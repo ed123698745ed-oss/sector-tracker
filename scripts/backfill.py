@@ -52,12 +52,10 @@ def run(dates):
             time.sleep(3)
             tp = quotes.get_json(f'https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date={d.year}%2F{d.month:02d}%2F{d.day:02d}&type=EW&response=json')
             time.sleep(3)
+            saved = quotes.save(ds, tw, tp)  # 上市有資料但上櫃缺漏時會丟出例外，不存原始檔，下輪重抓
             save_raw('twse', ds, tw)
             save_raw('tpex', ds, tp)
-            if quotes.save(ds, tw, tp):
-                print(ds, 'saved', flush=True)
-            else:
-                print(ds, 'closed', flush=True)
+            print(ds, 'saved' if saved else 'closed', flush=True)
             ok += 1
         except BaseException as e:  # SystemExit 也只記錄
             fail += 1
