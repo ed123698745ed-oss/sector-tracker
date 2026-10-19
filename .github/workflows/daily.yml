@@ -30,7 +30,7 @@ jobs:
         run: |
           D="${{ github.event.inputs.date }}"; [ -z "$D" ] && D=$(TZ=Asia/Taipei date +%Y%m%d) || D=$(echo "$D" | tr -d -)
           python3 scripts/backfill.py run "$D"
-          if [ ! -f "data/quotes/$D.json" ] && ! grep -qx "$D" data/closed.txt; then echo "::error::$D 收盤資料抓取失敗"; exit 1; fi
+          if [ ! -f "data/quotes/$D.json" ] && [ ! -f "archive/raw/twse/$D.json.gz" ]; then echo "::error::$D 收盤資料抓取失敗"; exit 1; fi
       - name: 計算上榜題材
         run: python3 scripts/build.py
       - name: 提交更新

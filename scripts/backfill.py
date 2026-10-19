@@ -17,7 +17,12 @@ CLOSED = os.path.join(ROOT, 'data', 'closed.txt')
 
 
 def closed_days():
-    return set(open(CLOSED).read().split()) if os.path.exists(CLOSED) else set()
+    # 休市日：closed.txt（舊紀錄）＋已有上市原始檔但沒有精簡檔的日期（每日一檔，多個工作並行時不會互相衝突）
+    s = set(open(CLOSED).read().split()) if os.path.exists(CLOSED) else set()
+    have = set(os.listdir(quotes.OUT))
+    if os.path.isdir(f'{RAW}/twse'):
+        s |= {f[:8] for f in os.listdir(f'{RAW}/twse') if f'{f[:8]}.json' not in have}
+    return s
 
 
 def missing():
@@ -52,8 +57,6 @@ def run(dates):
             if quotes.save(ds, tw, tp):
                 print(ds, 'saved', flush=True)
             else:
-                with open(CLOSED, 'a') as f:
-                    f.write(ds + '\n')
                 print(ds, 'closed', flush=True)
             ok += 1
         except BaseException as e:  # SystemExit 也只記錄
