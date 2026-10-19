@@ -14,6 +14,8 @@ import quotes  # noqa: E402
 ROOT = quotes.ROOT
 RAW = os.path.join(ROOT, 'archive', 'raw')
 CLOSED = os.path.join(ROOT, 'data', 'closed.txt')
+TPE = datetime.timezone(datetime.timedelta(hours=8))
+PUBLOG = os.path.join(ROOT, 'data', 'publish_log.txt')
 
 
 def closed_days():
@@ -53,9 +55,16 @@ def run(dates):
             tp = quotes.get_json(f'https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date={d.year}%2F{d.month:02d}%2F{d.day:02d}&type=EW&response=json')
             time.sleep(3)
             saved = quotes.save(ds, tw, tp)  # 上市有資料但上櫃缺漏時會丟出例外，不存原始檔，下輪重抓
+            now = datetime.datetime.now(TPE)
+            if not saved and d == now.date() and now.hour < 18:
+                print(ds, 'not published yet', flush=True)  # 當天 18:00 前查無資料視為尚未公布，不記為休市
+                continue
             save_raw('twse', ds, tw)
             save_raw('tpex', ds, tp)
             print(ds, 'saved' if saved else 'closed', flush=True)
+            if saved and d == now.date():  # 記錄當天第一次抓到資料的時間，用來調整排程
+                with open(PUBLOG, 'a') as f:
+                    f.write(f"{ds} {now.strftime('%H:%M')}\n")
             ok += 1
         except BaseException as e:  # SystemExit 也只記錄
             fail += 1

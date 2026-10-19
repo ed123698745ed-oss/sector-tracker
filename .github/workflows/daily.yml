@@ -2,7 +2,14 @@ name: 每日族群追蹤更新
 
 on:
   schedule:
-    # 台北時間週一至週五 16:20 與 18:20（UTC 08:20、10:20）；第二次為補抓，資料已存在則跳過
+    # 台北時間週一至週五 13:52、14:12、14:32、14:52、15:12、15:42、16:20、18:20（cron 為 UTC）
+    # 收盤資料公布時間不固定，分段重試；當天已抓到就跳過。分鐘避開整點以減少 GitHub 排程延遲
+    - cron: '52 5 * * 1-5'
+    - cron: '12 6 * * 1-5'
+    - cron: '32 6 * * 1-5'
+    - cron: '52 6 * * 1-5'
+    - cron: '12 7 * * 1-5'
+    - cron: '42 7 * * 1-5'
     - cron: '20 8 * * 1-5'
     - cron: '20 10 * * 1-5'
   workflow_dispatch:
@@ -27,13 +34,20 @@ jobs:
         with:
           python-version: '3.12'
       - name: 抓取收盤行情（原始檔一併存 archive/raw）
+        id: fetch
         run: |
           D="${{ github.event.inputs.date }}"; [ -z "$D" ] && D=$(TZ=Asia/Taipei date +%Y%m%d) || D=$(echo "$D" | tr -d -)
+          if [ -f "data/quotes/$D.json" ] || [ -f "archive/raw/twse/$D.json.gz" ]; then echo "$D 已處理，跳過"; echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0; fi
           python3 scripts/backfill.py run "$D"
-          if [ ! -f "data/quotes/$D.json" ] && [ ! -f "archive/raw/twse/$D.json.gz" ]; then echo "::error::$D 收盤資料抓取失敗"; exit 1; fi
+          if [ -f "data/quotes/$D.json" ] || [ -f "archive/raw/twse/$D.json.gz" ]; then exit 0; fi
+          H=$(TZ=Asia/Taipei date +%H)
+          if [ "$H" -ge 18 ] || [ -n "${{ github.event.inputs.date }}" ]; then echo "::error::$D 收盤資料抓取失敗"; exit 1; fi
+          echo "$D 資料尚未公布，等下一次排程"; echo "skip=1" >> "$GITHUB_OUTPUT"
       - name: 計算上榜題材
+        if: steps.fetch.outputs.skip != '1'
         run: python3 scripts/build.py
       - name: 提交更新
+        if: steps.fetch.outputs.skip != '1'
         run: |
           git config user.name "sector-tracker-bot"
           git config user.email "actions@users.noreply.github.com"
