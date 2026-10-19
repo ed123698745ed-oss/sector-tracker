@@ -108,7 +108,7 @@ footer p{margin:0;max-width:65ch}
     <h2>熱門題材數<small>近 60 個交易日</small></h2>
     <div class="chart">
       <svg id="trend" viewBox="0 0 420 200" role="img" aria-label="近 60 日每日熱門題材數"></svg>
-      <div class="legend"><span><i style="background:var(--accent)"></i>熱門題材數</span><span><i style="background:var(--muted);border-radius:50%"></i>大盤漲跌相近時的一年平均</span></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>熱門題材數</span><span><i style="background:var(--muted);border-radius:50%"></i>大盤漲跌相近時的歷史平均</span></div>
       <div class="tip" id="tip">點長條看當天數字</div>
     </div>
   </section>
@@ -141,22 +141,30 @@ const bucket = x => x == null ? null : x <= -2 ? 0 : x <= -1 ? 1 : x < 0 ? 2 : x
 const BUCKET_TXT = ['跌 2% 以上','跌 1～2%','跌 0～1%','漲 0～1%','漲 1～2%','漲 2% 以上'];
 let D, TH, idx, sortKey = 'c20', sortDir = -1;
 
+let HIST_LOADED = false;
 fetch('data.json', {cache:'no-cache'}).then(r => r.json()).then(data => {
-  D = data.days; TH = data.meta.themes;
+  D = data.days; TH = data.meta.themes; window.META = data.meta;
+  window.BA = data.meta.bucket_avg;
   D.forEach(d => d.hits = d.t.filter(r => r[0]).length);
-  // 各大盤漲跌區間的一年平均熱門數
-  const sum = [0,0,0,0,0,0], cnt = [0,0,0,0,0,0];
-  D.forEach(d => { const b = bucket(d.tx); if (b != null) { sum[b] += d.hits; cnt[b]++; } });
-  data.bucketAvg = sum.map((s,i) => cnt[i] ? s / cnt[i] : null);
-  window.META = data.meta; window.BA = data.bucketAvg;
   const sel = $('day');
-  sel.innerHTML = D.map((d,i) => `<option value="${i}">${fmtD(d.d)}</option>`).reverse().join('');
-  let start = D.length - 1;
-  try { const h = location.hash.slice(1); const j = D.findIndex(d => d.d === h); if (j >= 0) start = j; } catch(e) {}
+  const all = [...(META.hist_dates || []), ...D.map(d => d.d)];
+  sel.innerHTML = all.map(d => `<option value="${d}">${fmtD(d)}</option>`).reverse().join('');
+  let start = D[D.length - 1].d;
+  try { const h = location.hash.slice(1); if (all.includes(h)) start = h; } catch(e) {}
   sel.value = start;
-  sel.addEventListener('change', () => render(+sel.value));
-  render(start);
+  sel.addEventListener('change', () => go(sel.value));
+  go(start);
 }).catch(() => { $('sub').textContent = '資料讀取失敗，請稍後重新整理。'; });
+
+function go(ds){
+  const i = D.findIndex(d => d.d === ds);
+  if (i >= 0 && (i >= 19 || HIST_LOADED || !(META.hist_dates || []).length)) return render(i);
+  $('sub').textContent = '讀取歷史資料中…';
+  fetch('history.json', {cache:'no-cache'}).then(r => r.json()).then(h => {
+    if (!HIST_LOADED) { h.days.forEach(d => d.hits = d.t.filter(r => r[0]).length); D = h.days.concat(D); HIST_LOADED = true; }
+    render(D.findIndex(d => d.d === ds));
+  }).catch(() => { $('sub').textContent = '歷史資料讀取失敗，請稍後再試。'; });
+}
 
 function streak(ti, i){ let n = 0; while (i >= 0 && D[i].t[ti][0]) { n++; i--; } return n; }
 function count(ti, i, w){ let n = 0; for (let k = Math.max(0, i-w+1); k <= i; k++) if (D[k].t[ti][0]) n++; return n; }
@@ -175,7 +183,7 @@ function render(i){
     <div class="big">${d.hits}<span>/ ${TH.length}</span></div>
     <div class="facts">
       <div>加權指數 <b class="${cls(d.tx)}">${pct(d.tx)}</b></div>
-      <div>大盤${BUCKET_TXT[bucket(d.tx)] ?? ''}的日子，一年平均 <b>${ba != null ? ba.toFixed(1) : '—'}</b> 個上榜</div>
+      <div>大盤${BUCKET_TXT[bucket(d.tx)] ?? ''}的日子，歷史平均 <b>${ba != null ? ba.toFixed(1) : '—'}</b> 個上榜</div>
       ${tag ? `<div><span class="badge ${tagCls}">${tag}</span></div>` : ''}
     </div>`;
   drawTrend(i);
@@ -200,7 +208,7 @@ function render(i){
   drawTable(i);
   $('foot').innerHTML = `
     <p><b>上榜規則 ${META.rule_version}</b>（符合任一條）：A 齊漲＝漲幅 ≥3% 的成分股 ≥3 檔且佔 ≥25%；B 帶頭擴散＝漲幅 ≥4% 的 ≥2 檔，且漲幅 ≥1.5% 的家數佔 ≥40%；C 強勢＝漲幅 ≥7% 的 ≥2 檔。家數以當日有成交的成分股計算；漲幅為收盤對前一交易日參考價。</p>
-    <p>題材分類表 ${META.themes_version}，共 ${TH.length} 個題材。資料來源：臺灣證券交易所、證券櫃檯買賣中心每日收盤行情。</p>
+    <p>題材分類表 ${META.themes_version}，共 ${TH.length} 個題材。資料起始 ${fmtD(META.first_day)}；「歷史平均」以起始日至今、大盤漲跌落在同一區間的交易日計算。資料來源：臺灣證券交易所、證券櫃檯買賣中心每日收盤行情。</p>
     <p>歷史資料以現行成分股回推，有事後歸類偏差，只供觀察市場，不是交易訊號。</p>`;
 }
 
@@ -226,10 +234,10 @@ function drawTrend(i){
   svg.onclick = svg.onmousemove = e => {
     const k = e.target.dataset && e.target.dataset.k; if (k == null) return;
     const d = D[+k], ba = BA[bucket(d.tx)];
-    $('tip').innerHTML = `${fmtD(d.d)}：熱門 <b>${d.hits}</b> 個，加權 <span class="${cls(d.tx)}">${pct(d.tx)}</span>，同級一年平均 ${ba != null ? ba.toFixed(1) : '—'}`;
+    $('tip').innerHTML = `${fmtD(d.d)}：熱門 <b>${d.hits}</b> 個，加權 <span class="${cls(d.tx)}">${pct(d.tx)}</span>，同級歷史平均 ${ba != null ? ba.toFixed(1) : '—'}`;
   };
   const ba = BA[bucket(D[i].tx)];
-  $('tip').innerHTML = `${fmtD(D[i].d)}：熱門 <b>${D[i].hits}</b> 個，加權 <span class="${cls(D[i].tx)}">${pct(D[i].tx)}</span>，同級一年平均 ${ba != null ? ba.toFixed(1) : '—'}`;
+  $('tip').innerHTML = `${fmtD(D[i].d)}：熱門 <b>${D[i].hits}</b> 個，加權 <span class="${cls(D[i].tx)}">${pct(D[i].tx)}</span>，同級歷史平均 ${ba != null ? ba.toFixed(1) : '—'}`;
 }
 
 function drawHeat(i){

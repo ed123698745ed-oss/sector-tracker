@@ -10,9 +10,10 @@ import datetime, glob, json, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RULE_VERSION = 'V01'
-THEMES_VERSION = 'V01_20261019'
+THEMES_VERSION = 'V02_20261019'
 R = dict(A_pct=3.0, A_n=3, A_ratio=0.25, B_pct=4.0, B_n=2, B_follow_pct=1.5, B_follow=0.40, C_pct=7.0, C_n=2)
 LIMIT = 9.5  # 視為漲停的近似門檻
+RECENT = 260  # 首頁載入的近期交易日數，其餘放 history.json
 
 
 def judge(p):
@@ -58,16 +59,26 @@ def main():
                 row.append([[n, x] for n, x in sorted(mem, key=lambda z: -z[1])])
             rows.append(row)
         days.append({'d': d['date'], 'tx': d['taiex'], 't': rows})
-    out = {
-        'meta': {
-            'generated': (datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))).strftime('%Y-%m-%d %H:%M'),
-            'rule_version': RULE_VERSION, 'themes_version': THEMES_VERSION, 'rule': R,
-            'themes': names, 'members': {t: [n for _, n in th[t]] for t in names},
-        },
-        'days': days,
+    # 各大盤漲跌區間的平均上榜數（全部歷史）
+    def bucket(x):
+        return None if x is None else 0 if x <= -2 else 1 if x <= -1 else 2 if x < 0 else 3 if x < 1 else 4 if x < 2 else 5
+    bs, bc = [0] * 6, [0] * 6
+    for d in days:
+        b = bucket(d['tx'])
+        if b is not None:
+            bs[b] += sum(1 for r in d['t'] if r[0]); bc[b] += 1
+    recent, hist = days[-RECENT:], days[:-RECENT]
+    meta = {
+        'generated': datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime('%Y-%m-%d %H:%M'),
+        'rule_version': RULE_VERSION, 'themes_version': THEMES_VERSION, 'rule': R,
+        'themes': names, 'members': {t: [n for _, n in th[t]] for t in names},
+        'bucket_avg': [round(s / c, 2) if c else None for s, c in zip(bs, bc)], 'bucket_n': bc,
+        'first_day': days[0]['d'], 'hist_dates': [d['d'] for d in hist],
     }
     os.makedirs(f'{ROOT}/docs', exist_ok=True)
-    json.dump(out, open(f'{ROOT}/docs/data.json', 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    dump = lambda o, f: json.dump(o, open(f'{ROOT}/docs/{f}', 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    dump({'meta': meta, 'days': recent}, 'data.json')
+    dump({'days': hist}, 'history.json')
     last = days[-1]
     print('days', len(days), 'last', last['d'], 'hits', sum(1 for r in last['t'] if r[0]))
 
