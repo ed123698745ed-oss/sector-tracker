@@ -10,7 +10,7 @@ import datetime, glob, json, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RULE_VERSION = 'V01'
-THEMES_VERSION = 'V04_20261020'
+THEMES_VERSION = 'V05_20261020'
 R = dict(A_pct=3.0, A_n=3, A_ratio=0.25, B_pct=4.0, B_n=2, B_follow_pct=1.5, B_follow=0.40, C_pct=7.0, C_n=2)
 LIMIT = 9.5  # 視為漲停的近似門檻
 RECENT = 260  # 首頁載入的近期交易日數，其餘放 history.json
