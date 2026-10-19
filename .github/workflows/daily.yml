@@ -26,15 +26,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: 抓取收盤行情
-        run: python3 scripts/quotes.py fetch ${{ github.event.inputs.date }}
+      - name: 抓取收盤行情（原始檔一併存 archive/raw）
+        run: |
+          D="${{ github.event.inputs.date }}"; [ -z "$D" ] && D=$(TZ=Asia/Taipei date +%Y%m%d) || D=$(echo "$D" | tr -d -)
+          python3 scripts/backfill.py run "$D"
+          if [ ! -f "data/quotes/$D.json" ] && ! grep -qx "$D" data/closed.txt; then echo "::error::$D 收盤資料抓取失敗"; exit 1; fi
       - name: 計算上榜題材
         run: python3 scripts/build.py
       - name: 提交更新
         run: |
           git config user.name "sector-tracker-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/quotes docs/data.json
+          git add archive data docs
           if git diff --cached --quiet; then echo "沒有新資料"; exit 0; fi
           git commit -m "資料更新 $(TZ=Asia/Taipei date +%Y-%m-%d)"
-          git push
+          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done
