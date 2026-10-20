@@ -1,0 +1,6 @@
+run_at 2026-10-20 13:35:27
+codes 604 returned 604 priced 604 seconds 47.4
+requests 13 errors 0 last_error 
+quote_time_range ['13:30:00'] ['13:33:00']
+hits 1 光學鏡頭(ABC)
+
