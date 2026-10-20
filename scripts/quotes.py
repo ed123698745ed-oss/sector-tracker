@@ -16,7 +16,7 @@ UA = {'User-Agent': 'Mozilla/5.0 (sector-tracker)'}
 
 def num(s):
     try:
-        return float(str(s).replace(',', '').strip())
+        return float(str(s).replace(',', '').replace(' ', '').strip())
     except ValueError:
         return None
 
