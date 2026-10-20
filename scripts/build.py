@@ -10,9 +10,8 @@ import datetime, glob, json, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RULE_VERSION = 'V01'
-THEMES_VERSION = 'V11_20261020'
+THEMES_VERSION = 'V12_20261021'
 R = dict(A_pct=3.0, A_n=3, A_ratio=0.25, B_pct=4.0, B_n=2, B_follow_pct=1.5, B_follow=0.40, C_pct=7.0, C_n=2)
-LIMIT = 9.5  # 視為漲停的近似門檻
 RECENT = 260  # 首頁載入的近期交易日數，其餘放 history.json
 BASE_DAYS = 735  # 擴散基準：近三年交易日數（約 245 日 × 3）
 NEW_LISTING_DAYS = 5  # 新上市（櫃）前五個交易日無漲跌幅限制，不計入
@@ -122,7 +121,7 @@ def main():
             p = [x for _, x in mem]
             hit = judge(p)
             avg = round(sum(p) / len(p), 2) if p else None
-            row = [hit, avg, sum(x >= 3 for x in p), len(p), sum(x >= LIMIT for x in p)]
+            row = [hit, avg, sum(x >= 3 for x in p), len(p), sum(q[c][2] if len(q[c]) > 2 else 0 for c, _ in th[t] if c in q)]
             if hit:  # 上榜題材附全部有成交成分股（依漲幅排序）
                 row.append([[n, x] for n, x in sorted(mem, key=lambda z: -z[1])])
             rows.append(row)

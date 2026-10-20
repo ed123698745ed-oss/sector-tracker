@@ -1,12 +1,11 @@
 """抓上市、上櫃公司已發行普通股數，存 config/shares.json（代號 → 股數），用來計算題材成分股市值。
-資料來源：證交所 OpenAPI t187ap03_L、櫃買中心 OpenAPI mopsfe_t187ap03_O（公司基本資料）。
+資料來源：證交所 OpenAPI t187ap03_L（上市公司基本資料）；上櫃股數改由 build.py 直接讀櫃買每日收盤行情的「發行股數」欄。
 """
 import json, os, urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = {
     'twse': ['https://openapi.twse.com.tw/v1/opendata/t187ap03_L', 'https://mopsfs.twse.com.tw/opendata/t187ap03_L.csv'],
-    'tpex': ['https://www.tpex.org.tw/openapi/v1/mopsfe_t187ap03_O', 'https://mopsfs.twse.com.tw/opendata/t187ap03_O.csv'],
 }
 
 

@@ -162,7 +162,7 @@ function go(ds){
   const i = D.findIndex(d => d.d === ds);
   // 近期資料不足 20 天，或某題材連續上榜一路延伸到近期資料起點時，需載入更早的歷史才算得準
   const trunc = i >= 0 && !HIST_LOADED && TH.some((_, ti) => streak(ti, i) > i);
-  if (i >= 0 && ((i >= 19 && !trunc) || HIST_LOADED || !(META.hist_dates || []).length)) return render(i);
+  if (i >= 0 && ((i >= 59 && !trunc) || HIST_LOADED || !(META.hist_dates || []).length)) return render(i);
   $('sub').textContent = '讀取歷史資料中…';
   fetch('history.json', {cache:'no-cache'}).then(r => r.json()).then(h => {
     if (!HIST_LOADED) { h.days.forEach(d => d.hits = d.t.filter(r => r[0]).length); D = h.days.concat(D); HIST_LOADED = true; }
@@ -247,7 +247,7 @@ function drawTrend(i){
 function drawHeat(i){
   const s = Math.max(0, i - 19), days = D.slice(s, i + 1);
   const G = META.groups || [], GO = ['電子', '傳產'], go = g => { const k = GO.indexOf(g); return k < 0 ? 9 : k; };
-  const rows = TH.map((t, ti) => ({t, ti, g: G[ti] || '傳產', n: count(ti, i, 20), st: streak(ti, i)})).filter(r => r.n > 0)
+  const rows = TH.map((t, ti) => ({t, ti, g: G[ti] || '傳產', n: count(ti, i, 20), st: streak(ti, i)})).filter(r => r.n > 0 && D[i].t[r.ti].length)
     .sort((a, b) => go(a.g) - go(b.g) || b.n - a.n || b.st - a.st);
   if (!rows.length) { $('heat').innerHTML = '<tr><td class="empty">近 20 日沒有題材上榜。</td></tr>'; return; }
   $('heat').innerHTML = rows.map((r, k) => (k === 0 || rows[k-1].g !== r.g ? `<tr class="grp"><th colspan="${days.length + 2}">${r.g}</th></tr>` : '')
@@ -258,8 +258,8 @@ function drawHeat(i){
 function drawTable(i){
   const d = D[i];
   const G = META.groups || [], GO = ['電子', '傳產'], go = g => { const k = GO.indexOf(g); return k < 0 ? 9 : k; };
-  const rows = TH.map((t, ti) => [t, ti]).filter(([t, ti]) => d.t[ti].length).map(([t, ti]) => { const r = d.t[ti]; return {t, g: G[ti] || '傳產', hit: r[0], avg: r[1], ge3: r[2], n: r[3], c5: count(ti, i, 5), c20: count(ti, i, 20), st: streak(ti, i)}; });
-  rows.sort((a, b) => { const x = a[sortKey] ?? -999, y = b[sortKey] ?? -999; return go(a.g) - go(b.g) || (typeof x === 'string' ? sortDir * x.localeCompare(y) : sortDir * (x - y)); });
+  const rows = TH.map((t, ti) => [t, ti]).filter(([t, ti]) => d.t[ti].length).map(([t, ti]) => { const r = d.t[ti]; return {t, g: G[ti] || '傳產', hit: r[0], avg: r[1], ge3: r[2], n: r[3], ge3r: r[3] ? r[2] / r[3] : 0, c5: count(ti, i, 5), c20: count(ti, i, 20), st: streak(ti, i)}; });
+  rows.sort((a, b) => { const sk = sortKey === 'ge3' ? 'ge3r' : sortKey, x = a[sk] ?? -999, y = b[sk] ?? -999; return go(a.g) - go(b.g) || (typeof x === 'string' ? sortDir * x.localeCompare(y) : sortDir * (x - y)); });
   const cols = [['t','題材'],['avg','均漲'],['ge3','≥3%'],['c5','近5日'],['c20','近20日'],['st','連續']];
   $('all').innerHTML = `<thead><tr>${cols.map(([k, n]) => `<th data-k="${k}" class="${k === sortKey ? 'sorted' : ''}">${n}${k === sortKey ? (sortDir < 0 ? ' ▼' : ' ▲') : ''}</th>`).join('')}</tr></thead><tbody>`
     + rows.map((r, k) => (k === 0 || rows[k-1].g !== r.g ? `<tr class="grp"><td colspan="6">${r.g}</td></tr>` : '') + `<tr class="${r.hit ? 'hit' : ''}"><td>${r.t}</td><td class="${cls(r.avg)}">${pct(r.avg)}</td><td>${r.ge3}/${r.n}</td><td>${r.c5}</td><td>${r.c20}</td><td>${r.st || ''}</td></tr>`).join('') + '</tbody>';

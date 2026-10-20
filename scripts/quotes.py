@@ -16,6 +16,27 @@ OUT = os.path.join(ROOT, 'data', 'quotes')
 UA = {'User-Agent': 'Mozilla/5.0 (sector-tracker)'}
 
 
+LIMIT_CHANGE = '20150601'  # 漲跌幅限制由 7% 放寬為 10%
+
+
+def tick(p):
+    return 0.01 if p < 10 else 0.05 if p < 50 else 0.1 if p < 100 else 0.5 if p < 500 else 1 if p < 1000 else 5
+
+
+def limit_up(ref, ds):
+    """依參考價與升降單位計算漲停價（向下取至該價位的升降單位）"""
+    lim = ref * (1.07 if ds < LIMIT_CHANGE else 1.10)
+    t = tick(lim)
+    v = int(lim / t + 1e-9) * t
+    if tick(v) != t:  # 跨價位級距時以較低級距重算
+        t = tick(v); v = int(lim / t + 1e-9) * t
+    return round(v, 2)
+
+
+def is_lu(close, ref, ds):
+    return 1 if close and ref and close >= limit_up(ref, ds) - 1e-6 else 0
+
+
 def num(s):
     try:
         return float(str(s).replace(',', '').replace(' ', '').strip())
@@ -23,7 +44,7 @@ def num(s):
         return None
 
 
-def parse_twse(d, exref=None):
+def parse_twse(d, exref=None, ds='99999999'):
     q, taiex = {}, None
     exref = exref or {}
     for t in d.get('tables', []):
@@ -43,21 +64,21 @@ def parse_twse(d, exref=None):
                 close, diff = num(r[ic]), num(r[idf])
                 sg = re.sub('<[^>]+>', '', r[isg]).strip()
                 code = r[0].strip()
-                if sg == 'X' and close and exref.get(code):  # 除權息日：對除權息參考價
+                if sg == 'X' and close and exref.get(code):  # 除權息／減資恢復買賣日：對參考價
                     ref = exref[code]
-                    q[code] = [round((close - ref) / ref * 100, 2), round((num(r[iv]) or 0) / 1e8, 2)]
+                    q[code] = [round((close - ref) / ref * 100, 2), round((num(r[iv]) or 0) / 1e8, 2), is_lu(close, ref, ds)]
                     continue
                 if close is None or diff is None or sg not in ('+', '-', ''):
                     continue
                 diff = -diff if sg == '-' else diff
                 prev = close - diff
                 if prev > 0:
-                    q[r[0].strip()] = [round(diff / prev * 100, 2), round((num(r[iv]) or 0) / 1e8, 2)]
+                    q[code] = [round(diff / prev * 100, 2), round((num(r[iv]) or 0) / 1e8, 2), is_lu(close, prev, ds)]
     return q, taiex
 
 
-def tpex_limits(d):
-    """上櫃前一交易日公布的次日漲跌停價 → {代號: 推算參考價}"""
+def tpex_limits(d, want_up=False):
+    """上櫃前一交易日公布的次日漲跌停價 → {代號: 推算參考價}（want_up=True 時回傳次日漲停價）"""
     out = {}
     for t in (d or {}).get('tables', []):
         f = [x.strip() for x in t.get('fields', [])]
@@ -67,13 +88,14 @@ def tpex_limits(d):
         for r in t['data']:
             up, dn = num(r[iu]), num(r[idn])
             if up and dn and up < 9999:
-                out[r[0].strip()] = (up + dn) / 2
+                out[r[0].strip()] = up if want_up else (up + dn) / 2
     return out
 
 
-def parse_tpex(d, prevraw=None):
+def parse_tpex(d, prevraw=None, ds='99999999'):
     q = {}
     refs = None
+    ups = tpex_limits(prevraw, True) if prevraw else {}
     for t in d.get('tables', []):
         f = [x.strip() for x in t.get('fields', [])]
         if '收盤' not in f:
@@ -87,13 +109,15 @@ def parse_tpex(d, prevraw=None):
                     refs = tpex_limits(prevraw)
                 ref = refs.get(code)
                 if ref:
-                    q[code] = [round((close - ref) / ref * 100, 2), round((num(r[iv]) or 0) / 1e8, 2)]
+                    lu = 1 if code in ups and close >= ups[code] - 1e-6 else is_lu(close, ref, ds)
+                    q[code] = [round((close - ref) / ref * 100, 2), round((num(r[iv]) or 0) / 1e8, 2), lu]
                 continue
             if close is None or diff is None:
                 continue
             prev = close - diff
             if prev > 0:
-                q[r[0].strip()] = [round(diff / prev * 100, 2), round((num(r[iv]) or 0) / 1e8, 2)]
+                lu = 1 if code in ups and close >= ups[code] - 1e-6 else is_lu(close, prev, ds)
+                q[code] = [round(diff / prev * 100, 2), round((num(r[iv]) or 0) / 1e8, 2), lu]
     return q
 
 
@@ -145,12 +169,12 @@ def is_holiday(day):
 
 
 def save(ds, tw, tp, exref=None, prevtp=None):
-    q, taiex = parse_twse(tw, exref)
+    q, taiex = parse_twse(tw, exref, ds)
     if not q:
         return False  # 休市
     if not tp or not parse_tpex(tp):
         raise SystemExit(f'{ds} 上市有資料但上櫃無資料，停止，不產生不完整檔案')
-    q.update(parse_tpex(tp, prevtp))
+    q.update(parse_tpex(tp, prevtp, ds))
     os.makedirs(OUT, exist_ok=True)
     json.dump({'date': ds, 'taiex': taiex, 'q': q}, open(f'{OUT}/{ds}.json', 'w'), separators=(',', ':'))
     return True

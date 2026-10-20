@@ -21,8 +21,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: 抓證交所除權除息計算結果表（2015-01 起逐月）
-        run: python3 scripts/exright.py range 2015-01 $(TZ=Asia/Taipei date +%Y-%m)
+      - name: 補抓減資恢復買賣參考價（2015-01 起逐月）
+        run: python3 scripts/exright.py range 2015-01 $(TZ=Asia/Taipei date +%Y-%m) reduction
+      - name: 補抓 2016–2018 週六補行交易日
+        run: python3 scripts/backfill.py run 20160130,20160604,20160910,20170218,20170603,20170930,20180331,20181222
       - name: 由原始檔重算全部精簡檔（含除權息日）
         run: python3 scripts/quotes.py rebuild
       - name: 計算上榜題材
@@ -31,6 +33,6 @@ jobs:
         run: |
           git config user.name "sector-tracker-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data docs
-          git commit -m "除權息日改以參考價計算，全部重算 [skip ci]" || exit 0
+          git add archive data docs
+          git commit -m "補減資恢復買賣參考價、週六補行交易日、漲停改依升降單位判斷，全部重算 [skip ci]" || exit 0
           for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done

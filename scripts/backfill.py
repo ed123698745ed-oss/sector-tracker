@@ -57,7 +57,7 @@ def run(dates):
             exref = None
             if quotes.has_twse_exright(tw):  # 有除權息股：抓當日除權息參考價
                 import exright
-                ex = exright.load(); ex.update(exright.fetch(ds, ds)); exright.save(ex)
+                ex = exright.load(); exright.merge(ex, exright.fetch(ds, ds)); exright.merge(ex, exright.fetch_reduction(ds, ds)); exright.save(ex)
                 exref = ex.get(ds)
             saved = quotes.save(ds, tw, tp, exref, quotes.prev_tpex_raw(ds))  # 上市有資料但上櫃缺漏時會丟出例外，不存原始檔，下輪重抓
             now = datetime.datetime.now(TPE)

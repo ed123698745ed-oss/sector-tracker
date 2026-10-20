@@ -13,8 +13,13 @@ BATCH = 50
 
 
 def members():
+    from build import load_periods
+    per, today = load_periods(), datetime.datetime.now(TPE).strftime('%Y%m%d')
     th = {}
     for r in list(csv.reader(open(f'{ROOT}/config/themes.csv', encoding='utf-8')))[1:]:
+        a, b = per.get(r[0], ('', ''))
+        if (a and today < a) or (b and today > b):  # 已過有效期間的題材不判斷
+            continue
         th.setdefault(r[0], []).append(r[1])
     return th
 
@@ -51,13 +56,24 @@ def fetch(codes, tse):
 
 
 def pct(x):
+    """盤中漲跌%。當下無成交價時：今日累計量為 0 視為無成交；否則依序用最佳買價、最佳賣價
+    （跌停鎖死時只剩賣價、漲停鎖死時只剩買價），都沒有就用漲跌停價判斷。"""
     try:
         y = float(x['y'])
+        if not y:
+            return None
         z = x.get('z', '-')
-        if z in ('-', '', None):  # 這一刻沒有成交價，改用最佳買價第一檔
-            z = (x.get('b') or '-').split('_')[0]
-        z = float(z)
-        return round((z - y) / y * 100, 2) if y else None
+        if z in ('-', '', None):
+            if float(x.get('v') or 0) <= 0:
+                return None
+            z = '-'
+            for k in ('b', 'a'):
+                v = (x.get(k) or '-').split('_')[0]
+                if v not in ('-', ''):
+                    z = v; break
+            if z == '-':
+                return None
+        return round((float(z) - y) / y * 100, 2)
     except Exception:
         return None
 
