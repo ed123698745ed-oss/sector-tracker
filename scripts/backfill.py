@@ -54,10 +54,20 @@ def run(dates):
             time.sleep(3)
             tp = quotes.get_json(f'https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date={d.year}%2F{d.month:02d}%2F{d.day:02d}&type=EW&response=json')
             time.sleep(3)
-            saved = quotes.save(ds, tw, tp)  # 上市有資料但上櫃缺漏時會丟出例外，不存原始檔，下輪重抓
+            exref = None
+            if quotes.has_twse_exright(tw):  # 有除權息股：抓當日除權息參考價
+                import exright
+                ex = exright.load(); ex.update(exright.fetch(ds, ds)); exright.save(ex)
+                exref = ex.get(ds)
+            saved = quotes.save(ds, tw, tp, exref, quotes.prev_tpex_raw(ds))  # 上市有資料但上櫃缺漏時會丟出例外，不存原始檔，下輪重抓
             now = datetime.datetime.now(TPE)
             if not saved and d == now.date() and now.hour < 18:
                 print(ds, 'not published yet', flush=True)  # 當天 18:00 前查無資料視為尚未公布，不記為休市
+                continue
+            if not saved and (now.date() - d).days < 7 and not quotes.is_holiday(d):
+                # 近期平日查無資料、又不在證交所休市日期表 → 不記為休市，讓排程報錯並於下次重抓
+                print(ds, 'NO DATA but not a scheduled holiday', flush=True)
+                fail += 1
                 continue
             save_raw('twse', ds, tw)
             save_raw('tpex', ds, tp)

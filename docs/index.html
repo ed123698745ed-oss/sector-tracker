@@ -160,7 +160,9 @@ fetch('data.json', {cache:'no-cache'}).then(r => r.json()).then(data => {
 
 function go(ds){
   const i = D.findIndex(d => d.d === ds);
-  if (i >= 0 && (i >= 19 || HIST_LOADED || !(META.hist_dates || []).length)) return render(i);
+  // 近期資料不足 20 天，或某題材連續上榜一路延伸到近期資料起點時，需載入更早的歷史才算得準
+  const trunc = i >= 0 && !HIST_LOADED && TH.some((_, ti) => streak(ti, i) > i);
+  if (i >= 0 && ((i >= 19 && !trunc) || HIST_LOADED || !(META.hist_dates || []).length)) return render(i);
   $('sub').textContent = '讀取歷史資料中…';
   fetch('history.json', {cache:'no-cache'}).then(r => r.json()).then(h => {
     if (!HIST_LOADED) { h.days.forEach(d => d.hits = d.t.filter(r => r[0]).length); D = h.days.concat(D); HIST_LOADED = true; }

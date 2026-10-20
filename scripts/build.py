@@ -10,10 +10,11 @@ import datetime, glob, json, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RULE_VERSION = 'V01'
-THEMES_VERSION = 'V09_20261020'
+THEMES_VERSION = 'V10_20261020'
 R = dict(A_pct=3.0, A_n=3, A_ratio=0.25, B_pct=4.0, B_n=2, B_follow_pct=1.5, B_follow=0.40, C_pct=7.0, C_n=2)
 LIMIT = 9.5  # 視為漲停的近似門檻
 RECENT = 260  # 首頁載入的近期交易日數，其餘放 history.json
+NEW_LISTING_DAYS = 5  # 新上市（櫃）前五個交易日無漲跌幅限制，不計入
 
 
 def judge(p):
@@ -103,9 +104,13 @@ def main():
     names = list(th)
     groups = load_groups(names)
     days = []
-    for fp in sorted(glob.glob(f'{ROOT}/data/quotes/*.json')):
+    seen = {}  # 代號 → 第幾個交易日首次出現（用來排除新上市前五日：無漲跌幅限制）
+    for k, fp in enumerate(sorted(glob.glob(f'{ROOT}/data/quotes/*.json'))):
         d = json.load(open(fp))
         q = d['q']
+        for c in q:
+            seen.setdefault(c, k)
+        q = {c: v for c, v in q.items() if seen[c] == 0 or k - seen[c] >= NEW_LISTING_DAYS}
         rows = []
         for t in names:
             a, b = per.get(t, ('', ''))

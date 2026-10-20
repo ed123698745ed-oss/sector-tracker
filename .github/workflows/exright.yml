@@ -1,0 +1,36 @@
+name: 除權息參考價補抓並重算
+
+on:
+  push:
+    paths: ['test/EXRIGHT_TRIGGER']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-update
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 抓證交所除權除息計算結果表（2015-01 起逐月）
+        run: python3 scripts/exright.py range 2015-01 $(TZ=Asia/Taipei date +%Y-%m)
+      - name: 由原始檔重算全部精簡檔（含除權息日）
+        run: python3 scripts/quotes.py rebuild
+      - name: 計算上榜題材
+        run: python3 scripts/build.py
+      - name: 提交
+        run: |
+          git config user.name "sector-tracker-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data docs
+          git commit -m "除權息日改以參考價計算，全部重算 [skip ci]" || exit 0
+          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done
