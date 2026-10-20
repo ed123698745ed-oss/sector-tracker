@@ -10,10 +10,11 @@ import datetime, glob, json, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RULE_VERSION = 'V01'
-THEMES_VERSION = 'V10_20261020'
+THEMES_VERSION = 'V11_20261020'
 R = dict(A_pct=3.0, A_n=3, A_ratio=0.25, B_pct=4.0, B_n=2, B_follow_pct=1.5, B_follow=0.40, C_pct=7.0, C_n=2)
 LIMIT = 9.5  # 視為漲停的近似門檻
 RECENT = 260  # 首頁載入的近期交易日數，其餘放 history.json
+BASE_DAYS = 735  # 擴散基準：近三年交易日數（約 245 日 × 3）
 NEW_LISTING_DAYS = 5  # 新上市（櫃）前五個交易日無漲跌幅限制，不計入
 
 
@@ -134,6 +135,20 @@ def main():
         b = bucket(d['tx'])
         if b is not None:
             bs[b] += sum(1 for r in d['t'] if r and r[0]); bc[b] += 1
+    # 每日基準：近三年（含當日往前 BASE_DAYS 個交易日）大盤漲跌落在同一區間的平均上榜數
+    from collections import deque
+    win, ws, wc = deque(), [0] * 6, [0] * 6
+    for d in days:
+        b = bucket(d['tx'])
+        h = sum(1 for r in d['t'] if r and r[0])
+        win.append((b, h))
+        if b is not None:
+            ws[b] += h; wc[b] += 1
+        if len(win) > BASE_DAYS:
+            ob, oh = win.popleft()
+            if ob is not None:
+                ws[ob] -= oh; wc[ob] -= 1
+        d['ba'] = round(ws[b] / wc[b], 1) if b is not None and wc[b] else None
     recent, hist = days[-RECENT:], days[:-RECENT]
     meta = {
         'generated': datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime('%Y-%m-%d %H:%M'),
