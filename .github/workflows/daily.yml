@@ -12,6 +12,8 @@ on:
     - cron: '42 7 * * 1-5'
     - cron: '20 8 * * 1-5'
     - cron: '20 10 * * 1-5'
+  push:
+    paths: ['test/DAILY_TRIGGER']   # 備用：排程沒觸發時，改這個檔案即可手動觸發
   workflow_dispatch:
     inputs:
       date:
