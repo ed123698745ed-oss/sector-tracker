@@ -5,15 +5,17 @@
   B 帶頭擴散：漲幅 ≥4% 的 ≥2 檔，且漲幅 ≥1.5% 的家數佔有成交成分股 ≥40%
   C 強勢：漲幅 ≥7% 的 ≥2 檔
 當日無成交的成分股不計入家數。
+規則 V02（Ed 2026-10-21 確認）：2015-06-01 前漲跌幅限制為 7%，該期間收盤鎖漲停者視同漲幅 ≥7%（僅影響 C 條件）。
 """
 import datetime, glob, json, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RULE_VERSION = 'V01'
+RULE_VERSION = 'V02'
 THEMES_VERSION = 'V12_20261021'
 R = dict(A_pct=3.0, A_n=3, A_ratio=0.25, B_pct=4.0, B_n=2, B_follow_pct=1.5, B_follow=0.40, C_pct=7.0, C_n=2)
 RECENT = 260  # 首頁載入的近期交易日數，其餘放 history.json
 BASE_DAYS = 735  # 擴散基準：近三年交易日數（約 245 日 × 3）
+LIMIT7_END = '20150601'  # 此日前漲跌幅限制為 7%
 NEW_LISTING_DAYS = 5  # 新上市（櫃）前五個交易日無漲跌幅限制，不計入
 
 
@@ -119,7 +121,10 @@ def main():
                 continue
             mem = [(n, q[c][0]) for c, n in th[t] if c in q]
             p = [x for _, x in mem]
-            hit = judge(p)
+            if d['date'] < LIMIT7_END:  # 漲跌幅 7% 時期：鎖漲停視同達 C 條件的 7%（規則 V02）
+                hit = judge([max(q[c][0], R['C_pct']) if len(q[c]) > 2 and q[c][2] else q[c][0] for c, _ in th[t] if c in q])
+            else:
+                hit = judge(p)
             avg = round(sum(p) / len(p), 2) if p else None
             row = [hit, avg, sum(x >= 3 for x in p), len(p), sum(q[c][2] if len(q[c]) > 2 else 0 for c, _ in th[t] if c in q)]
             if hit:  # 上榜題材附全部有成交成分股（依漲幅排序）
