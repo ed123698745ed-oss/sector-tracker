@@ -71,7 +71,7 @@ def tpex_limits(d):
     return out
 
 
-def parse_tpex(d, prev=None):
+def parse_tpex(d, prevraw=None):
     q = {}
     refs = None
     for t in d.get('tables', []):
@@ -84,7 +84,7 @@ def parse_tpex(d, prev=None):
             code = r[0].strip()
             if close and diff is None and '除' in str(r[idf]):  # 除權／除息／除權息
                 if refs is None:
-                    refs = tpex_limits(prev)
+                    refs = tpex_limits(prevraw)
                 ref = refs.get(code)
                 if ref:
                     q[code] = [round((close - ref) / ref * 100, 2), round((num(r[iv]) or 0) / 1e8, 2)]
