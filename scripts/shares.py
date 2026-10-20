@@ -5,14 +5,19 @@ import json, os, urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = {
-    'twse': 'https://openapi.twse.com.tw/v1/opendata/t187ap03_L',
-    'tpex': 'https://www.tpex.org.tw/openapi/v1/mopsfe_t187ap03_O',
+    'twse': ['https://openapi.twse.com.tw/v1/opendata/t187ap03_L', 'https://mopsfs.twse.com.tw/opendata/t187ap03_L.csv'],
+    'tpex': ['https://www.tpex.org.tw/openapi/v1/mopsfe_t187ap03_O', 'https://mopsfs.twse.com.tw/opendata/t187ap03_O.csv'],
 }
 
 
 def get(u):
-    req = urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json'})
-    return json.loads(urllib.request.urlopen(req, timeout=60).read())
+    req = urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json, text/csv'})
+    b = urllib.request.urlopen(req, timeout=60).read()
+    if u.endswith('.csv'):
+        import csv, io
+        t = b.decode('utf-8-sig', errors='replace')
+        return list(csv.DictReader(io.StringIO(t)))
+    return json.loads(b)
 
 
 def pick(row, keys):
@@ -31,11 +36,17 @@ def num(x):
 
 def main():
     out, notes = {}, []
-    for name, u in SRC.items():
-        try:
-            rows = get(u)
-        except Exception as e:
-            notes.append(f'{name} ERROR {e!r}'[:300])
+    for name, urls in SRC.items():
+        rows = None
+        for u in urls:
+            try:
+                rows = get(u)
+                if rows:
+                    notes.append(f'{name} source {u}')
+                    break
+            except Exception as e:
+                notes.append(f'{name} ERROR {u} {e!r}'[:300])
+        if not rows:
             continue
         notes.append(f'{name} rows {len(rows)} fields {list(rows[0].keys()) if rows else []}')
         for r in rows:
