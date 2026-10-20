@@ -1,0 +1,36 @@
+name: 盤中抓取測試
+
+on:
+  push:
+    paths: ['test/TRIGGER']
+  schedule:
+    # 測試用：台北時間 10/21 盤中 09:32、10:12、11:42、13:12 各抓一次
+    - cron: '32 1 21 10 *'
+    - cron: '12 2 21 10 *'
+    - cron: '42 3 21 10 *'
+    - cron: '12 5 21 10 *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: intraday-test
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 scripts/intraday.py
+      - name: 提交測試結果
+        run: |
+          git config user.name "sector-tracker-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add test/mis_result.txt
+          git commit -m "盤中抓取測試結果 [skip ci]" || exit 0
+          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done
