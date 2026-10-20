@@ -76,6 +76,7 @@ h2 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
 .heat td.c{width:13px;height:18px;border:2px solid var(--panel);background:var(--chip)}
 .heat td.c.on{background:var(--accent)}
 .heat td.n{padding:0 10px 0 6px;font-family:var(--num);font-size:14px;text-align:right}
+.heat tr.grp th{color:var(--fg);font-weight:600;font-size:13px;padding:12px 8px 4px;border-bottom:1px solid var(--line)}
 .heat .axis td{font-size:11px;color:var(--muted);padding-top:4px}
 table.all{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
 table.all th,table.all td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
@@ -242,10 +243,12 @@ function drawTrend(i){
 
 function drawHeat(i){
   const s = Math.max(0, i - 19), days = D.slice(s, i + 1);
-  const rows = TH.map((t, ti) => ({t, ti, n: count(ti, i, 20), st: streak(ti, i)})).filter(r => r.n > 0)
-    .sort((a, b) => b.n - a.n || b.st - a.st);
+  const G = META.groups || [], GO = ['電子', '傳產'], go = g => { const k = GO.indexOf(g); return k < 0 ? 9 : k; };
+  const rows = TH.map((t, ti) => ({t, ti, g: G[ti] || '傳產', n: count(ti, i, 20), st: streak(ti, i)})).filter(r => r.n > 0)
+    .sort((a, b) => go(a.g) - go(b.g) || b.n - a.n || b.st - a.st);
   if (!rows.length) { $('heat').innerHTML = '<tr><td class="empty">近 20 日沒有題材上榜。</td></tr>'; return; }
-  $('heat').innerHTML = rows.map(r => `<tr><th>${r.t}</th>${days.map(d => `<td class="c${d.t[r.ti][0] ? ' on' : ''}" title="${fmtD(d.d)}"></td>`).join('')}<td class="n">${r.n}</td></tr>`).join('')
+  $('heat').innerHTML = rows.map((r, k) => (k === 0 || rows[k-1].g !== r.g ? `<tr class="grp"><th colspan="${days.length + 2}">${r.g}</th></tr>` : '')
+    + `<tr><th>${r.t}</th>${days.map(d => `<td class="c${d.t[r.ti][0] ? ' on' : ''}" title="${fmtD(d.d)}"></td>`).join('')}<td class="n">${r.n}</td></tr>`).join('')
     + `<tr class="axis"><th></th><td colspan="${days.length}"><div style="display:flex;justify-content:space-between"><span>${fmtD(days[0].d).slice(5)}</span><span>${fmtD(days[days.length-1].d).slice(5)}</span></div></td><td></td></tr>`;
 }
 

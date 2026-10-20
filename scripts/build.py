@@ -41,9 +41,24 @@ def load_themes():
     return th
 
 
+def load_groups(names):
+    g = {}
+    fp = f'{ROOT}/config/theme_groups.csv'
+    if os.path.exists(fp):
+        for i, line in enumerate(open(fp, encoding='utf-8')):
+            if i and line.strip():
+                t, c = line.rstrip('\n').split(',')[:2]
+                g[t.strip()] = c.strip()
+    for t in names:
+        if t not in g:
+            print('WARNING 題材未分類（列入傳產）:', t)
+    return [g.get(t, '傳產') for t in names]
+
+
 def main():
     th = load_themes()
     names = list(th)
+    groups = load_groups(names)
     days = []
     for fp in sorted(glob.glob(f'{ROOT}/data/quotes/*.json')):
         d = json.load(open(fp))
@@ -71,7 +86,7 @@ def main():
     meta = {
         'generated': datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime('%Y-%m-%d %H:%M'),
         'rule_version': RULE_VERSION, 'themes_version': THEMES_VERSION, 'rule': R,
-        'themes': names, 'members': {t: [n for _, n in th[t]] for t in names},
+        'themes': names, 'groups': groups, 'members': {t: [n for _, n in th[t]] for t in names},
         'bucket_avg': [round(s / c, 2) if c else None for s, c in zip(bs, bc)], 'bucket_n': bc,
         'first_day': days[0]['d'], 'hist_dates': [d['d'] for d in hist],
     }
