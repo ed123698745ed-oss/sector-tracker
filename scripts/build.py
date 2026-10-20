@@ -55,6 +55,36 @@ def load_groups(names):
     return [g.get(t, '傳產') for t in names]
 
 
+def market_caps(th):
+    """各題材成分股市值總和（億元）：最近一日收盤價 × 發行股數。
+    上市股數取自 config/shares.json（證交所公司基本資料），上櫃股數取自櫃買每日收盤行情的「發行股數」欄。"""
+    import gzip
+    num = lambda x: float(str(x).replace(',', '').strip()) if str(x).replace(',', '').strip().replace('.', '', 1).isdigit() else None
+    cap = {}
+    sp = f'{ROOT}/config/shares.json'
+    shares = json.load(open(sp)) if os.path.exists(sp) else {}
+    tws = sorted(glob.glob(f'{ROOT}/archive/raw/twse/*.json.gz'))
+    if tws and shares:
+        for t in json.load(gzip.open(tws[-1], 'rt')).get('tables', []):
+            if '每日收盤行情' in (t.get('title') or ''):
+                f = t['fields']; ic = f.index('收盤價')
+                for r in t['data']:
+                    c, px = r[0], num(r[ic])
+                    if px and c in shares:
+                        cap[c] = px * shares[c] / 1e8
+    tps = sorted(glob.glob(f'{ROOT}/archive/raw/tpex/*.json.gz'))
+    if tps:
+        for t in json.load(gzip.open(tps[-1], 'rt')).get('tables', []):
+            f = [x.strip() for x in t.get('fields', [])]
+            if '發行股數' in f and '收盤' in f:
+                ic, isd = f.index('收盤'), f.index('發行股數')
+                for r in t['data']:
+                    px, sh = num(r[ic]), num(r[isd])
+                    if px and sh:
+                        cap[r[0]] = px * sh / 1e8
+    return {t: round(sum(cap.get(c, 0) for c, _ in m)) for t, m in th.items()}
+
+
 def main():
     th = load_themes()
     names = list(th)
@@ -86,7 +116,7 @@ def main():
     meta = {
         'generated': datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime('%Y-%m-%d %H:%M'),
         'rule_version': RULE_VERSION, 'themes_version': THEMES_VERSION, 'rule': R,
-        'themes': names, 'groups': groups, 'members': {t: [n for _, n in th[t]] for t in names},
+        'themes': names, 'groups': groups, 'mcap': market_caps(th), 'members': {t: [n for _, n in th[t]] for t in names},
         'bucket_avg': [round(s / c, 2) if c else None for s, c in zip(bs, bc)], 'bucket_n': bc,
         'first_day': days[0]['d'], 'hist_dates': [d['d'] for d in hist],
     }
