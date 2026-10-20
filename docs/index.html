@@ -245,7 +245,7 @@ function drawHeat(i){
   const s = Math.max(0, i - 19), days = D.slice(s, i + 1);
   const G = META.groups || [], GO = ['電子', '傳產'], go = g => { const k = GO.indexOf(g); return k < 0 ? 9 : k; };
   const rows = TH.map((t, ti) => ({t, ti, g: G[ti] || '傳產', n: count(ti, i, 20), st: streak(ti, i)})).filter(r => r.n > 0)
-    .sort((a, b) => go(a.g) - go(b.g) || ((META.mcap || {})[b.t] || 0) - ((META.mcap || {})[a.t] || 0) || b.n - a.n);
+    .sort((a, b) => go(a.g) - go(b.g) || b.n - a.n || b.st - a.st);
   if (!rows.length) { $('heat').innerHTML = '<tr><td class="empty">近 20 日沒有題材上榜。</td></tr>'; return; }
   $('heat').innerHTML = rows.map((r, k) => (k === 0 || rows[k-1].g !== r.g ? `<tr class="grp"><th colspan="${days.length + 2}">${r.g}</th></tr>` : '')
     + `<tr><th>${r.t}</th>${days.map(d => `<td class="c${d.t[r.ti][0] ? ' on' : ''}" title="${fmtD(d.d)}"></td>`).join('')}<td class="n">${r.n}</td></tr>`).join('')
