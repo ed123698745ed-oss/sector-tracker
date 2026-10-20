@@ -32,14 +32,19 @@ def num(x):
 def main():
     out, notes = {}, []
     for name, u in SRC.items():
-        rows = get(u)
+        try:
+            rows = get(u)
+        except Exception as e:
+            notes.append(f'{name} ERROR {e!r}'[:300])
+            continue
         notes.append(f'{name} rows {len(rows)} fields {list(rows[0].keys()) if rows else []}')
         for r in rows:
             c = pick(r, ['公司代號', 'SecuritiesCompanyCode', 'CompanyCode'])
             s = num(pick(r, ['已發行普通股數', 'IssueShares', 'Shares']))
             if c and s:
                 out[str(c).strip()] = s
-    json.dump(out, open(f'{ROOT}/config/shares.json', 'w'), separators=(',', ':'), sort_keys=True)
+    if len(out) > 1000:
+        json.dump(out, open(f'{ROOT}/config/shares.json', 'w'), separators=(',', ':'), sort_keys=True)
     os.makedirs(f'{ROOT}/test', exist_ok=True)
     open(f'{ROOT}/test/shares_fields.txt', 'w', encoding='utf-8').write('\n'.join(notes) + f'\ncodes {len(out)}\n')
     print('\n'.join(notes), len(out))

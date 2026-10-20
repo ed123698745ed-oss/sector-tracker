@@ -23,6 +23,6 @@ jobs:
         run: |
           git config user.name "sector-tracker-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add config/shares.json test/shares_fields.txt
+          git add test/shares_fields.txt; [ -f config/shares.json ] && git add config/shares.json
           git commit -m "更新發行股數 [skip ci]" || exit 0
           for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done
