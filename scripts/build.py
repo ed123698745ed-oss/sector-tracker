@@ -7,7 +7,8 @@
 當日無成交的成分股不計入家數。
 規則 V02（Ed 2026-10-21 確認）：2015-06-01 前漲跌幅限制為 7%，該期間收盤鎖漲停者視同漲幅 ≥7%（僅影響 C 條件）。
 """
-import datetime, glob, json, os
+import datetime, glob, json, os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RULE_VERSION = 'V02'
@@ -105,7 +106,7 @@ def main():
     per = load_periods()
     names = list(th)
     groups = load_groups(names)
-    days = []
+    days, qs = [], []
     seen = {}  # 代號 → 第幾個交易日首次出現（用來排除新上市前五日：無漲跌幅限制）
     for k, fp in enumerate(sorted(glob.glob(f'{ROOT}/data/quotes/*.json'))):
         d = json.load(open(fp))
@@ -113,6 +114,7 @@ def main():
         for c in q:
             seen.setdefault(c, k)
         q = {c: v for c, v in q.items() if seen[c] == 0 or k - seen[c] >= NEW_LISTING_DAYS}
+        qs.append({c: v[0] for c, v in q.items()})
         rows = []
         for t in names:
             a, b = per.get(t, ('', ''))
@@ -131,6 +133,9 @@ def main():
                 row.append([[n, x] for n, x in sorted(mem, key=lambda z: -z[1])])
             rows.append(row)
         days.append({'d': d['date'], 'tx': d['taiex'], 't': rows})
+    import continuity  # 族群延續性標籤與週欄位（Elon 交接 2026-10-21）
+    continuity.compute(days, qs, th, names)
+    del qs
     # 各大盤漲跌區間的平均上榜數（全部歷史）
     def bucket(x):
         return None if x is None else 0 if x <= -2 else 1 if x <= -1 else 2 if x < 0 else 3 if x < 1 else 4 if x < 2 else 5
@@ -156,6 +161,7 @@ def main():
     recent, hist = days[-RECENT:], days[:-RECENT]
     meta = {
         'generated': datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime('%Y-%m-%d %H:%M'),
+        'cont_rule': continuity.RULE, 'cont': continuity.C,
         'rule_version': RULE_VERSION, 'themes_version': THEMES_VERSION, 'rule': R,
         'themes': names, 'groups': groups, 'periods': {t: list(v) for t, v in per.items()}, 'mcap': market_caps(th), 'members': {t: [n for _, n in th[t]] for t in names},
         'bucket_avg': [round(s / c, 2) if c else None for s, c in zip(bs, bc)], 'bucket_n': bc,

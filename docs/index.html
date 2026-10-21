@@ -60,6 +60,19 @@ h2 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
 .intra .row:last-child{border-bottom:0}
 .intra .g{font-weight:600;padding-top:8px;color:var(--muted);font-size:13px}
 .intra .num{font-family:var(--num);white-space:nowrap}
+.lab{padding:1px 7px;border-radius:999px;font-size:12px;white-space:nowrap;background:var(--chip);color:var(--muted)}
+.lab-M{background:var(--accent);color:var(--panel);font-weight:600}
+.lab-C{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.lab-D{border:1px solid var(--line);background:transparent}
+.wk{display:inline-block;min-width:22px;text-align:center;border-radius:6px;padding:1px 0;font-family:var(--num)}
+.wk0{color:var(--muted)}
+.wk1{background:color-mix(in srgb,var(--accent) 15%,transparent)}
+.wk2{background:color-mix(in srgb,var(--accent) 30%,transparent)}
+.wk3{background:color-mix(in srgb,var(--accent) 55%,transparent);color:var(--panel)}
+.wk4{background:color-mix(in srgb,var(--accent) 75%,transparent);color:var(--panel)}
+.wk5{background:var(--accent);color:var(--panel);font-weight:600}
+table.all td:first-child,table.all th:first-child{position:sticky;left:0;background:var(--panel);z-index:1}
+sup.few{font-size:10px;color:var(--muted);margin-left:2px}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .card .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
@@ -244,6 +257,7 @@ function render(i){
     <div class="facts">
       <div>加權指數 <b class="${cls(d.tx)}">${pct(d.tx)}</b></div>
       <div>大盤${BUCKET_TXT[bucket(d.tx)] ?? ''}的日子，近三年平均 <b>${ba != null ? ba.toFixed(1) : '—'}</b> 個上榜</div>
+      ${(() => { const c = contSummary(i); return c ? `<div>本週主流族群 <b>${c.week}</b> 個${c.prog ? '（進行中）' : ''}・當日主流 <b>${c.day}</b> 個</div>` : ''; })()}
       ${tag ? `<div><span class="badge ${tagCls}">${tag}</span></div>` : ''}
       ${live ? `<div><span class="badge live">盤中暫定 ${live.time}</span></div>` : ''}
     </div>`;
@@ -270,6 +284,7 @@ function render(i){
   drawTable(i);
   $('foot').innerHTML = `
     <p><b>上榜規則 ${META.rule_version}</b>（符合任一條）：A 齊漲＝漲幅 ≥3% 的成分股 ≥3 檔且佔 ≥25%；B 帶頭擴散＝漲幅 ≥4% 的 ≥2 檔，且漲幅 ≥1.5% 的家數佔 ≥40%；C 強勢＝漲幅 ≥7% 的 ≥2 檔（2015-06-01 前漲跌幅限制 7%，鎖漲停視同 ≥7%）。家數以當日有成交的成分股計算；漲幅為收盤對前一交易日參考價。</p>
+    <p><b>延續性 ${META.cont_rule || ''}</b>（每日標籤）：主流＝族群指數站上 20 日均線、成分股站上自身 20 日均線比例 ≥70%，且接近 60 日高點（≥97%）或近 20 日上榜 ≥8 天；延續＝站月線且比例 ≥50%；分化＝站月線但比例 &lt;50%；轉弱＝未站月線且比例 &lt;40%；其餘為盤整。族群指數為成分股等權每日平均漲幅連乘。資料不足 60 日或有效成分股不足 3 檔（航空 2 檔）不給標籤。<br>本週主流＝本週被判主流的天數；主流週／延續週＝一週有 ≥3 天主流（或主流＋延續）的連續週數，容許中斷 1 週，連續 2 週未達才歸零；本週未滿 3 天時沿用上週為止的週數。「少」＝成分股 5 檔以下。只供觀察，不是交易訊號。</p>
     <p>題材分類表 ${META.themes_version}，共 ${TH.length} 個題材。資料起始 ${fmtD(META.first_day)}；「近三年平均」以該日往前約三年（735 個交易日）、大盤漲跌落在同一區間的交易日計算。資料來源：臺灣證券交易所、證券櫃檯買賣中心每日收盤行情。</p>
     <p>歷史資料以現行成分股回推，有事後歸類偏差，只供觀察市場，不是交易訊號。</p>`;
 }
@@ -313,14 +328,24 @@ function drawHeat(i){
     + `<tr class="axis"><th></th><td colspan="${days.length}"><div style="display:flex;justify-content:space-between"><span>${fmtD(days[0].d).slice(5)}</span><span>${fmtD(days[days.length-1].d).slice(5)}</span></div></td><td></td></tr>`;
 }
 
+const LAB = {M: '主流', C: '延續', D: '分化', W: '轉弱', S: '盤整'}, LAB_ORD = {M: 5, C: 4, D: 3, S: 2, W: 1};
+function weekOf(ds){ const t = new Date(Date.UTC(+ds.slice(0,4), +ds.slice(4,6) - 1, +ds.slice(6))); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y = t.getUTCFullYear(); return y * 100 + Math.ceil(((t - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7); }
+function weekProg(i){ return i === D.length - 1 && new Date().getDay() !== 6 && new Date().getDay() !== 0 && weekOf(D[i].d) === weekOf(new Date().toISOString().slice(0,10).replace(/-/g,'')); }
+function contSummary(i){
+  const d = D[i]; if (!d || !d.L) return null;
+  const w = d.w || {};
+  return {week: Object.values(w).filter(v => v[0] >= ((META.cont || {}).week_min || 3)).length, day: [...d.L].filter(c => c === 'M').length, prog: weekProg(i)};
+}
 function drawTable(i){
   const d = D[i];
   const G = META.groups || [], GO = ['電子', '傳產'], go = g => { const k = GO.indexOf(g); return k < 0 ? 9 : k; };
-  const rows = TH.map((t, ti) => [t, ti]).filter(([t, ti]) => d.t[ti].length).map(([t, ti]) => { const r = d.t[ti]; return {t, g: G[ti] || '傳產', hit: r[0], avg: r[1], ge3: r[2], n: r[3], ge3r: r[3] ? r[2] / r[3] : 0, c5: count(ti, i, 5), c20: count(ti, i, 20), st: streak(ti, i)}; });
-  rows.sort((a, b) => { const sk = sortKey === 'ge3' ? 'ge3r' : sortKey, x = a[sk] ?? -999, y = b[sk] ?? -999; return go(a.g) - go(b.g) || (typeof x === 'string' ? sortDir * x.localeCompare(y) : sortDir * (x - y)); });
-  const cols = [['t','題材'],['avg','均漲'],['ge3','≥3%'],['c5','近5日'],['c20','近20日'],['st','連續']];
+  const rows = TH.map((t, ti) => [t, ti]).filter(([t, ti]) => d.t[ti].length).map(([t, ti]) => { const r = d.t[ti]; return {t, g: G[ti] || '傳產', hit: r[0], avg: r[1], ge3: r[2], n: r[3], ge3r: r[3] ? r[2] / r[3] : 0, c5: count(ti, i, 5), c20: count(ti, i, 20), st: streak(ti, i),
+    lab: (d.L || '')[ti] || '-', labo: LAB_ORD[(d.L || '')[ti]] || 0, wm: ((d.w || {})[ti] || [0])[0], ms: ((d.w || {})[ti] || [0,0,0])[2], cs: ((d.w || {})[ti] || [0,0,0,0])[3],
+    few: ((META.members || {})[t] || []).length <= 5}; });
+  rows.sort((a, b) => { const sk = sortKey === 'ge3' ? 'ge3r' : sortKey === 'lab' ? 'labo' : sortKey, x = a[sk] ?? -999, y = b[sk] ?? -999; return go(a.g) - go(b.g) || (typeof x === 'string' ? sortDir * x.localeCompare(y) : sortDir * (x - y)); });
+  const cols = [['t','題材'],['avg','均漲'],['ge3','≥3%'],['c5','近5日'],['c20','近20日'],['st','連續'],['lab','狀態'],['wm','本週主流'],['ms','主流週'],['cs','延續週']];
   $('all').innerHTML = `<thead><tr>${cols.map(([k, n]) => `<th data-k="${k}" class="${k === sortKey ? 'sorted' : ''}">${n}${k === sortKey ? (sortDir < 0 ? ' ▼' : ' ▲') : ''}</th>`).join('')}</tr></thead><tbody>`
-    + rows.map((r, k) => (k === 0 || rows[k-1].g !== r.g ? `<tr class="grp"><td colspan="6">${r.g}</td></tr>` : '') + `<tr class="${r.hit ? 'hit' : ''}"><td>${r.t}</td><td class="${cls(r.avg)}">${pct(r.avg)}</td><td>${r.ge3}/${r.n}</td><td>${r.c5}</td><td>${r.c20}</td><td>${r.st || ''}</td></tr>`).join('') + '</tbody>';
+    + rows.map((r, k) => (k === 0 || rows[k-1].g !== r.g ? `<tr class="grp"><td colspan="${cols.length}">${r.g}</td></tr>` : '') + `<tr class="${r.hit ? 'hit' : ''}"><td>${r.t}${r.few ? '<sup class="few" title="成分股 5 檔以下，一檔變動影響一致性 20～33%">少</sup>' : ''}</td><td class="${cls(r.avg)}">${pct(r.avg)}</td><td>${r.ge3}/${r.n}</td><td>${r.c5}</td><td>${r.c20}</td><td>${r.st || ''}</td><td>${LAB[r.lab] ? `<span class="lab lab-${r.lab}">${LAB[r.lab]}</span>` : '—'}</td><td><span class="wk wk${r.wm}">${r.wm}</span></td><td>${r.ms || ''}</td><td>${r.cs || ''}</td></tr>`).join('') + '</tbody>';
   $('all').querySelectorAll('th').forEach(th => th.onclick = () => {
     const k = th.dataset.k; if (k === sortKey) sortDir = -sortDir; else { sortKey = k; sortDir = k === 't' ? 1 : -1; }
     drawTable(idx);
