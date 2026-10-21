@@ -1,0 +1,3 @@
+swagger 200 476923
+/tpex_exright_daily ['上櫃股票除權除息計算結果表']
+/tpex_exright_prepost ['上櫃股票除權除息預告表']
