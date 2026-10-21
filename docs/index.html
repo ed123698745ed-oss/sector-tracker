@@ -95,6 +95,8 @@ table.all tr.hit td:first-child::after{content:" ●";color:var(--accent);font-s
 footer{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:14px}
 footer p{margin:0;max-width:65ch}
 .hdr-r{display:flex;align-items:flex-end;gap:8px}
+.badge.live{background:#fef3c7;color:#92400e}
+@media (prefers-color-scheme:dark){.badge.live{background:#3a2a0a;color:#fcd34d}}
 #refresh{font:inherit;font-size:14px;padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;cursor:pointer}
 #refresh:disabled{opacity:.5;cursor:default}
 @media (max-width:420px){.big{font-size:54px}.summary{gap:6px 16px}}
@@ -159,7 +161,7 @@ const bucket = x => x == null ? null : x <= -2 ? 0 : x <= -1 ? 1 : x < 0 ? 2 : x
 const BUCKET_TXT = ['跌 2% 以上','跌 1～2%','跌 0～1%','漲 0～1%','漲 1～2%','漲 2% 以上'];
 let D, TH, idx, sortKey = 'avg', sortDir = -1;
 
-let HIST_LOADED = false;
+let HIST_LOADED = false, INTRA = null;
 // keep：重新整理時保留目前選的日期；原本在看最新一天的，跳到新的最新一天
 function loadData(keep){
   return fetch('data.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).then(data => {
@@ -192,7 +194,9 @@ $('refresh').addEventListener('click', () => {
 function loadIntra(){
   fetch('intraday.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.ok ? r.json() : null).then(x => {
     const last = D && D[D.length - 1].d;
-    if (!x || !last || x.date <= last) { $('intra').hidden = true; return; }  // 收盤資料已出，就不顯示盤中暫定
+    if (!x || !last || x.date <= last) { INTRA = null; $('intra').hidden = true; return; }  // 收盤資料已出，就不顯示盤中暫定
+    INTRA = x;
+    if (idx === D.length - 1) render(idx);  // 看最新一天時，摘要與熱門題材改用盤中暫定
     const G = META.groups || [], gi = t => G[TH.indexOf(t)] || '傳產';
     const rows = x.hits.slice().sort((a, b) => (gi(a[0]) === '電子' ? 0 : 1) - (gi(b[0]) === '電子' ? 0 : 1) || b[2] - a[2]);
     $('intraSub').textContent = `${x.time} 抓取・報價至 ${x.quote_time || '—'}・上榜 ${x.hits.length}/${x.active}・收盤後以正式資料為準`;
@@ -220,8 +224,14 @@ function streak(ti, i){ let n = 0; while (i >= 0 && D[i].t[ti][0]) { n++; i--; }
 function count(ti, i, w){ let n = 0; for (let k = Math.max(0, i-w+1); k <= i; k++) if (D[k].t[ti][0]) n++; return n; }
 
 function render(i){
-  idx = i; const d = D[i], ba = d.ba ?? null;
-  $('sub').textContent = `資料日 ${fmtD(d.d)}・更新 ${META.generated}`;
+  idx = i;
+  // 盤中：看最新一天、且有比它新的盤中暫定 → 摘要與當日熱門題材改用盤中資料（其他區塊仍為收盤正式資料）
+  const live = i === D.length - 1 && INTRA && INTRA.date > D[i].d && INTRA.hits.every(r => r.length > 5) ? INTRA : null;
+  const d = live ? {d: live.date, tx: live.tx, hits: live.hits.length,
+    t: TH.map(t => { const r = live.hits.find(h => h[0] === t); return r ? [r[1], r[2], r[3], r[4], r[6] || 0, r[5]] : ['']; })} : D[i];
+  const ba = live ? ((META.ba_now || [])[bucket(d.tx)] ?? null) : (d.ba ?? null);
+  const liveTag = live ? `${fmtD(live.date)} 盤中暫定 ${live.time}（報價至 ${live.quote_time || '—'}，收盤後以正式資料為準）` : '';
+  $('sub').textContent = live ? liveTag : `資料日 ${fmtD(d.d)}・更新 ${META.generated}`;
   // 摘要
   let tag = '', tagCls = '';
   if (ba != null && ba > 0) {
@@ -230,17 +240,19 @@ function render(i){
     tagCls = r >= 1.3 ? 'wide' : r <= 0.7 ? 'narrow' : '';
   }
   $('summary').innerHTML = `
-    <div class="big">${d.hits}<span>/ ${d.t.filter(r => r.length).length}</span></div>
+    <div class="big">${d.hits}<span>/ ${live ? live.active : d.t.filter(r => r.length).length}</span></div>
     <div class="facts">
       <div>加權指數 <b class="${cls(d.tx)}">${pct(d.tx)}</b></div>
       <div>大盤${BUCKET_TXT[bucket(d.tx)] ?? ''}的日子，近三年平均 <b>${ba != null ? ba.toFixed(1) : '—'}</b> 個上榜</div>
       ${tag ? `<div><span class="badge ${tagCls}">${tag}</span></div>` : ''}
+      ${live ? `<div><span class="badge live">盤中暫定 ${live.time}</span></div>` : ''}
     </div>`;
   drawTrend(i);
-  // 今日熱門
+  // 今日熱門（盤中：連續天數與近 5／20 日次數把今天算進去）
   const hot = d.t.map((r, ti) => ({r, ti})).filter(x => x.r[0]);
-  $('hotTitle').textContent = `當日熱門題材（${hot.length}）`;
-  hot.forEach(x => { x.s = streak(x.ti, i); x.c20 = count(x.ti, i, 20); });
+  $('hotTitle').textContent = live ? `盤中熱門題材（${hot.length}）・${live.time} 暫定` : `當日熱門題材（${hot.length}）`;
+  const cnt = (ti, w) => live ? count(ti, i, w - 1) + 1 : count(ti, i, w);
+  hot.forEach(x => { x.s = live ? streak(x.ti, i) + 1 : streak(x.ti, i); x.c20 = cnt(x.ti, 20); });
   hot.sort((a,b) => b.s - a.s || b.c20 - a.c20 || b.r[1] - a.r[1]);
   $('cards').innerHTML = hot.length ? hot.map(({r, ti, s, c20}) => `
     <article class="card">
@@ -248,7 +260,7 @@ function render(i){
       <div class="meta">
         ${s > 1 ? `<span class="chip streak">連續 ${s} 天</span>` : `<span class="chip new">新上榜</span>`}
         ${[...r[0]].map(k => `<span class="chip rule">${RULE_TXT[k]}</span>`).join('')}
-        <span class="chip">近5日 ${count(ti, i, 5)} 次</span><span class="chip">近20日 ${c20} 次</span>
+        <span class="chip">近5日 ${cnt(ti, 5)} 次</span><span class="chip">近20日 ${c20} 次</span>
         <span class="chip">≥3%：${r[2]}/${r[3]}${r[4] ? `・漲停 ${r[4]}` : ''}</span>
       </div>
       <div class="members">${r[5].map(([n, p]) => `<span>${n}<b class="${cls(p)}">${pct(p)}</b></span>`).join('')}</div>
