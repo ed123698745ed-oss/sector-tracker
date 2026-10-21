@@ -4,6 +4,8 @@
 漲跌% = 漲跌價差 ÷ (收盤 − 漲跌價差) × 100，即對前一交易日參考價；無成交或不比價者不列入。
 除權息日：上市以證交所除權除息計算結果表（TWT49U）的除權息參考價計算；上櫃以前一交易日公布的
 次日漲停價與跌停價推算參考價（兩者平均）。
+前一交易日無成交（多為暫停交易後恢復）證交所也標 X：對最近一次收盤計算；期間有除權息／減資，或算出超過漲跌幅限制
+（面額分割、變更面額等另行調整參考價）則不推算、維持排除。
 
 用法：
   python3 quotes.py fetch [YYYY-MM-DD]      抓一天（預設今天台北時間）；休市日不產生檔案
@@ -44,9 +46,10 @@ def num(s):
         return None
 
 
-def parse_twse(d, exref=None, ds='99999999'):
+def parse_twse(d, exref=None, ds='99999999', lastclose=None, exall=None):
     q, taiex = {}, None
     exref = exref or {}
+    lastclose = lastclose or {}
     for t in d.get('tables', []):
         title = t.get('title') or ''
         if title.endswith('價格指數(臺灣證券交易所)'):
@@ -68,6 +71,13 @@ def parse_twse(d, exref=None, ds='99999999'):
                     ref = exref[code]
                     q[code] = [round((close - ref) / ref * 100, 2), round((num(r[iv]) or 0) / 1e8, 2), is_lu(close, ref, ds)]
                     continue
+                if sg == 'X' and close and code in lastclose:  # 前一交易日無成交（多為暫停交易後恢復）：對最近一次收盤
+                    d0, ref = lastclose[code]
+                    lim = 7.5 if ds < LIMIT_CHANGE else 10.5  # 超過漲跌幅限制＝參考價另有調整（面額分割、變更面額等），不推算
+                    if ref and abs(close / ref - 1) * 100 <= lim and \
+                            not any(code in (exall or {}).get(x, {}) for x in (exall or {}) if d0 < x <= ds):
+                        q[code] = [round((close - ref) / ref * 100, 2), round((num(r[iv]) or 0) / 1e8, 2), is_lu(close, ref, ds)]
+                    continue
                 if close is None or diff is None or sg not in ('+', '-', ''):
                     continue
                 diff = -diff if sg == '-' else diff
@@ -87,7 +97,7 @@ def tpex_limits(d, want_up=False):
         iu, idn = f.index('次日漲停價'), f.index('次日跌停價')
         for r in t['data']:
             up, dn = num(r[iu]), num(r[idn])
-            if up and dn and up < 9999:
+            if up and dn and abs(up - 9999.95) > 1e-6:  # 9999.95＝無漲跌幅限制（債券 ETF 等）的代表值；股價破萬（信驊）照算
                 out[r[0].strip()] = up if want_up else (up + dn) / 2
     return out
 
@@ -140,6 +150,50 @@ def has_twse_exright(tw):
     return False
 
 
+def twse_closes(d):
+    """上市原始檔 → {代號: 收盤}（只含有成交的）"""
+    out = {}
+    for t in (d or {}).get('tables', []):
+        if '每日收盤行情' in (t.get('title') or ''):
+            ic = t['fields'].index('收盤價')
+            for r in t['data']:
+                c = num(r[ic])
+                if c:
+                    out[r[0].strip()] = c
+    return out
+
+
+def x_codes(tw):
+    """上市原始檔中標 X（不比價）且有收盤的代號"""
+    out = set()
+    for t in (tw or {}).get('tables', []):
+        if '每日收盤行情' in (t.get('title') or ''):
+            f = t['fields']
+            ic, isg = f.index('收盤價'), f.index('漲跌(+/-)')
+            for r in t['data']:
+                if re.sub('<[^>]+>', '', r[isg]).strip() == 'X' and num(r[ic]):
+                    out.add(r[0].strip())
+    return out
+
+
+def last_twse_closes(ds, codes, maxback=260):
+    """ds 之前各代號最近一次收盤 {代號: (日期, 收盤)}；往回最多 maxback 個原始檔（約一年）"""
+    import glob, gzip
+    need, out = set(codes), {}
+    for f in sorted(glob.glob(f'{ROOT}/archive/raw/twse/*.json.gz'), reverse=True):
+        d8 = os.path.basename(f)[:8]
+        if d8 >= ds:
+            continue
+        if not need or maxback <= 0:
+            break
+        maxback -= 1
+        cl = twse_closes(json.load(gzip.open(f, 'rt')))
+        for c in list(need):
+            if c in cl:
+                out[c] = (d8, cl[c]); need.discard(c)
+    return out
+
+
 def prev_tpex_raw(ds):
     """archive/raw/tpex 中 ds 之前最近一個有資料的交易日原始檔"""
     import glob, gzip
@@ -168,8 +222,8 @@ def is_holiday(day):
     return day.isoformat() in days
 
 
-def save(ds, tw, tp, exref=None, prevtp=None):
-    q, taiex = parse_twse(tw, exref, ds)
+def save(ds, tw, tp, exref=None, prevtp=None, lastclose=None, exall=None):
+    q, taiex = parse_twse(tw, exref, ds, lastclose, exall)
     if not q:
         return False  # 休市
     if not tp or not parse_tpex(tp):
@@ -198,15 +252,18 @@ if __name__ == '__main__':
     elif cmd == 'rebuild':  # 由 archive/raw 全部重算精簡檔（含除權息日）
         import glob, gzip
         ex = json.load(open(f'{ROOT}/data/exright_twse.json'))
-        prev, n = None, 0
+        prev, n, last = None, 0, {}
         for f in sorted(glob.glob(f'{ROOT}/archive/raw/twse/*.json.gz')):
             ds = os.path.basename(f)[:8]
             tw = json.load(gzip.open(f, 'rt'))
+            xs = x_codes(tw)
+            lc = {c: last[c] for c in xs if c in last}
             tpp = f'{ROOT}/archive/raw/tpex/{ds}.json.gz'
             tp = json.load(gzip.open(tpp, 'rt')) if os.path.exists(tpp) else None
-            if save(ds, tw, tp, ex.get(ds), prev):
+            if save(ds, tw, tp, ex.get(ds), prev, lc, ex):
                 n += 1
                 prev = tp
+                last.update({c: (ds, v) for c, v in twse_closes(tw).items()})
         print('rebuilt', n)
     elif cmd == 'convert':
         raw = sys.argv[2]
