@@ -1,38 +1,38 @@
 name: 除權息參考價補抓並重算
 
 on:
-  push:
-    paths: ['test/EXRIGHT_TRIGGER']
   workflow_dispatch:
 
 permissions:
   contents: write
 
-concurrency:
-  group: daily-update
-  cancel-in-progress: false
-
 jobs:
-  rebuild:
+  probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: 補抓減資恢復買賣參考價（2015-01 起逐月）
-        run: python3 scripts/exright.py range 2015-01 $(TZ=Asia/Taipei date +%Y-%m) reduction
-      - name: 補抓 2016–2018 週六補行交易日
-        run: python3 scripts/backfill.py run 20160130,20160604,20160910,20170218,20170603,20170930,20180331,20181222
-      - name: 由原始檔重算全部精簡檔（含除權息日）
-        run: python3 scripts/quotes.py rebuild
-      - name: 計算上榜題材
-        run: python3 scripts/build.py
-      - name: 提交
+      - name: 臨時查核：櫃買除權除息計算結果表介面（不合併）
         run: |
-          git config user.name "sector-tracker-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add archive data docs
-          git commit -m "補減資恢復買賣參考價、週六補行交易日、漲停改依升降單位判斷，全部重算 [skip ci]" || exit 0
-          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done
+          mkdir -p /tmp/p && cd /tmp/p
+          UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/129.0 Safari/537.36'
+          curl -s -A "$UA" -m 40 https://www.tpex.org.tw/openapi/swagger.json -o swagger.json; python3 - <<'PY' > swagger_hits.txt
+          import json
+          try:
+              s=json.load(open('swagger.json'))
+              for p,v in s.get('paths',{}).items():
+                  for m,o in v.items():
+                      t=json.dumps(o,ensure_ascii=False)
+                      if any(k in t for k in ('除權','除息','exright','Exright','參考價')): print(p,o.get('summary'))
+          except Exception as e: print('ERR',e)
+          PY
+          i=0
+          for u in \
+            "https://www.tpex.org.tw/web/stock/exright/dailyquo/exDailyQ_result.php?l=zh-tw&d=115/06/01&ed=115/07/31" \
+            "https://www.tpex.org.tw/www/zh-tw/exright/dailyQuo?startDate=2026/06/01&endDate=2026/07/31&response=json" \
+            "https://www.tpex.org.tw/www/zh-tw/exright/exDailyQ?startDate=2026/06/01&endDate=2026/07/31&response=json" \
+            "https://www.tpex.org.tw/www/zh-tw/bulletin/exDailyQ?startDate=2026/06/01&endDate=2026/07/31&response=json" \
+            "https://www.tpex.org.tw/openapi/v1/tpex_exright_daily" ; do
+            i=$((i+1)); curl -s -A "$UA" -m 40 -w '\nHTTP %{http_code}\n' "$u" | head -c 3000 > c$i.txt; echo "$u" >> c$i.txt
+          done
+          git config user.name probe; git config user.email probe@x
+          git checkout --orphan tmp-probe; git rm -rfq .; cp /tmp/p/*.txt .; git add -A; git commit -qm probe; git push -f origin tmp-probe
