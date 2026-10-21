@@ -11,29 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: 臨時查核：櫃買除權除息計算結果表介面（不合併）
+      - name: 查詢
+        run: python3 scripts/_probe.py
+      - name: 推暫存分支
         run: |
-          set +e +o pipefail
-          mkdir -p /tmp/p && cd /tmp/p
-          UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/129.0 Safari/537.36'
-          curl -s -A "$UA" -m 40 https://www.tpex.org.tw/openapi/swagger.json -o swagger.json; python3 - <<'PY' > swagger_hits.txt
-          import json
-          try:
-              s=json.load(open('swagger.json'))
-              for p,v in s.get('paths',{}).items():
-                  for m,o in v.items():
-                      t=json.dumps(o,ensure_ascii=False)
-                      if any(k in t for k in ('除權','除息','exright','Exright','參考價')): print(p,o.get('summary'))
-          except Exception as e: print('ERR',e)
-          PY
-          i=0
-          for u in \
-            "https://www.tpex.org.tw/web/stock/exright/dailyquo/exDailyQ_result.php?l=zh-tw&d=115/06/01&ed=115/07/31" \
-            "https://www.tpex.org.tw/www/zh-tw/exright/dailyQuo?startDate=2026/06/01&endDate=2026/07/31&response=json" \
-            "https://www.tpex.org.tw/www/zh-tw/exright/exDailyQ?startDate=2026/06/01&endDate=2026/07/31&response=json" \
-            "https://www.tpex.org.tw/www/zh-tw/bulletin/exDailyQ?startDate=2026/06/01&endDate=2026/07/31&response=json" \
-            "https://www.tpex.org.tw/openapi/v1/tpex_exright_daily" ; do
-            i=$((i+1)); curl -s -A "$UA" -m 40 -w '\nHTTP %{http_code}\n' "$u" | head -c 3000 > c$i.txt; echo "$u" >> c$i.txt
-          done
-          git config user.name probe; git config user.email probe@x
-          git checkout --orphan tmp-probe; git rm -rfq .; cp /tmp/p/*.txt .; git add -A; git commit -qm probe; git push -f origin tmp-probe
+          cd /tmp/p && git init -q && git config user.name probe && git config user.email probe@x
+          git checkout -q -b tmp-probe && git add -A && git commit -qm probe
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" tmp-probe
