@@ -67,14 +67,20 @@ def pct(x):
         if z in ('-', '', None):
             if float(x.get('v') or 0) <= 0:
                 return None
-            z = '-'
-            for k in ('b', 'a'):
-                v = (x.get(k) or '-').split('_')[0]
-                if v not in ('-', ''):
-                    z = v; break
-            if z == '-':
+            z = None
+            for k in ('b', 'a'):  # 各檔價位中第一個大於 0 的價格（無掛單時證交所會給 0 或 -）
+                for v in (x.get(k) or '').split('_'):
+                    try:
+                        if float(v) > 0:
+                            z = float(v); break
+                    except ValueError:
+                        pass
+                if z:
+                    break
+            if not z:
                 return None
-        return round((float(z) - y) / y * 100, 2)
+        r = round((float(z) - y) / y * 100, 2)
+        return r if abs(r) <= 10.5 else None  # 超出漲跌幅限制視為異常值（新上市蜜月期亦不計）
     except Exception:
         return None
 
