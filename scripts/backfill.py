@@ -59,7 +59,10 @@ def run(dates):
                 import exright
                 ex = exright.load(); exright.merge(ex, exright.fetch(ds, ds)); exright.merge(ex, exright.fetch_reduction(ds, ds)); exright.save(ex)
                 exref = ex.get(ds)
-            saved = quotes.save(ds, tw, tp, exref, quotes.prev_tpex_raw(ds))  # 上市有資料但上櫃缺漏時會丟出例外，不存原始檔，下輪重抓
+            import exright
+            xs = quotes.x_codes(tw) - set(exref or {})  # 標 X 但不在除權息／減資名單：多為暫停交易後恢復
+            lc = quotes.last_twse_closes(ds, xs) if xs else {}
+            saved = quotes.save(ds, tw, tp, exref, quotes.prev_tpex_raw(ds), lc, exright.load() if xs else None)  # 上市有資料但上櫃缺漏時會丟出例外，不存原始檔，下輪重抓
             now = datetime.datetime.now(TPE)
             if not saved and d == now.date() and now.hour < 18:
                 print(ds, 'not published yet', flush=True)  # 當天 18:00 前查無資料視為尚未公布，不記為休市
