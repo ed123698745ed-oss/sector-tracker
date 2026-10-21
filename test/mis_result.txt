@@ -16,3 +16,9 @@ requests 13 errors 0 last_error
 quote_time_range ['09:00:13'] ['09:23:06']
 hits 17 IP/ASIC(AB) 矽晶圓(AB) 記憶體(A) 化合物半導體(AB) 先進封裝設備(A) 封測(AB) 載板(AB) CCL(ABC) PCB/伺服器板(AB) 伺服器組裝(AB) 散熱(ABC) 連接器/線材(AB) 被動元件(ABC) 光通訊/矽光子(AB) 低軌衛星(ABC) 光學鏡頭(AB) 工具機(A)
 
+run_at 2026-10-21 12:39:24
+codes 616 returned 610 priced 607 seconds 64.7
+requests 13 errors 0 last_error 
+quote_time_range ['11:29:42'] ['12:39:09']
+hits 14 IP/ASIC(A) 矽晶圓(AB) 記憶體(AB) 化合物半導體(AB) 封測(AB) CCL(ABC) PCB/伺服器板(AB) 被動元件(ABC) 光通訊/矽光子(AB) 低軌衛星(ABC) 太陽能/儲能(AB) 工具機(A) 驅動IC(AB) 導線架(B)
+
