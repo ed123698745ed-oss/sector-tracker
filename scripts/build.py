@@ -159,6 +159,7 @@ def main():
         'rule_version': RULE_VERSION, 'themes_version': THEMES_VERSION, 'rule': R,
         'themes': names, 'groups': groups, 'periods': {t: list(v) for t, v in per.items()}, 'mcap': market_caps(th), 'members': {t: [n for _, n in th[t]] for t in names},
         'bucket_avg': [round(s / c, 2) if c else None for s, c in zip(bs, bc)], 'bucket_n': bc,
+        'ba_now': [round(x / c, 1) if c else None for x, c in zip(ws, wc)],  # 最近 BASE_DAYS 日各區間平均（盤中暫定比較用）
         'first_day': days[0]['d'], 'hist_dates': [d['d'] for d in hist],
     }
     os.makedirs(f'{ROOT}/docs', exist_ok=True)
