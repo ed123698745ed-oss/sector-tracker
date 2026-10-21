@@ -94,6 +94,9 @@ table.all tr.hit td:first-child{font-weight:700}
 table.all tr.hit td:first-child::after{content:" ●";color:var(--accent);font-size:10px}
 footer{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:14px}
 footer p{margin:0;max-width:65ch}
+.hdr-r{display:flex;align-items:flex-end;gap:8px}
+#refresh{font:inherit;font-size:14px;padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;cursor:pointer}
+#refresh:disabled{opacity:.5;cursor:default}
 @media (max-width:420px){.big{font-size:54px}.summary{gap:6px 16px}}
 </style>
 </head>
@@ -104,9 +107,12 @@ footer p{margin:0;max-width:65ch}
       <h1>台股族群追蹤</h1>
       <div class="sub" id="sub">讀取資料中…</div>
     </div>
-    <label class="sub">交易日
-      <select id="day" aria-label="選擇交易日"></select>
-    </label>
+    <div class="hdr-r">
+      <label class="sub">交易日
+        <select id="day" aria-label="選擇交易日"></select>
+      </label>
+      <button id="refresh" type="button" aria-label="重新整理資料">重新整理</button>
+    </div>
   </header>
 
   <section id="intra" hidden>
@@ -154,23 +160,37 @@ const BUCKET_TXT = ['跌 2% 以上','跌 1～2%','跌 0～1%','漲 0～1%','漲 
 let D, TH, idx, sortKey = 'avg', sortDir = -1;
 
 let HIST_LOADED = false;
-fetch('data.json', {cache:'no-cache'}).then(r => r.json()).then(data => {
-  D = data.days; TH = data.meta.themes; window.META = data.meta;
-  window.BA = data.meta.bucket_avg;
-  D.forEach(d => d.hits = d.t.filter(r => r[0]).length);
-  const sel = $('day');
-  const all = [...(META.hist_dates || []), ...D.map(d => d.d)];
-  sel.innerHTML = all.map(d => `<option value="${d}">${fmtD(d)}</option>`).reverse().join('');
-  let start = D[D.length - 1].d;
-  try { const h = location.hash.slice(1); if (all.includes(h)) start = h; } catch(e) {}
-  sel.value = start;
-  sel.addEventListener('change', () => go(sel.value));
-  go(start);
-  loadIntra();
-}).catch(() => { $('sub').textContent = '資料讀取失敗，請稍後重新整理。'; });
+// keep：重新整理時保留目前選的日期；原本在看最新一天的，跳到新的最新一天
+function loadData(keep){
+  return fetch('data.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).then(data => {
+    const wasLatest = !D || $('day').value === D[D.length - 1].d;
+    D = data.days; TH = data.meta.themes; window.META = data.meta;
+    window.BA = data.meta.bucket_avg; HIST_LOADED = false;
+    D.forEach(d => d.hits = d.t.filter(r => r[0]).length);
+    const sel = $('day');
+    const all = [...(META.hist_dates || []), ...D.map(d => d.d)];
+    const prev = sel.value;
+    sel.innerHTML = all.map(d => `<option value="${d}">${fmtD(d)}</option>`).reverse().join('');
+    let start = D[D.length - 1].d;
+    if (keep) { if (!wasLatest && all.includes(prev)) start = prev; }
+    else { try { const h = location.hash.slice(1); if (all.includes(h)) start = h; } catch(e) {} }
+    sel.value = start;
+    go(start);
+    loadIntra();
+  });
+}
+$('day').addEventListener('change', () => go($('day').value));
+loadData(false).catch(() => { $('sub').textContent = '資料讀取失敗，請按「重新整理」再試。'; });
+$('refresh').addEventListener('click', () => {
+  const b = $('refresh'); b.disabled = true; b.textContent = '更新中…';
+  loadData(true).then(() => {
+    const t = new Date(); b.textContent = `已更新 ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+  }).catch(() => { b.textContent = '更新失敗，再按一次'; })
+    .finally(() => { b.disabled = false; setTimeout(() => { b.textContent = '重新整理'; }, 4000); });
+});
 
 function loadIntra(){
-  fetch('intraday.json', {cache:'no-cache'}).then(r => r.ok ? r.json() : null).then(x => {
+  fetch('intraday.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.ok ? r.json() : null).then(x => {
     const last = D && D[D.length - 1].d;
     if (!x || !last || x.date <= last) { $('intra').hidden = true; return; }  // 收盤資料已出，就不顯示盤中暫定
     const G = META.groups || [], gi = t => G[TH.indexOf(t)] || '傳產';
