@@ -13,6 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: 臨時查核：櫃買除權除息計算結果表介面（不合併）
         run: |
+          set +e +o pipefail
           mkdir -p /tmp/p && cd /tmp/p
           UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/129.0 Safari/537.36'
           curl -s -A "$UA" -m 40 https://www.tpex.org.tw/openapi/swagger.json -o swagger.json; python3 - <<'PY' > swagger_hits.txt
