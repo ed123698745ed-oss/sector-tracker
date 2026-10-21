@@ -4,3 +4,9 @@ requests 13 errors 0 last_error
 quote_time_range ['13:30:00'] ['13:33:00']
 hits 1 光學鏡頭(ABC)
 
+run_at 2026-10-21 09:21:31
+codes 616 returned 610 priced 583 seconds 61.0
+requests 13 errors 0 last_error 
+quote_time_range ['09:00:13'] ['09:21:23']
+hits 16 IP/ASIC(AB) 矽晶圓(AB) 化合物半導體(A) 先進封裝設備(A) 封測(AB) 載板(AB) CCL(B) PCB/伺服器板(AB) 伺服器組裝(AB) 散熱(AB) 連接器/線材(AB) 被動元件(ABC) 光通訊/矽光子(AB) 低軌衛星(AB) 光學鏡頭(ABC) 工具機(A)
+
