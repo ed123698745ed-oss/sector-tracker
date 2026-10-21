@@ -21,7 +21,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: 補抓上櫃除權除息計算結果表（2015-01 起逐月）
+      - name: 重抓上市除權息與減資恢復買賣基準價（2015-01 起逐月）
+        run: python3 scripts/exright.py range 2015-01 $(TZ=Asia/Taipei date +%Y-%m)
+      - name: 重抓上櫃除權除息計算結果表（2015-01 起逐月）
         run: python3 scripts/exright.py range 2015-01 $(TZ=Asia/Taipei date +%Y-%m) tpex
       - name: 由原始檔重算全部精簡檔（含除權息日）
         run: python3 scripts/quotes.py rebuild
@@ -32,5 +34,5 @@ jobs:
           git config user.name "sector-tracker-bot"
           git config user.email "actions@users.noreply.github.com"
           git add archive data docs
-          git commit -m "上櫃除權息改用櫃買官方參考價，全部重算 [skip ci]" || exit 0
+          git commit -m "除權息日改用交易所漲跌停基準價（上市開盤競價基準、上櫃開始交易基準價），全部重算 [skip ci]" || exit 0
           for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done
