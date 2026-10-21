@@ -48,6 +48,12 @@ jobs:
       - name: 計算上榜題材
         if: steps.fetch.outputs.skip != '1'
         run: python3 scripts/build.py
+      - name: 市場階段警示（階段改變才推 LINE）
+        if: steps.fetch.outputs.skip != '1'
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        run: python3 scripts/notify.py || true
       - name: 提交更新
         if: steps.fetch.outputs.skip != '1'
         run: |

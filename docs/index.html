@@ -55,6 +55,27 @@ h2 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
 .legend{display:flex;gap:16px;font-size:12px;color:var(--muted);padding:0 4px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 /* 熱門卡片 */
+
+.mp{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.mp .head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.mp .ph{font-size:22px;font-weight:700;padding:6px 14px;border-radius:10px;background:var(--chip)}
+.mp .ph.p1{background:color-mix(in srgb,var(--down) 18%,transparent);color:var(--down)}
+.mp .ph.p2{background:var(--down);color:#fff}
+.mp .ph.p3{background:var(--accent-soft);color:var(--accent)}
+.mp .ph.p4,.mp .ph.p6{background:var(--accent);color:#fff}
+.mp .ph.p5{background:color-mix(in srgb,var(--up) 18%,transparent);color:var(--up)}
+.mp .alert{border:1px solid var(--up);color:var(--up);border-radius:10px;padding:8px 12px;font-weight:600}
+.mp .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mp .tile{background:var(--chip);border-radius:10px;padding:10px;text-align:center}
+.mp .tile b{display:block;font-family:var(--num);font-size:24px}
+.mp .tile span{font-size:12px;color:var(--muted)}
+.mp table{border-collapse:collapse;width:100%;font-size:13px}
+.mp td,.mp th{padding:6px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.mp th{font-weight:600;white-space:nowrap}
+.mp td.v{font-family:var(--num);white-space:nowrap;text-align:right}
+.mp .ok{color:var(--accent);font-weight:700}.mp .no{color:var(--muted)}
+.mp .ev{font-size:13px;color:var(--muted)}.mp .ev b{color:var(--fg)}
+.mp svg{width:100%;height:auto;display:block}
 .intra{background:var(--panel);border:1px solid var(--accent);border-radius:14px;padding:12px 14px}
 .intra .row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
 .intra .row:last-child{border-bottom:0}
@@ -109,6 +130,7 @@ table.all tr.hit td:first-child::after{content:" ●";color:var(--accent);font-s
 footer{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:14px}
 footer p{margin:0;max-width:65ch}
 footer .leg h4{margin:4px 0 6px;font-size:14px;color:var(--fg)}
+footer .leg .ph{display:inline-block;border-radius:8px;background:var(--chip)}
 footer .leg h4 small{font-weight:400;color:var(--muted);margin-left:8px;font-size:12px}
 footer dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 12px;margin:0 0 6px;align-items:center}
 footer dt{margin:0;text-align:center}
@@ -145,6 +167,11 @@ footer .fine{font-size:12px;margin-top:6px}
   </section>
 
   <div class="summary" id="summary"></div>
+
+  <section id="mpsec">
+    <h2>市場階段<small>規則 MP01・只供觀察</small></h2>
+    <div class="mp" id="mp"></div>
+  </section>
 
   <section>
     <h2>熱門題材數<small>近 60 個交易日</small></h2>
@@ -183,7 +210,8 @@ const bucket = x => x == null ? null : x <= -2 ? 0 : x <= -1 ? 1 : x < 0 ? 2 : x
 const BUCKET_TXT = ['跌 2% 以上','跌 1～2%','跌 0～1%','漲 0～1%','漲 1～2%','漲 2% 以上'];
 let D, TH, idx, sortKey = 'avg', sortDir = -1;
 
-let HIST_LOADED = false, INTRA = null;
+let HIST_LOADED = false, INTRA = null, ALERTS = null;
+fetch('alerts.json', {cache:'no-cache'}).then(r => r.ok ? r.json() : null).then(a => { ALERTS = a; if (typeof idx === 'number' && D) drawMP(idx); }).catch(() => {});
 // keep：重新整理時保留目前選的日期；原本在看最新一天的，跳到新的最新一天
 function loadData(keep){
   return fetch('data.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).then(data => {
@@ -270,6 +298,7 @@ function render(i){
       ${tag ? `<div><span class="badge ${tagCls}">${tag}</span></div>` : ''}
       ${live ? `<div><span class="badge live">盤中暫定 ${live.time}</span></div>` : ''}
     </div>`;
+  drawMP(i);
   drawTrend(i);
   // 今日熱門（盤中：連續天數與近 5／20 日次數把今天算進去）
   const hot = d.t.map((r, ti) => ({r, ti})).filter(x => x.r[0]);
@@ -321,7 +350,58 @@ function render(i){
         <dt><sup class="few">少</sup></dt><dd>成分股 5 檔以下，一檔漲跌就影響很大</dd>
       </dl>
     </div>
+    <div class="leg">
+      <h4>市場階段 ${META.mp_rule || ''}<small>依五次底部（2020-03、2022-10、2024-08、2025-04、2026-07）整理的初稿，數值取 5 日平均</small></h4>
+      <dl>
+        <dt><span class="ph p2" style="font-size:13px;padding:2px 8px">洗乾淨</span></dt><dd>轉弱族群 ≥55 個。多數族群跌破月線，是轉好的前提，不是買點</dd>
+        <dt><span class="ph p3" style="font-size:13px;padding:2px 8px">轉好起點</span></dt><dd>洗乾淨後 40 個交易日內，站穩月線 ≥40 且轉弱 ≤10</dd>
+        <dt><span class="ph p6" style="font-size:13px;padding:2px 8px">確認</span></dt><dd>連續兩個完整週主流族群 ≥10，且兩週轉弱平均 ≤3。2024-08、2026-07 兩次只到轉好起點就退回，沒有確認</dd>
+        <dt><span class="ph p5" style="font-size:13px;padding:2px 8px">退潮</span></dt><dd>延續中時主流族群不到上週一半，且轉弱 ≥20</dd>
+        <dt><span class="ph p1" style="font-size:13px;padding:2px 8px">惡化</span></dt><dd>轉弱 ≥30</dd>
+      </dl>
+    </div>
     <p class="fine">題材表 ${META.themes_version}・延續性 ${META.cont_rule || ''}・資料 ${fmtD(META.first_day)} 起・來源：證交所、櫃買中心。只供觀察，不是交易訊號。</p>`;
+}
+
+function drawMP(i){
+  const d = D[i], mp = d.mp; if (!mp) { $('mpsec').hidden = true; return; } $('mpsec').hidden = false;
+  const P = META.mp || {}, PH = META.mp_phase || [], [W, S, M, w5, s5, curMain, ph, lastMain, last2] = mp;
+  const washedRecent = (() => { for (let k = i; k >= Math.max(0, i - (P.washed_window || 40)); k--) if (D[k].mp && D[k].mp[3] >= P.washed) return D[k].d; return null; })();
+  const MEAN = {0:'族群結構沒有明顯方向。', 1:'轉弱族群增加，結構正在變差。', 2:'多數族群跌破月線，已洗乾淨；是轉好的前提，不是買點。', 3:'洗乾淨後多數族群重新站上月線，等待確認。', 4:'族群性已重新產生，這一波進行中。', 5:'主流族群快速減少、轉弱回升，這一波可能結束。', 6:'連續兩週主流族群 ≥10 且轉弱極少，確認轉好。'};
+  const ck = (v) => v ? '<span class="ok">✓</span>' : '<span class="no">✗</span>';
+  const ev = (ALERTS && ALERTS.events || []).filter(e => e.d <= d.d).slice(-5).reverse();
+  const today = ev.length && ev[0].d === d.d ? ev[0] : null;
+  // 60 日走勢：轉弱、站穩
+  const s0 = Math.max(0, i - 59), seg = D.slice(s0, i + 1).filter(x => x.mp);
+  const Wd = 420, Hd = 150, L = 26, R = 6, T = 8, B = 20, y = v => T + (Hd - T - B) * (1 - v / 75), x = k => L + k * (Wd - L - R) / Math.max(1, seg.length - 1);
+  const line = (idx, col) => `<polyline fill="none" stroke="${col}" stroke-width="2" points="${seg.map((x_, k) => `${x(k)},${y(x_.mp[idx])}`).join(' ')}"/>`;
+  let g = [0, 25, 50, 75].map(v => `<line x1="${L}" x2="${Wd-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-4}" y="${y(v)+4}" text-anchor="end" font-size="10" fill="var(--muted)">${v}</text>`).join('');
+  g += `<line x1="${L}" x2="${Wd-R}" y1="${y(P.washed)}" y2="${y(P.washed)}" stroke="var(--down)" stroke-dasharray="3 3"/>`;
+  g += line(3, 'var(--down)') + line(4, 'var(--accent)');
+  seg.forEach((x_, k) => { if (k && x_.mp[6] !== seg[k-1].mp[6]) g += `<line x1="${x(k)}" x2="${x(k)}" y1="${T}" y2="${Hd-B}" stroke="var(--muted)" stroke-dasharray="2 3"/>`; });
+  g += `<text x="${L}" y="${Hd-5}" font-size="10" fill="var(--muted)">${fmtD(seg[0].d).slice(5)}</text><text x="${Wd-R}" y="${Hd-5}" text-anchor="end" font-size="10" fill="var(--muted)">${fmtD(d.d).slice(5)}</text>`;
+  $('mp').innerHTML = `
+    ${today ? `<div class="alert">⚠ 今日警示：${today.from} → ${today.to}</div>` : ''}
+    <div class="head"><span class="ph p${ph}">${PH[ph] || ''}</span><span>${MEAN[ph] || ''}</span></div>
+    <div class="tiles">
+      <div class="tile"><b class="${w5 >= P.washed ? 'down' : ''}">${w5}</b><span>轉弱族群（5 日均）<br>今日 ${W}</span></div>
+      <div class="tile"><b>${s5}</b><span>站穩月線（主流＋延續）<br>今日 ${S}</span></div>
+      <div class="tile"><b>${curMain}</b><span>本週主流族群${weekProg(i) ? '（進行中）' : ''}<br>上週 ${lastMain}</span></div>
+    </div>
+    <svg viewBox="0 0 ${Wd} ${Hd}" role="img" aria-label="近 60 日轉弱與站穩族群數">${g}</svg>
+    <div class="legend"><span><i style="background:var(--down)"></i>轉弱（5 日均）</span><span><i style="background:var(--accent)"></i>站穩月線（5 日均）</span><span>虛線＝階段改變</span></div>
+    <table>
+      <tr><th>洗乾淨</th><td>轉弱 5 日均 ≥ ${P.washed}</td><td class="v">${w5}</td><td>${ck(w5 >= P.washed)}</td></tr>
+      <tr><th rowspan="3">轉好起點</th><td>最近 ${P.washed_window} 個交易日內出現過洗乾淨</td><td class="v">${washedRecent ? fmtD(washedRecent).slice(5) : '—'}</td><td>${ck(!!washedRecent)}</td></tr>
+      <tr><td>站穩月線 5 日均 ≥ ${P.turn_s}</td><td class="v">${s5}</td><td>${ck(s5 >= P.turn_s)}</td></tr>
+      <tr><td>轉弱 5 日均 ≤ ${P.turn_w}</td><td class="v">${w5}</td><td>${ck(w5 <= P.turn_w)}</td></tr>
+      <tr><th rowspan="2">確認</th><td>最近兩個完整週主流族群都 ≥ ${P.confirm_main}</td><td class="v">${last2.length ? last2.map(x => x[0]).join('、') : '—'}</td><td>${ck(last2.length === 2 && last2.every(x => x[0] >= P.confirm_main))}</td></tr>
+      <tr><td>該兩週轉弱平均都 ≤ ${P.confirm_w}</td><td class="v">${last2.length ? last2.map(x => x[1]).join('、') : '—'}</td><td>${ck(last2.length === 2 && last2.every(x => x[1] <= P.confirm_w))}</td></tr>
+      <tr><th rowspan="2">退潮</th><td>主流族群不到上一完整週的一半</td><td class="v">${curMain} / ${lastMain}</td><td>${ck(lastMain && curMain <= lastMain / 2)}</td></tr>
+      <tr><td>轉弱 5 日均 ≥ ${P.fade_w}</td><td class="v">${w5}</td><td>${ck(w5 >= P.fade_w)}</td></tr>
+      <tr><th>惡化</th><td>轉弱 5 日均 ≥ ${P.worse}</td><td class="v">${w5}</td><td>${ck(w5 >= P.worse)}</td></tr>
+    </table>
+    <div class="ev">最近階段變化：${ev.length ? ev.map(e => `<b>${fmtD(e.d).slice(5)}</b> ${e.from}→${e.to}`).join('　') : '—'}</div>`;
 }
 
 function drawTrend(i){

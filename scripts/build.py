@@ -136,6 +136,10 @@ def main():
     import continuity  # 族群延續性標籤與週欄位（Elon 交接 2026-10-21）
     continuity.compute(days, qs, th, names)
     del qs
+    import market_phase
+    mp_events = market_phase.compute(days)
+    json.dump({'rule': market_phase.RULE, 'params': market_phase.P, 'events': mp_events[-200:]},
+              open(f'{ROOT}/docs/alerts.json', 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     # 各大盤漲跌區間的平均上榜數（全部歷史）
     def bucket(x):
         return None if x is None else 0 if x <= -2 else 1 if x <= -1 else 2 if x < 0 else 3 if x < 1 else 4 if x < 2 else 5
@@ -162,6 +166,7 @@ def main():
     meta = {
         'generated': datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime('%Y-%m-%d %H:%M'),
         'cont_rule': continuity.RULE, 'cont': continuity.C,
+        'mp_rule': market_phase.RULE, 'mp': market_phase.P, 'mp_phase': market_phase.PHASE,
         'rule_version': RULE_VERSION, 'themes_version': THEMES_VERSION, 'rule': R,
         'themes': names, 'groups': groups, 'periods': {t: list(v) for t, v in per.items()}, 'mcap': market_caps(th), 'members': {t: [n for _, n in th[t]] for t in names},
         'bucket_avg': [round(s / c, 2) if c else None for s, c in zip(bs, bc)], 'bucket_n': bc,
