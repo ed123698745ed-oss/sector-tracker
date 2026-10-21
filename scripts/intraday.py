@@ -1,6 +1,7 @@
 """盤中快照（測試版）：從證交所「基本市況報導」查詢題材成分股的最新成交價，計算盤中上榜題材。
 
-  python3 intraday.py test   抓一次，輸出抓取統計到 test/mis_result.txt（不存個股報價）
+  python3 intraday.py   抓一次，輸出族群層級的盤中暫定結果到 docs/intraday.json（不存個股報價），
+                        抓取統計附記到 test/mis_result.txt
 """
 import csv, datetime, glob, gzip, json, os, sys, time, urllib.request
 
@@ -86,11 +87,14 @@ def main():
     secs = round(time.time() - t0, 1)
     p = {c: pct(x) for c, x in q.items()}
     got = sum(v is not None for v in p.values())
-    hits = []
+    hits, rows = [], []
     for t, cs in th.items():
-        h = judge([p[c] for c in cs if p.get(c) is not None])
+        pp = [p[c] for c in cs if p.get(c) is not None]
+        h = judge(pp)
         if h:
             hits.append(f'{t}({h})')
+            rows.append([t, h, round(sum(pp) / len(pp), 2), sum(x >= 3 for x in pp), len(pp)])
+    rows.sort(key=lambda r: -r[2])
     times = sorted({x.get('t') for x in q.values() if x.get('t')})
     lines = [
         f"run_at {datetime.datetime.now(TPE).strftime('%Y-%m-%d %H:%M:%S')}",
@@ -99,6 +103,10 @@ def main():
         f"quote_time_range {times[:1]} {times[-1:]}",
         f"hits {len(hits)} {' '.join(hits)}",
     ]
+    now = datetime.datetime.now(TPE)
+    out = {'date': now.strftime('%Y%m%d'), 'time': now.strftime('%H:%M'),
+           'quote_time': times[-1] if times else None, 'active': len(th), 'priced': got, 'total': len(codes), 'hits': rows}
+    json.dump(out, open(f'{ROOT}/docs/intraday.json', 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     os.makedirs(f'{ROOT}/test', exist_ok=True)
     with open(f'{ROOT}/test/mis_result.txt', 'a', encoding='utf-8') as f:
         f.write('\n'.join(lines) + '\n\n')

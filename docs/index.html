@@ -55,6 +55,11 @@ h2 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
 .legend{display:flex;gap:16px;font-size:12px;color:var(--muted);padding:0 4px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 /* 熱門卡片 */
+.intra{background:var(--panel);border:1px solid var(--accent);border-radius:14px;padding:12px 14px}
+.intra .row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+.intra .row:last-child{border-bottom:0}
+.intra .g{font-weight:600;padding-top:8px;color:var(--muted);font-size:13px}
+.intra .num{font-family:var(--num);white-space:nowrap}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .card .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
@@ -103,6 +108,11 @@ footer p{margin:0;max-width:65ch}
       <select id="day" aria-label="選擇交易日"></select>
     </label>
   </header>
+
+  <section id="intra" hidden>
+    <h2>盤中暫定<small id="intraSub"></small></h2>
+    <div class="intra" id="intraBody"></div>
+  </section>
 
   <div class="summary" id="summary"></div>
 
@@ -156,7 +166,23 @@ fetch('data.json', {cache:'no-cache'}).then(r => r.json()).then(data => {
   sel.value = start;
   sel.addEventListener('change', () => go(sel.value));
   go(start);
+  loadIntra();
 }).catch(() => { $('sub').textContent = '資料讀取失敗，請稍後重新整理。'; });
+
+function loadIntra(){
+  fetch('intraday.json', {cache:'no-cache'}).then(r => r.ok ? r.json() : null).then(x => {
+    const last = D && D[D.length - 1].d;
+    if (!x || !last || x.date <= last) { $('intra').hidden = true; return; }  // 收盤資料已出，就不顯示盤中暫定
+    const G = META.groups || [], gi = t => G[TH.indexOf(t)] || '傳產';
+    const rows = x.hits.slice().sort((a, b) => (gi(a[0]) === '電子' ? 0 : 1) - (gi(b[0]) === '電子' ? 0 : 1) || b[2] - a[2]);
+    $('intraSub').textContent = `${x.time} 抓取・報價至 ${x.quote_time || '—'}・上榜 ${x.hits.length}/${x.active}・收盤後以正式資料為準`;
+    $('intraBody').innerHTML = rows.length ? rows.map((r, k) => (k === 0 || gi(rows[k-1][0]) !== gi(r[0]) ? `<div class="g">${gi(r[0])}</div>` : '')
+      + `<div class="row"><span>${r[0]} <span class="chip rule">${r[1]}</span></span><span class="num"><span class="${cls(r[2])}">${pct(r[2])}</span>　≥3% ${r[3]}/${r[4]}</span></div>`).join('')
+      : '<div class="row">目前沒有題材上榜</div>';
+    $('intra').hidden = false;
+  }).catch(() => {});
+}
+setInterval(loadIntra, 120000);
 
 function go(ds){
   const i = D.findIndex(d => d.d === ds);
