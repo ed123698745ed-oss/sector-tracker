@@ -13,6 +13,15 @@ FP = os.path.join(quotes.ROOT, 'data', 'exright_twse.json')
 FP_TPEX = os.path.join(quotes.ROOT, 'data', 'exright_tpex.json')
 
 
+def pick(fields, *names):
+    """依序取第一個存在的欄位。Ed 2026-10-21：改用交易所實際計算漲跌停的基準價（上市「開盤競價基準」、
+    上櫃「開始交易基準價」）；除權息同時現金增資時，「除權息參考價」會低於基準價，算出的漲幅可能超過 10%。"""
+    for n in names:
+        if n in fields:
+            return fields.index(n)
+    raise KeyError(f'找不到欄位 {names}：{fields}')
+
+
 def load(fp=FP):
     return json.load(open(fp)) if os.path.exists(fp) else {}
 
@@ -26,7 +35,7 @@ def fetch_tpex(a, b):
         f = [x.strip() for x in t.get('fields') or []]
         if '除權息參考價' not in f:
             continue
-        i_d, i_c, i_r = f.index('除權息日期'), f.index('代號'), f.index('除權息參考價')
+        i_d, i_c, i_r = f.index('除權息日期'), f.index('代號'), pick(f, '開始交易基準價', '除權息參考價')
         for r in t.get('data') or []:
             y, m, dd = [int(x) for x in str(r[i_d]).strip().split('/')]
             ref = quotes.num(r[i_r])
@@ -41,7 +50,7 @@ def fetch(a, b):
     if d.get('stat') != 'OK':
         return out
     f = d['fields']
-    i_d, i_c, i_r = f.index('資料日期'), f.index('股票代號'), f.index('除權息參考價')
+    i_d, i_c, i_r = f.index('資料日期'), f.index('股票代號'), pick(f, '開盤競價基準', '除權息參考價')
     for r in d.get('data', []):
         y, m, dd = [int(x) for x in r[i_d].replace('年', ' ').replace('月', ' ').replace('日', '').split()]
         ds = f'{y + 1911}{m:02d}{dd:02d}'
@@ -58,7 +67,7 @@ def fetch_reduction(a, b):
     if d.get('stat') != 'OK':
         return out
     f = d['fields']
-    i_d, i_c, i_r = f.index('恢復買賣日期'), f.index('股票代號'), f.index('恢復買賣參考價')
+    i_d, i_c, i_r = f.index('恢復買賣日期'), f.index('股票代號'), pick(f, '開盤競價基準', '恢復買賣參考價')
     for r in d.get('data', []):
         y, m, dd = [int(x) for x in r[i_d].split('/')]
         ref = quotes.num(r[i_r])
