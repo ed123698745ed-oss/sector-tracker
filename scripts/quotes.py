@@ -2,8 +2,8 @@
 
 精簡檔格式：{"date": "YYYYMMDD", "taiex": 加權漲跌%, "q": {代號: [漲跌%, 成交金額(億)]}}
 漲跌% = 漲跌價差 ÷ (收盤 − 漲跌價差) × 100，即對前一交易日參考價；無成交或不比價者不列入。
-除權息日：上市以證交所除權除息計算結果表（TWT49U）的除權息參考價計算；上櫃以前一交易日公布的
-次日漲停價與跌停價推算參考價（兩者平均）。
+除權息日：上市以證交所除權除息計算結果表（TWT49U）、上櫃以櫃買中心除權除息計算結果表（exDailyQ）
+的除權息參考價計算；上櫃查不到時才以前一交易日公布的次日漲停價與跌停價平均推算。
 前一交易日無成交（多為暫停交易後恢復）證交所也標 X：對最近一次收盤計算；期間有除權息／減資，或算出超過漲跌幅限制
 （面額分割、變更面額等另行調整參考價）則不推算、維持排除。
 
@@ -102,7 +102,7 @@ def tpex_limits(d, want_up=False):
     return out
 
 
-def parse_tpex(d, prevraw=None, ds='99999999'):
+def parse_tpex(d, prevraw=None, ds='99999999', exref=None):
     q = {}
     refs = None
     ups = tpex_limits(prevraw, True) if prevraw else {}
@@ -115,9 +115,11 @@ def parse_tpex(d, prevraw=None, ds='99999999'):
             close, diff = num(r[ic]), num(r[idf])
             code = r[0].strip()
             if close and diff is None and '除' in str(r[idf]):  # 除權／除息／除權息
-                if refs is None:
-                    refs = tpex_limits(prevraw)
-                ref = refs.get(code)
+                ref = (exref or {}).get(code)  # 櫃買除權除息計算結果表的官方參考價
+                if not ref:  # 查不到才用前一交易日次日漲跌停價平均推算（可能差半個升降單位）
+                    if refs is None:
+                        refs = tpex_limits(prevraw)
+                    ref = refs.get(code)
                 if ref:
                     lu = 1 if code in ups and close >= ups[code] - 1e-6 else is_lu(close, ref, ds)
                     q[code] = [round((close - ref) / ref * 100, 2), round((num(r[iv]) or 0) / 1e8, 2), lu]
@@ -140,6 +142,17 @@ def get_json(url):
             print('retry', i, e, flush=True)
             time.sleep(15 * (i + 1))
     raise SystemExit(f'抓取失敗：{url}')
+
+
+def has_tpex_exright(tp):
+    """上櫃收盤行情中是否有除權息股（漲跌欄為除權／除息／除權息）"""
+    for t in (tp or {}).get('tables', []):
+        f = [x.strip() for x in t.get('fields', [])]
+        if '漲跌' in f:
+            i = f.index('漲跌')
+            if any('除' in str(r[i]) for r in t.get('data') or []):
+                return True
+    return False
 
 
 def has_twse_exright(tw):
@@ -222,13 +235,13 @@ def is_holiday(day):
     return day.isoformat() in days
 
 
-def save(ds, tw, tp, exref=None, prevtp=None, lastclose=None, exall=None):
+def save(ds, tw, tp, exref=None, prevtp=None, lastclose=None, exall=None, exref_tpex=None):
     q, taiex = parse_twse(tw, exref, ds, lastclose, exall)
     if not q:
         return False  # 休市
     if not tp or not parse_tpex(tp):
         raise SystemExit(f'{ds} 上市有資料但上櫃無資料，停止，不產生不完整檔案')
-    q.update(parse_tpex(tp, prevtp, ds))
+    q.update(parse_tpex(tp, prevtp, ds, exref_tpex))
     os.makedirs(OUT, exist_ok=True)
     json.dump({'date': ds, 'taiex': taiex, 'q': q}, open(f'{OUT}/{ds}.json', 'w'), separators=(',', ':'))
     return True
@@ -252,6 +265,8 @@ if __name__ == '__main__':
     elif cmd == 'rebuild':  # 由 archive/raw 全部重算精簡檔（含除權息日）
         import glob, gzip
         ex = json.load(open(f'{ROOT}/data/exright_twse.json'))
+        etp = f'{ROOT}/data/exright_tpex.json'
+        ex_tp = json.load(open(etp)) if os.path.exists(etp) else {}
         prev, n, last = None, 0, {}
         for f in sorted(glob.glob(f'{ROOT}/archive/raw/twse/*.json.gz')):
             ds = os.path.basename(f)[:8]
@@ -260,7 +275,7 @@ if __name__ == '__main__':
             lc = {c: last[c] for c in xs if c in last}
             tpp = f'{ROOT}/archive/raw/tpex/{ds}.json.gz'
             tp = json.load(gzip.open(tpp, 'rt')) if os.path.exists(tpp) else None
-            if save(ds, tw, tp, ex.get(ds), prev, lc, ex):
+            if save(ds, tw, tp, ex.get(ds), prev, lc, ex, ex_tp.get(ds)):
                 n += 1
                 prev = tp
                 last.update({c: (ds, v) for c, v in twse_closes(tw).items()})

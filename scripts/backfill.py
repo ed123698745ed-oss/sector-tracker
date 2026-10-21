@@ -60,9 +60,16 @@ def run(dates):
                 ex = exright.load(); exright.merge(ex, exright.fetch(ds, ds)); exright.merge(ex, exright.fetch_reduction(ds, ds)); exright.save(ex)
                 exref = ex.get(ds)
             import exright
+            ex_tp = None
+            if quotes.has_tpex_exright(tp):  # 上櫃有除權息股：抓櫃買除權除息計算結果表當日參考價
+                try:
+                    etp = exright.load(exright.FP_TPEX); exright.merge(etp, exright.fetch_tpex(ds, ds)); exright.save(etp, exright.FP_TPEX)
+                    ex_tp = etp.get(ds)
+                except SystemExit as e:
+                    print(ds, '上櫃除權息參考價抓取失敗，改用漲跌停價推算：', e, flush=True)
             xs = quotes.x_codes(tw) - set(exref or {})  # 標 X 但不在除權息／減資名單：多為暫停交易後恢復
             lc = quotes.last_twse_closes(ds, xs) if xs else {}
-            saved = quotes.save(ds, tw, tp, exref, quotes.prev_tpex_raw(ds), lc, exright.load() if xs else None)  # 上市有資料但上櫃缺漏時會丟出例外，不存原始檔，下輪重抓
+            saved = quotes.save(ds, tw, tp, exref, quotes.prev_tpex_raw(ds), lc, exright.load() if xs else None, ex_tp)  # 上市有資料但上櫃缺漏時會丟出例外，不存原始檔，下輪重抓
             now = datetime.datetime.now(TPE)
             if not saved and d == now.date() and now.hour < 18:
                 print(ds, 'not published yet', flush=True)  # 當天 18:00 前查無資料視為尚未公布，不記為休市
