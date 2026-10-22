@@ -108,7 +108,8 @@ def main():
     groups = load_groups(names)
     days, qs = [], []
     seen = {}  # 代號 → 第幾個交易日首次出現（用來排除新上市前五日：無漲跌幅限制）
-    for k, fp in enumerate(sorted(glob.glob(f'{ROOT}/data/quotes/*.json'))):
+    files = sorted(glob.glob(f'{ROOT}/data/quotes/*.json'))
+    for k, fp in enumerate(files):
         d = json.load(open(fp))
         q = d['q']
         for c in q:
@@ -129,7 +130,7 @@ def main():
                 hit = judge(p)
             avg = round(sum(p) / len(p), 2) if p else None
             row = [hit, avg, sum(x >= 3 for x in p), len(p), sum(q[c][2] if len(q[c]) > 2 else 0 for c, _ in th[t] if c in q)]
-            if hit:  # 上榜題材附全部有成交成分股（依漲幅排序）
+            if hit or k == len(files) - 1:  # 上榜題材附全部有成交成分股（依漲幅排序）；最新一天全部題材都附，供網頁展開成分股
                 row.append([[n, x] for n, x in sorted(mem, key=lambda z: -z[1])])
             rows.append(row)
         days.append({'d': d['date'], 'tx': d['taiex'], 't': rows})

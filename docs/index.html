@@ -95,6 +95,15 @@ table.all td:first-child,table.all th:first-child{position:sticky;left:0;backgro
 table.all tr.grp td{position:static}
 table.all tr.grp .gl{position:sticky;left:10px}
 sup.few{font-size:10px;color:var(--muted);margin-left:2px}
+table.all td.tn{cursor:pointer}
+table.all .car{display:inline-block;width:12px;color:var(--muted);font-size:11px}
+table.all tr.mem td{position:static;text-align:left;white-space:normal;background:var(--bg);padding:8px 10px 10px 24px;font-size:13px}
+table.all tr.mem .ml,table.all tr.mem .note{position:sticky;left:24px;max-width:min(560px,calc(100vw - 80px))}
+table.all tr.mem .ml{display:flex;flex-wrap:wrap;gap:4px 14px}
+table.all tr.mem .ml span{white-space:nowrap}
+table.all tr.mem .ml b{font-weight:500;margin-left:3px;font-family:var(--num)}
+table.all tr.mem .ml .na{color:var(--muted)}
+table.all tr.mem .note{color:var(--muted);font-size:12px;margin-top:6px}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .card .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
@@ -193,7 +202,7 @@ footer .fine{font-size:12px;margin-top:6px}
   </section>
 
   <section>
-    <h2>全部題材<small id="allNote">點欄位排序</small></h2>
+    <h2>全部題材<small id="allNote">點欄位排序・點題材名稱展開成分股</small></h2>
     <div class="scroll"><table class="all" id="all"></table></div>
   </section>
 
@@ -210,7 +219,7 @@ const bucket = x => x == null ? null : x <= -2 ? 0 : x <= -1 ? 1 : x < 0 ? 2 : x
 const BUCKET_TXT = ['跌 2% 以上','跌 1～2%','跌 0～1%','漲 0～1%','漲 1～2%','漲 2% 以上'];
 let D, TH, idx, sortKey = 'avg', sortDir = -1;
 
-let HIST_LOADED = false, INTRA = null, ALERTS = null, LIVE_D = null;
+let HIST_LOADED = false, INTRA = null, ALERTS = null, LIVE_D = null, OPEN = new Set();  // OPEN：全部題材表中展開成分股的題材
 // 盤中：把盤中暫定當成「最新一天之後的一天」，暫時接在 D 後面畫熱門題材數、熱度圖、全部題材表
 function withLive(f){ const s = D; D = D.concat([LIVE_D]); try { return f(D.length - 1); } finally { D = s; } }
 function drawLiveable(f){ return LIVE_D && idx === D.length - 1 ? withLive(f) : f(idx); }
@@ -253,7 +262,7 @@ function loadIntra(){
     const ld = D[D.length - 1];
     LIVE_D = x.all ? {d: x.date, tx: x.tx, live: true, L: ld.L, w: ld.w, ba: (META.ba_now || [])[bucket(x.tx)] ?? null,
       t: TH.map(t => { const h = x.hits.find(r => r[0] === t); if (h) return [h[1], h[2], h[3], h[4], h[6] || 0, h[5]];
-        const a = x.all.find(r => r[0] === t); return a ? ['', a[1], a[2], a[3], a[4] || 0] : []; })} : null;
+        const a = x.all.find(r => r[0] === t); return a ? ['', a[1], a[2], a[3], a[4] || 0].concat(a[5] ? [a[5]] : []) : []; })} : null;
     if (LIVE_D) LIVE_D.hits = LIVE_D.t.filter(r => r[0]).length;
     if (idx === D.length - 1) render(idx);  // 看最新一天時，摘要與熱門題材改用盤中暫定
     const G = META.groups || [], gi = t => G[TH.indexOf(t)] || '傳產';
@@ -291,7 +300,7 @@ function render(i){
   const ba = live ? ((META.ba_now || [])[bucket(d.tx)] ?? null) : (d.ba ?? null);
   const closeTxt = `${fmtD(D[i].d).slice(5)} 收盤`;
   $('mpNote').textContent = `規則 ${META.mp_rule || 'MP01'}・只供觀察${live ? `・依 ${closeTxt}` : ''}`;
-  $('allNote').textContent = live && LIVE_D ? `點欄位排序・均漲到連續為盤中暫定；狀態、本週主流、主流週、延續週為 ${closeTxt}` : '點欄位排序';
+  $('allNote').textContent = live && LIVE_D ? `點欄位排序・點題材名稱展開成分股・均漲到連續為盤中暫定；狀態、本週主流、主流週、延續週為 ${closeTxt}` : '點欄位排序・點題材名稱展開成分股';
   const liveTag = live ? `${fmtD(live.date)} 盤中暫定 ${live.time}（報價至 ${live.quote_time || '—'}，收盤後以正式資料為準）` : '';
   $('sub').textContent = live ? liveTag : `資料日 ${fmtD(d.d)}・更新 ${META.generated}`;
   // 摘要
@@ -462,16 +471,32 @@ function contSummary(i){
   const w = d.w || {};
   return {week: Object.values(w).filter(v => v[0] >= ((META.cont || {}).week_min || 3)).length, day: [...d.L].filter(c => c === 'M').length, prog: weekProg(i)};
 }
+// 展開列：有當天漲跌就依漲幅列出；沒有（過去日期未上榜）只列名稱
+function memRow(r, d, n){
+  const all = (META.members || {})[r.t] || [];
+  let body, note = '';
+  if (r.mem) {
+    const got = new Set(r.mem.map(x => x[0]));
+    body = r.mem.map(([nm, p]) => `<span>${nm}<b class="${cls(p)}">${pct(p)}</b></span>`).join('')
+      + all.filter(nm => !got.has(nm)).map(nm => `<span class="na">${nm} 無成交</span>`).join('');
+    note = d.live ? '盤中暫定漲跌' : `${fmtD(d.d)} 收盤漲跌`;
+  } else {
+    body = all.map(nm => `<span>${nm}</span>`).join('');
+    note = '這天未上榜，只列成分股名稱（最新一天與盤中會顯示每檔漲跌）';
+  }
+  return `<tr class="mem"><td colspan="${n}"><div class="ml">${body}</div><div class="note">成分股 ${all.length} 檔・${note}</div></td></tr>`;
+}
 function drawTable(i){
   const d = D[i];
   const G = META.groups || [], GO = ['電子', '傳產'], go = g => { const k = GO.indexOf(g); return k < 0 ? 9 : k; };
-  const rows = TH.map((t, ti) => [t, ti]).filter(([t, ti]) => d.t[ti].length).map(([t, ti]) => { const r = d.t[ti]; return {t, g: G[ti] || '傳產', hit: r[0], avg: r[1], ge3: r[2], n: r[3], ge3r: r[3] ? r[2] / r[3] : 0, c5: count(ti, i, 5), c20: count(ti, i, 20), st: streak(ti, i),
+  const rows = TH.map((t, ti) => [t, ti]).filter(([t, ti]) => d.t[ti].length).map(([t, ti]) => { const r = d.t[ti]; return {t, mem: r[5] || null, g: G[ti] || '傳產', hit: r[0], avg: r[1], ge3: r[2], n: r[3], ge3r: r[3] ? r[2] / r[3] : 0, c5: count(ti, i, 5), c20: count(ti, i, 20), st: streak(ti, i),
     lab: (d.L || '')[ti] || '-', labo: LAB_ORD[(d.L || '')[ti]] || 0, wm: ((d.w || {})[ti] || [0])[0], wmc: ((d.w || {})[ti] || [0,0])[1], ms: ((d.w || {})[ti] || [0,0,0])[2], cs: ((d.w || {})[ti] || [0,0,0,0])[3],
     few: ((META.members || {})[t] || []).length <= 5}; });
   rows.sort((a, b) => { const sk = sortKey === 'ge3' ? 'ge3r' : sortKey === 'lab' ? 'labo' : sortKey, x = a[sk] ?? -999, y = b[sk] ?? -999; return go(a.g) - go(b.g) || (typeof x === 'string' ? sortDir * x.localeCompare(y) : sortDir * (x - y)); });
   const cols = [['t','題材'],['avg','均漲'],['ge3','≥3%'],['c5','近5日'],['c20','近20日'],['st','連續'],['lab','狀態'],['wm','本週主流'],['ms','主流週'],['cs','延續週']];
   $('all').innerHTML = `<thead><tr>${cols.map(([k, n]) => `<th data-k="${k}" class="${k === sortKey ? 'sorted' : ''}">${n}${k === sortKey ? (sortDir < 0 ? ' ▼' : ' ▲') : ''}</th>`).join('')}</tr></thead><tbody>`
-    + rows.map((r, k) => (k === 0 || rows[k-1].g !== r.g ? `<tr class="grp"><td colspan="${cols.length}"><span class="gl">${r.g}</span></td></tr>` : '') + `<tr class="${r.hit ? 'hit' : ''}"><td>${r.t}${r.few ? '<sup class="few" title="成分股 5 檔以下，一檔變動影響一致性 20～33%">少</sup>' : ''}</td><td class="${cls(r.avg)}">${pct(r.avg)}</td><td>${r.ge3}/${r.n}</td><td>${r.c5}</td><td>${r.c20}</td><td>${r.st || ''}</td><td>${LAB[r.lab] ? `<span class="lab lab-${r.lab}">${LAB[r.lab]}</span>` : '—'}</td><td><span class="wk wk${r.wm}">${r.wm || '·'}</span></td><td>${r.ms ? `<span class="${r.wm < 3 ? 'carry' : ''}">${r.ms}</span>` : ''}</td><td>${r.cs ? `<span class="${r.wmc < 3 ? 'carry' : ''}">${r.cs}</span>` : ''}</td></tr>`).join('') + '</tbody>';
+    + rows.map((r, k) => (k === 0 || rows[k-1].g !== r.g ? `<tr class="grp"><td colspan="${cols.length}"><span class="gl">${r.g}</span></td></tr>` : '') + `<tr class="${r.hit ? 'hit' : ''}"><td class="tn" data-t="${r.t}"><span class="car">${OPEN.has(r.t) ? '▾' : '▸'}</span>${r.t}${r.few ? '<sup class="few" title="成分股 5 檔以下，一檔變動影響一致性 20～33%">少</sup>' : ''}</td><td class="${cls(r.avg)}">${pct(r.avg)}</td><td>${r.ge3}/${r.n}</td><td>${r.c5}</td><td>${r.c20}</td><td>${r.st || ''}</td><td>${LAB[r.lab] ? `<span class="lab lab-${r.lab}">${LAB[r.lab]}</span>` : '—'}</td><td><span class="wk wk${r.wm}">${r.wm || '·'}</span></td><td>${r.ms ? `<span class="${r.wm < 3 ? 'carry' : ''}">${r.ms}</span>` : ''}</td><td>${r.cs ? `<span class="${r.wmc < 3 ? 'carry' : ''}">${r.cs}</span>` : ''}</td></tr>` + (OPEN.has(r.t) ? memRow(r, d, cols.length) : '')).join('') + '</tbody>';
+  $('all').querySelectorAll('td.tn').forEach(td => td.onclick = () => { const t = td.dataset.t; OPEN.has(t) ? OPEN.delete(t) : OPEN.add(t); drawLiveable(drawTable); });
   $('all').querySelectorAll('th').forEach(th => th.onclick = () => {
     const k = th.dataset.k; if (k === sortKey) sortDir = -sortDir; else { sortKey = k; sortDir = k === 't' ? 1 : -1; }
     drawLiveable(drawTable);

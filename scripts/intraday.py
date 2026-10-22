@@ -3,7 +3,7 @@
   python3 intraday.py   抓一次，輸出盤中暫定結果到 docs/intraday.json，抓取統計附記到 test/mis_result.txt
   intraday.json：date、time、quote_time、active、tx（加權漲跌%）、hits＝[題材, 規則, 均漲, ≥3%家數, 有成交家數,
   [[名稱, 漲跌%]…（依漲幅排序）], 漲停家數]；只存上榜題材的成分股，供網頁盤中顯示摘要與熱門題材卡片
-  all＝[題材, 均漲, ≥3%家數, 有成交家數, 漲停家數]，全部有效題材（含未上榜），供全部題材表、熱度圖、熱門題材數盤中顯示
+  all＝[題材, 均漲, ≥3%家數, 有成交家數, 漲停家數, [[名稱, 漲跌%]…]]，全部有效題材（含未上榜），供全部題材表、熱度圖、熱門題材數盤中顯示
 """
 import csv, datetime, glob, gzip, json, os, sys, time, urllib.request
 
@@ -133,7 +133,8 @@ def main():
         pp = [p[c] for c in cs if p.get(c) is not None]
         h = judge(pp)
         allr.append([t, round(sum(pp) / len(pp), 2) if pp else None, sum(x >= 3 for x in pp), len(pp),
-                     sum(1 for c in cs if p.get(c) is not None and at_limit_up(q[c]))])
+                     sum(1 for c in cs if p.get(c) is not None and at_limit_up(q[c])),
+                     sorted(([names.get(c, c), p[c]] for c in cs if p.get(c) is not None), key=lambda z: -z[1])])
         if h:
             hits.append(f'{t}({h})')
             mem = sorted(([names.get(c, c), p[c]] for c in cs if p.get(c) is not None), key=lambda z: -z[1])
