@@ -28,3 +28,9 @@ requests 13 errors 0 last_error
 quote_time_range ['08:51:49'] ['09:02:07']
 hits 1 CCL(AB)
 
+run_at 2026-10-22 09:12:00
+codes 616 returned 610 priced 555 seconds 76.0
+requests 13 errors 0 last_error 
+quote_time_range ['09:00:01'] ['09:11:48']
+hits 2 玻纖布/銅箔(AB) 散熱(AB)
+
