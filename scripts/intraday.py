@@ -131,7 +131,7 @@ def main():
     hits, rows, allr = [], [], []
     for t, cs in th.items():
         pp = [p[c] for c in cs if p.get(c) is not None]
-        h = judge(pp)
+        h = judge(pp, t)
         allr.append([t, round(sum(pp) / len(pp), 2) if pp else None, sum(x >= 3 for x in pp), len(pp),
                      sum(1 for c in cs if p.get(c) is not None and at_limit_up(q[c])),
                      sorted(([names.get(c, c), p[c]] for c in cs if p.get(c) is not None), key=lambda z: -z[1])])

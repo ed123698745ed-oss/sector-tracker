@@ -348,6 +348,7 @@ function render(i){
         <dt><span class="chip rule">A 齊漲</span></dt><dd>漲 ≥3% 的成分股 ≥3 檔，且佔 ≥25%</dd>
         <dt><span class="chip rule">B 帶頭擴散</span></dt><dd>漲 ≥4% 的 ≥2 檔，且漲 ≥1.5% 的佔 ≥40%</dd>
         <dt><span class="chip rule">C 強勢</span></dt><dd>漲 ≥7% 的 ≥2 檔</dd>
+        <dt>低波動族群</dt><dd>${Object.keys(META.low_vol || {}).join('、') || '—'}：三條的漲幅門檻都乘 2/3（A 2%、B 2.7%／1%、C 4.7%）</dd>
       </dl>
     </div>
     <div class="leg">

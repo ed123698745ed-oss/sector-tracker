@@ -6,21 +6,27 @@
   C 強勢：漲幅 ≥7% 的 ≥2 檔
 當日無成交的成分股不計入家數。
 規則 V02（Ed 2026-10-21 確認）：2015-06-01 前漲跌幅限制為 7%，該期間收盤鎖漲停者視同漲幅 ≥7%（僅影響 C 條件）。
+規則 V03（Ed 2026-10-22 確認）：低波動族群（電信服務、水泥、食品）A、B、C 的漲幅門檻等比例乘 2/3
+  （A 2%、B 帶頭 2.67%／跟漲 1%、C 4.67%）；家數與比例條件不變；其他族群不變。
 """
 import datetime, glob, json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RULE_VERSION = 'V02'
+RULE_VERSION = 'V03'
 THEMES_VERSION = 'V12_20261021'
 R = dict(A_pct=3.0, A_n=3, A_ratio=0.25, B_pct=4.0, B_n=2, B_follow_pct=1.5, B_follow=0.40, C_pct=7.0, C_n=2)
+LOW_VOL = {'電信服務': 2 / 3, '水泥': 2 / 3, '食品': 2 / 3}  # 規則 V03：低波動族群漲幅門檻倍數
 RECENT = 260  # 首頁載入的近期交易日數，其餘放 history.json
 BASE_DAYS = 735  # 擴散基準：近三年交易日數（約 245 日 × 3）
 LIMIT7_END = '20150601'  # 此日前漲跌幅限制為 7%
 NEW_LISTING_DAYS = 5  # 新上市（櫃）前五個交易日無漲跌幅限制，不計入
 
 
-def judge(p):
+def judge(p, theme=None):
+    k = LOW_VOL.get(theme, 1)
+    if k != 1:
+        p = [x / k for x in p]  # 等同把漲幅門檻乘上 k
     n = len(p)
     if not n:
         return ''
@@ -125,9 +131,9 @@ def main():
             mem = [(n, q[c][0]) for c, n in th[t] if c in q]
             p = [x for _, x in mem]
             if d['date'] < LIMIT7_END:  # 漲跌幅 7% 時期：鎖漲停視同達 C 條件的 7%（規則 V02）
-                hit = judge([max(q[c][0], R['C_pct']) if len(q[c]) > 2 and q[c][2] else q[c][0] for c, _ in th[t] if c in q])
+                hit = judge([max(q[c][0], R['C_pct']) if len(q[c]) > 2 and q[c][2] else q[c][0] for c, _ in th[t] if c in q], t)
             else:
-                hit = judge(p)
+                hit = judge(p, t)
             avg = round(sum(p) / len(p), 2) if p else None
             row = [hit, avg, sum(x >= 3 for x in p), len(p), sum(q[c][2] if len(q[c]) > 2 else 0 for c, _ in th[t] if c in q)]
             if hit or k == len(files) - 1:  # 上榜題材附全部有成交成分股（依漲幅排序）；最新一天全部題材都附，供網頁展開成分股
@@ -168,7 +174,7 @@ def main():
         'generated': datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime('%Y-%m-%d %H:%M'),
         'cont_rule': continuity.RULE, 'cont': continuity.C,
         'mp_rule': market_phase.RULE, 'mp': market_phase.P, 'mp_phase': market_phase.PHASE,
-        'rule_version': RULE_VERSION, 'themes_version': THEMES_VERSION, 'rule': R,
+        'rule_version': RULE_VERSION, 'themes_version': THEMES_VERSION, 'rule': R, 'low_vol': LOW_VOL,
         'themes': names, 'groups': groups, 'periods': {t: list(v) for t, v in per.items()}, 'mcap': market_caps(th), 'members': {t: [n for _, n in th[t]] for t in names},
         'bucket_avg': [round(s / c, 2) if c else None for s, c in zip(bs, bc)], 'bucket_n': bc,
         'ba_now': [round(x / c, 1) if c else None for x, c in zip(ws, wc)],  # 最近 BASE_DAYS 日各區間平均（盤中暫定比較用）
