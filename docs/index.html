@@ -169,7 +169,7 @@ footer .fine{font-size:12px;margin-top:6px}
   <div class="summary" id="summary"></div>
 
   <section id="mpsec">
-    <h2>市場階段<small>規則 MP01・只供觀察</small></h2>
+    <h2>市場階段<small id="mpNote">規則 MP01・只供觀察</small></h2>
     <div class="mp" id="mp"></div>
   </section>
 
@@ -193,7 +193,7 @@ footer .fine{font-size:12px;margin-top:6px}
   </section>
 
   <section>
-    <h2>全部題材<small>點欄位排序</small></h2>
+    <h2>全部題材<small id="allNote">點欄位排序</small></h2>
     <div class="scroll"><table class="all" id="all"></table></div>
   </section>
 
@@ -210,7 +210,10 @@ const bucket = x => x == null ? null : x <= -2 ? 0 : x <= -1 ? 1 : x < 0 ? 2 : x
 const BUCKET_TXT = ['跌 2% 以上','跌 1～2%','跌 0～1%','漲 0～1%','漲 1～2%','漲 2% 以上'];
 let D, TH, idx, sortKey = 'avg', sortDir = -1;
 
-let HIST_LOADED = false, INTRA = null, ALERTS = null;
+let HIST_LOADED = false, INTRA = null, ALERTS = null, LIVE_D = null;
+// 盤中：把盤中暫定當成「最新一天之後的一天」，暫時接在 D 後面畫熱門題材數、熱度圖、全部題材表
+function withLive(f){ const s = D; D = D.concat([LIVE_D]); try { return f(D.length - 1); } finally { D = s; } }
+function drawLiveable(f){ return LIVE_D && idx === D.length - 1 ? withLive(f) : f(idx); }
 fetch('alerts.json', {cache:'no-cache'}).then(r => r.ok ? r.json() : null).then(a => { ALERTS = a; if (typeof idx === 'number' && D) drawMP(idx); }).catch(() => {});
 // keep：重新整理時保留目前選的日期；原本在看最新一天的，跳到新的最新一天
 function loadData(keep){
@@ -244,8 +247,14 @@ $('refresh').addEventListener('click', () => {
 function loadIntra(){
   fetch('intraday.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.ok ? r.json() : null).then(x => {
     const last = D && D[D.length - 1].d;
-    if (!x || !last || x.date <= last) { INTRA = null; $('intra').hidden = true; return; }  // 收盤資料已出，就不顯示盤中暫定
+    if (!x || !last || x.date <= last) { INTRA = null; LIVE_D = null; $('intra').hidden = true; return; }  // 收盤資料已出，就不顯示盤中暫定
     INTRA = x;
+    // 全部題材的盤中數字（舊版 intraday.json 沒有 all 時只更新摘要與熱門題材）；狀態與週欄位沿用最新收盤
+    const ld = D[D.length - 1];
+    LIVE_D = x.all ? {d: x.date, tx: x.tx, live: true, L: ld.L, w: ld.w, ba: (META.ba_now || [])[bucket(x.tx)] ?? null,
+      t: TH.map(t => { const h = x.hits.find(r => r[0] === t); if (h) return [h[1], h[2], h[3], h[4], h[6] || 0, h[5]];
+        const a = x.all.find(r => r[0] === t); return a ? ['', a[1], a[2], a[3], a[4] || 0] : []; })} : null;
+    if (LIVE_D) LIVE_D.hits = LIVE_D.t.filter(r => r[0]).length;
     if (idx === D.length - 1) render(idx);  // 看最新一天時，摘要與熱門題材改用盤中暫定
     const G = META.groups || [], gi = t => G[TH.indexOf(t)] || '傳產';
     const rows = x.hits.slice().sort((a, b) => (gi(a[0]) === '電子' ? 0 : 1) - (gi(b[0]) === '電子' ? 0 : 1) || b[2] - a[2]);
@@ -277,9 +286,12 @@ function render(i){
   idx = i;
   // 盤中：看最新一天、且有比它新的盤中暫定 → 摘要與當日熱門題材改用盤中資料（其他區塊仍為收盤正式資料）
   const live = i === D.length - 1 && INTRA && INTRA.date > D[i].d && INTRA.hits.every(r => r.length > 5) ? INTRA : null;
-  const d = live ? {d: live.date, tx: live.tx, hits: live.hits.length,
+  const d = live && LIVE_D ? LIVE_D : live ? {d: live.date, tx: live.tx, hits: live.hits.length,
     t: TH.map(t => { const r = live.hits.find(h => h[0] === t); return r ? [r[1], r[2], r[3], r[4], r[6] || 0, r[5]] : ['']; })} : D[i];
   const ba = live ? ((META.ba_now || [])[bucket(d.tx)] ?? null) : (d.ba ?? null);
+  const closeTxt = `${fmtD(D[i].d).slice(5)} 收盤`;
+  $('mpNote').textContent = `規則 ${META.mp_rule || 'MP01'}・只供觀察${live ? `・依 ${closeTxt}` : ''}`;
+  $('allNote').textContent = live && LIVE_D ? `點欄位排序・均漲到連續為盤中暫定；狀態、本週主流、主流週、延續週為 ${closeTxt}` : '點欄位排序';
   const liveTag = live ? `${fmtD(live.date)} 盤中暫定 ${live.time}（報價至 ${live.quote_time || '—'}，收盤後以正式資料為準）` : '';
   $('sub').textContent = live ? liveTag : `資料日 ${fmtD(d.d)}・更新 ${META.generated}`;
   // 摘要
@@ -294,12 +306,12 @@ function render(i){
     <div class="facts">
       <div>加權指數 <b class="${cls(d.tx)}">${pct(d.tx)}</b></div>
       <div>大盤${BUCKET_TXT[bucket(d.tx)] ?? ''}的日子，近三年平均 <b>${ba != null ? ba.toFixed(1) : '—'}</b> 個上榜</div>
-      ${(() => { const c = contSummary(i); return c ? `<div>本週主流族群 <b>${c.week}</b> 個${c.prog ? '（進行中）' : ''}・當日主流 <b>${c.day}</b> 個</div>` : ''; })()}
+      ${(() => { const c = contSummary(i); return c ? `<div>本週主流族群 <b>${c.week}</b> 個${c.prog ? '（進行中）' : ''}・當日主流 <b>${c.day}</b> 個${live ? `（${closeTxt}）` : ''}</div>` : ''; })()}
       ${tag ? `<div><span class="badge ${tagCls}">${tag}</span></div>` : ''}
       ${live ? `<div><span class="badge live">盤中暫定 ${live.time}</span></div>` : ''}
     </div>`;
   drawMP(i);
-  drawTrend(i);
+  drawLiveable(drawTrend);
   // 今日熱門（盤中：連續天數與近 5／20 日次數把今天算進去）
   const hot = d.t.map((r, ti) => ({r, ti})).filter(x => x.r[0]);
   $('hotTitle').textContent = live ? `盤中熱門題材（${hot.length}）・${live.time} 暫定` : `當日熱門題材（${hot.length}）`;
@@ -318,8 +330,8 @@ function render(i){
       <div class="members">${r[5].map(([n, p]) => `<span>${n}<b class="${cls(p)}">${pct(p)}</b></span>`).join('')}</div>
     </article>`).join('')
     : `<div class="empty">這天沒有題材符合上榜規則。</div>`;
-  drawHeat(i);
-  drawTable(i);
+  drawLiveable(drawHeat);
+  drawLiveable(drawTable);
   $('foot').innerHTML = `
     <div class="leg">
       <h4>上榜規則 ${META.rule_version}<small>符合任一條就上榜</small></h4>
@@ -422,14 +434,13 @@ function drawTrend(i){
   });
   const lab = [0, Math.floor(seg.length/2), seg.length-1];
   lab.forEach(k => { const x = L + k*bw + bw/2; g += `<text x="${x}" y="${H-8}" text-anchor="${k===0?'start':k===seg.length-1?'end':'middle'}" font-size="11" fill="var(--muted)">${fmtD(seg[k].d).slice(5)}</text>`; });
-  const svg = $('trend'); svg.innerHTML = g;
+  const svg = $('trend'); svg.innerHTML = g; const S = D;
+  const tipTxt = d => { const ba = d.ba ?? null; return `${fmtD(d.d)}${d.live ? '（盤中暫定）' : ''}：熱門 <b>${d.hits}</b> 個，加權 <span class="${cls(d.tx)}">${pct(d.tx)}</span>，同級近三年平均 ${ba != null ? ba.toFixed(1) : '—'}`; };
   svg.onclick = svg.onmousemove = e => {
     const k = e.target.dataset && e.target.dataset.k; if (k == null) return;
-    const d = D[+k], ba = d.ba ?? null;
-    $('tip').innerHTML = `${fmtD(d.d)}：熱門 <b>${d.hits}</b> 個，加權 <span class="${cls(d.tx)}">${pct(d.tx)}</span>，同級近三年平均 ${ba != null ? ba.toFixed(1) : '—'}`;
+    $('tip').innerHTML = tipTxt(S[+k]);
   };
-  const ba = D[i].ba ?? null;
-  $('tip').innerHTML = `${fmtD(D[i].d)}：熱門 <b>${D[i].hits}</b> 個，加權 <span class="${cls(D[i].tx)}">${pct(D[i].tx)}</span>，同級近三年平均 ${ba != null ? ba.toFixed(1) : '—'}`;
+  $('tip').innerHTML = tipTxt(D[i]);
 }
 
 function drawHeat(i){
@@ -440,7 +451,7 @@ function drawHeat(i){
   if (!rows.length) { $('heat').innerHTML = '<tr><td class="empty">近 20 日沒有題材上榜。</td></tr>'; return; }
   $('heat').innerHTML = rows.map((r, k) => (k === 0 || rows[k-1].g !== r.g ? `<tr class="grp"><th colspan="${days.length + 2}">${r.g}</th></tr>` : '')
     + `<tr><th>${r.t}</th>${days.map(d => `<td class="c${d.t[r.ti][0] ? ' on' : ''}" title="${fmtD(d.d)}"></td>`).join('')}<td class="n">${r.n}</td></tr>`).join('')
-    + `<tr class="axis"><th></th><td colspan="${days.length}"><div style="display:flex;justify-content:space-between"><span>${fmtD(days[0].d).slice(5)}</span><span>${fmtD(days[days.length-1].d).slice(5)}</span></div></td><td></td></tr>`;
+    + `<tr class="axis"><th></th><td colspan="${days.length}"><div style="display:flex;justify-content:space-between"><span>${fmtD(days[0].d).slice(5)}</span><span>${fmtD(days[days.length-1].d).slice(5)}${days[days.length-1].live ? ' 盤中' : ''}</span></div></td><td></td></tr>`;
 }
 
 const LAB = {M: '主流', C: '延續', D: '分化', W: '轉弱', S: '盤整'}, LAB_ORD = {M: 5, C: 4, D: 3, S: 2, W: 1};
@@ -463,7 +474,7 @@ function drawTable(i){
     + rows.map((r, k) => (k === 0 || rows[k-1].g !== r.g ? `<tr class="grp"><td colspan="${cols.length}"><span class="gl">${r.g}</span></td></tr>` : '') + `<tr class="${r.hit ? 'hit' : ''}"><td>${r.t}${r.few ? '<sup class="few" title="成分股 5 檔以下，一檔變動影響一致性 20～33%">少</sup>' : ''}</td><td class="${cls(r.avg)}">${pct(r.avg)}</td><td>${r.ge3}/${r.n}</td><td>${r.c5}</td><td>${r.c20}</td><td>${r.st || ''}</td><td>${LAB[r.lab] ? `<span class="lab lab-${r.lab}">${LAB[r.lab]}</span>` : '—'}</td><td><span class="wk wk${r.wm}">${r.wm || '·'}</span></td><td>${r.ms ? `<span class="${r.wm < 3 ? 'carry' : ''}">${r.ms}</span>` : ''}</td><td>${r.cs ? `<span class="${r.wmc < 3 ? 'carry' : ''}">${r.cs}</span>` : ''}</td></tr>`).join('') + '</tbody>';
   $('all').querySelectorAll('th').forEach(th => th.onclick = () => {
     const k = th.dataset.k; if (k === sortKey) sortDir = -sortDir; else { sortKey = k; sortDir = k === 't' ? 1 : -1; }
-    drawTable(idx);
+    drawLiveable(drawTable);
   });
 }
 </script>
