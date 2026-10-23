@@ -150,7 +150,19 @@ def main():
         f"hits {len(hits)} {' '.join(hits)}",
     ]
     now = datetime.datetime.now(TPE)
-    out = {'date': now.strftime('%Y%m%d'), 'time': now.strftime('%H:%M'),
+    # 報價實際日期（證交所欄位 d）。休市日 MIS 仍回傳前一交易日收盤，必須用報價日期而非執行日期，
+    # 否則網頁會把前一日收盤當成「今日盤中」重複多算一天（2026-10-23 休市事故）
+    from collections import Counter
+    qd = Counter(x.get('d') for x in q.values() if x.get('d')).most_common(1)
+    qdate = qd[0][0] if qd else None
+    if qdate != now.strftime('%Y%m%d'):
+        lines.append(f'skip: quote date {qdate} != today（休市或尚無今日報價），不更新 intraday.json')
+        os.makedirs(f'{ROOT}/test', exist_ok=True)
+        with open(f'{ROOT}/test/mis_result.txt', 'a', encoding='utf-8') as f:
+            f.write('\n'.join(lines) + '\n\n')
+        print('\n'.join(lines))
+        return
+    out = {'date': qdate, 'time': now.strftime('%H:%M'),
            'quote_time': times[-1] if times else None, 'active': len(th), 'tx': tx, 'priced': got, 'total': len(codes), 'hits': rows, 'all': allr}
     json.dump(out, open(f'{ROOT}/docs/intraday.json', 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     os.makedirs(f'{ROOT}/test', exist_ok=True)
