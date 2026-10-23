@@ -355,12 +355,12 @@ function render(i){
       </dl>
     </div>
     <div class="leg">
-      <h4>狀態<small>月線＝20 日均線；比例＝站上自身月線的成分股比例</small></h4>
+      <h4>狀態<small>看兩件事：①族群指數（成分股每日漲跌平均、逐日累計成的一條線）有沒有在它自己的 20 日均線上；②成分股中，站上各自 20 日均線的家數比例</small></h4>
       <dl>
-        <dt><span class="lab lab-M">主流</span></dt><dd>族群站上月線、比例 ≥70%，且接近 60 日高點或近 20 日上榜 ≥8 天</dd>
-        <dt><span class="lab lab-C">延續</span></dt><dd>族群站上月線、比例 ≥50%</dd>
-        <dt><span class="lab lab-D">分化</span></dt><dd>族群站上月線，但比例 &lt;50%（靠少數股撐）</dd>
-        <dt><span class="lab lab-W">轉弱</span></dt><dd>族群跌破月線，比例 &lt;40%</dd>
+        <dt><span class="lab lab-M">主流</span></dt><dd>族群指數在月線上，且 ≥70% 成分股站上自己的月線；再加上族群指數接近 60 日高點，或近 20 日上榜 ≥8 天</dd>
+        <dt><span class="lab lab-C">延續</span></dt><dd>族群指數在月線上，且 ≥50% 成分股站上自己的月線</dd>
+        <dt><span class="lab lab-D">分化</span></dt><dd>族群指數在月線上，但站上自己月線的成分股 &lt;50%（靠少數股撐）</dd>
+        <dt><span class="lab lab-W">轉弱</span></dt><dd>族群指數跌破月線，且站上自己月線的成分股 &lt;40%</dd>
         <dt><span class="lab lab-S">盤整</span></dt><dd>其他情況</dd>
       </dl>
     </div>
@@ -378,7 +378,7 @@ function render(i){
     <div class="leg">
       <h4>市場階段 ${META.mp_rule || ''}<small>依五次底部（2020-03、2022-10、2024-08、2025-04、2026-07）整理的初稿，數值取 5 日平均</small></h4>
       <dl>
-        <dt>名詞</dt><dd><b>轉弱族群</b>：族群指數跌破自己的 20 日均線（月線），而且成分股裡站上自己月線的不到 4 成，也就是整個族群多數股票都在月線下。<b>站穩月線</b>：族群標籤是主流或延續（族群在月線上、多數成分股也在月線上）。單位都是「組」（族群數，全部約 72 組），取 5 日平均降低跳動</dd>
+        <dt>名詞</dt><dd><b>轉弱族群</b>：族群指數（成分股每日漲跌平均累計成的線）跌破它的 20 日均線（月線），而且成分股裡站上各自月線的不到 4 成，也就是整個族群多數股票都在月線下。<b>站穩月線</b>：族群標籤是主流或延續（族群在月線上、多數成分股也在月線上）。單位都是「組」（族群數，全部約 72 組），取 5 日平均降低跳動</dd>
         <dt><span class="ph p1" style="font-size:13px;padding:2px 8px">惡化</span></dt><dd>轉弱 ≥30 組。結構正在變差（循環第 1 步）</dd>
         <dt><span class="ph p2" style="font-size:13px;padding:2px 8px">洗乾淨</span></dt><dd>轉弱 ≥55 組。多數族群都跌破月線，是轉好的前提，不是買點（第 2 步）</dd>
         <dt><span class="ph p3" style="font-size:13px;padding:2px 8px">轉好起點</span></dt><dd>洗乾淨後 40 個交易日內，站穩月線 ≥40 組且轉弱 ≤10 組（第 3 步）</dd>
