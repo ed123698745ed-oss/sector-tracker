@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RULE_VERSION = 'V03'
-THEMES_VERSION = 'V13_20261022'
+THEMES_VERSION = 'V14_20261023'
 R = dict(A_pct=3.0, A_n=3, A_ratio=0.25, B_pct=4.0, B_n=2, B_follow_pct=1.5, B_follow=0.40, C_pct=7.0, C_n=2)
 LOW_VOL = {'電信服務': 2 / 3, '水泥': 2 / 3, '食品': 2 / 3}  # 規則 V03：低波動族群漲幅門檻倍數
 RECENT = 260  # 首頁載入的近期交易日數，其餘放 history.json
@@ -135,16 +135,19 @@ def main():
             else:
                 hit = judge(p, t)
             avg = round(sum(p) / len(p), 2) if p else None
-            row = [hit, avg, sum(x >= 3 for x in p), len(p), sum(q[c][2] if len(q[c]) > 2 else 0 for c, _ in th[t] if c in q)]
+            row = [hit, avg, sum(x >= R['A_pct'] * LOW_VOL.get(t, 1) - 1e-9 for x in p), len(p), sum(q[c][2] if len(q[c]) > 2 else 0 for c, _ in th[t] if c in q)]
             if hit or k == len(files) - 1:  # 上榜題材附全部有成交成分股（依漲幅排序）；最新一天全部題材都附，供網頁展開成分股
                 row.append([[n, x] for n, x in sorted(mem, key=lambda z: -z[1])])
             rows.append(row)
         days.append({'d': d['date'], 'tx': d['taiex'], 't': rows})
     import continuity  # 族群延續性標籤與週欄位（Elon 交接 2026-10-21）
     continuity.compute(days, qs, th, names)
+    qs_recent = qs[-5:]
     del qs
     import market_phase
     mp_events = market_phase.compute(days)
+    for d in days:
+        d.pop('we', None)
     json.dump({'rule': market_phase.RULE, 'params': market_phase.P, 'events': mp_events[-200:]},
               open(f'{ROOT}/docs/alerts.json', 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     # 各大盤漲跌區間的平均上榜數（全部歷史）
@@ -176,6 +179,8 @@ def main():
         'mp_rule': market_phase.RULE, 'mp': market_phase.P, 'mp_phase': market_phase.PHASE,
         'rule_version': RULE_VERSION, 'themes_version': THEMES_VERSION, 'rule': R, 'low_vol': LOW_VOL,
         'themes': names, 'groups': groups, 'periods': {t: list(v) for t, v in per.items()}, 'mcap': market_caps(th), 'members': {t: [n for _, n in th[t]] for t in names},
+        # 最近 5 個交易日有成交的成分股（排除已下市、轉投控前舊代號），供網頁展開與檔數
+        'members_active': {t: [n for c, n in th[t] if any(c in q for q in qs_recent)] for t in names},
         'bucket_avg': [round(s / c, 2) if c else None for s, c in zip(bs, bc)], 'bucket_n': bc,
         'ba_now': [round(x / c, 1) if c else None for x, c in zip(ws, wc)],  # 最近 BASE_DAYS 日各區間平均（盤中暫定比較用）
         'first_day': days[0]['d'], 'hist_dates': [d['d'] for d in hist],

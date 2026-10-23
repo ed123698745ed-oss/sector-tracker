@@ -8,20 +8,30 @@
 import csv, datetime, glob, gzip, json, os, sys, time, urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from build import judge  # noqa: E402
+from build import judge, R, LOW_VOL  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TPE = datetime.timezone(datetime.timedelta(hours=8))
 BATCH = 50
 
 
+def recent_codes():
+    """最近 5 個交易日有成交的代號（排除已下市、轉投控前舊代號，不再對其發查詢）"""
+    s = set()
+    for f in sorted(glob.glob(f'{ROOT}/data/quotes/*.json'))[-5:]:
+        s |= set(json.load(open(f))['q'])
+    return s
+
+
 def members():
     from build import load_periods
     per, today = load_periods(), datetime.datetime.now(TPE).strftime('%Y%m%d')
-    th, names = {}, {}
+    th, names, live = {}, {}, recent_codes()
     for r in list(csv.reader(open(f'{ROOT}/config/themes.csv', encoding='utf-8')))[1:]:
         a, b = per.get(r[0], ('', ''))
         if (a and today < a) or (b and today > b):  # 已過有效期間的題材不判斷
+            continue
+        if live and r[1] not in live:
             continue
         th.setdefault(r[0], []).append(r[1])
         names[r[1]] = r[2] if len(r) > 2 else r[1]
@@ -132,14 +142,15 @@ def main():
     for t, cs in th.items():
         pp = [p[c] for c in cs if p.get(c) is not None]
         h = judge(pp, t)
-        allr.append([t, round(sum(pp) / len(pp), 2) if pp else None, sum(x >= 3 for x in pp), len(pp),
+        ge = R['A_pct'] * LOW_VOL.get(t, 1) - 1e-9  # ≥3%（低波動族群 ≥2%）家數
+        allr.append([t, round(sum(pp) / len(pp), 2) if pp else None, sum(x >= ge for x in pp), len(pp),
                      sum(1 for c in cs if p.get(c) is not None and at_limit_up(q[c])),
                      sorted(([names.get(c, c), p[c]] for c in cs if p.get(c) is not None), key=lambda z: -z[1])])
         if h:
             hits.append(f'{t}({h})')
             mem = sorted(([names.get(c, c), p[c]] for c in cs if p.get(c) is not None), key=lambda z: -z[1])
             lu = sum(1 for c in cs if p.get(c) is not None and at_limit_up(q[c]))
-            rows.append([t, h, round(sum(pp) / len(pp), 2), sum(x >= 3 for x in pp), len(pp), mem, lu])
+            rows.append([t, h, round(sum(pp) / len(pp), 2), sum(x >= ge for x in pp), len(pp), mem, lu])
     rows.sort(key=lambda r: -r[2])
     times = sorted({x.get('t') for x in q.values() if x.get('t')})
     lines = [

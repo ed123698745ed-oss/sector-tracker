@@ -90,7 +90,7 @@ h2 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
 .wk{display:inline-block;min-width:22px;text-align:center;border-radius:6px;padding:1px 0;font-family:var(--num)}
 .wk0{color:var(--muted)}
 .wk1,.wk2{border:1px solid var(--accent);color:var(--accent)}
-.wk3,.wk4,.wk5{background:var(--accent);color:var(--panel);font-weight:700}
+.wk3,.wk4,.wk5,.wk6,.wk7{background:var(--accent);color:var(--panel);font-weight:700}
 table.all td:first-child,table.all th:first-child{position:sticky;left:0;background:var(--panel);z-index:1}
 table.all tr.grp td{position:static}
 table.all tr.grp .gl{position:sticky;left:10px}
@@ -216,6 +216,7 @@ const cls = v => v > 0 ? 'up' : v < 0 ? 'down' : 'flat';
 const pct = v => v == null ? '—' : (v > 0 ? '+' : '') + v.toFixed(2) + '%';
 const fmtD = d => `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6)}`;
 const bucket = x => x == null ? null : x <= -2 ? 0 : x <= -1 ? 1 : x < 0 ? 2 : x < 1 ? 3 : x < 2 ? 4 : 5;
+const geTxt = t => (META.low_vol || {})[t] ? 2 : 3;  // ≥3%（低波動族群 ≥2%，規則 V03）
 const BUCKET_TXT = ['跌 2% 以上','跌 1～2%','跌 0～1%','漲 0～1%','漲 1～2%','漲 2% 以上'];
 let D, TH, idx, sortKey = 'avg', sortDir = -1;
 
@@ -269,7 +270,7 @@ function loadIntra(){
     const rows = x.hits.slice().sort((a, b) => (gi(a[0]) === '電子' ? 0 : 1) - (gi(b[0]) === '電子' ? 0 : 1) || b[2] - a[2]);
     $('intraSub').textContent = `${x.time} 抓取・報價至 ${x.quote_time || '—'}・上榜 ${x.hits.length}/${x.active}・收盤後以正式資料為準`;
     $('intraBody').innerHTML = rows.length ? rows.map((r, k) => (k === 0 || gi(rows[k-1][0]) !== gi(r[0]) ? `<div class="g">${gi(r[0])}</div>` : '')
-      + `<div class="row"><span>${r[0]} <span class="chip rule">${r[1]}</span></span><span class="num"><span class="${cls(r[2])}">${pct(r[2])}</span>　≥3% ${r[3]}/${r[4]}</span></div>`).join('')
+      + `<div class="row"><span>${r[0]} <span class="chip rule">${r[1]}</span></span><span class="num"><span class="${cls(r[2])}">${pct(r[2])}</span>　≥${geTxt(r[0])}% ${r[3]}/${r[4]}</span></div>`).join('')
       : '<div class="row">目前沒有題材上榜</div>';
     $('intra').hidden = false;
   }).catch(() => {});
@@ -334,7 +335,7 @@ function render(i){
         ${s > 1 ? `<span class="chip streak">連續 ${s} 天</span>` : `<span class="chip new">新上榜</span>`}
         ${[...r[0]].map(k => `<span class="chip rule">${RULE_TXT[k]}</span>`).join('')}
         <span class="chip">近5日 ${cnt(ti, 5)} 次</span><span class="chip">近20日 ${c20} 次</span>
-        <span class="chip">≥3%：${r[2]}/${r[3]}${r[4] ? `・漲停 ${r[4]}` : ''}</span>
+        <span class="chip">≥${geTxt(TH[ti])}%：${r[2]}/${r[3]}${r[4] ? `・漲停 ${r[4]}` : ''}</span>
       </div>
       <div class="members">${r[5].map(([n, p]) => `<span>${n}<b class="${cls(p)}">${pct(p)}</b></span>`).join('')}</div>
     </article>`).join('')
@@ -367,7 +368,7 @@ function render(i){
         <dt><span class="wk wk5">3</span></dt><dd>本週主流天數 ≥3，本週算一個主流週</dd>
         <dt><span class="wk wk1">2</span></dt><dd>本週主流天數 1～2，還沒達標</dd>
         <dt><span class="wk wk0">·</span></dt><dd>本週沒有主流</dd>
-        <dt><b>7</b> / <span class="carry">7</span></dt><dd>主流週、延續週：連續幾週。灰字＝本週還沒達標，暫時沿用上週的週數</dd>
+        <dt><b>7</b> / <span class="carry">7</span></dt><dd>主流週、延續週：連續幾週，每週最後交易日收盤結算；交易日不到 3 天的短週不計。灰字＝本週還沒達標，暫時沿用上週的週數</dd>
         <dt><b>粗體</b><span class="hitdot"> ●</span></dt><dd>當天有上榜</dd>
         <dt><sup class="few">少</sup></dt><dd>成分股 5 檔以下，一檔漲跌就影響很大</dd>
       </dl>
@@ -377,8 +378,8 @@ function render(i){
       <dl>
         <dt><span class="ph p2" style="font-size:13px;padding:2px 8px">洗乾淨</span></dt><dd>轉弱族群 ≥55 個。多數族群跌破月線，是轉好的前提，不是買點</dd>
         <dt><span class="ph p3" style="font-size:13px;padding:2px 8px">轉好起點</span></dt><dd>洗乾淨後 40 個交易日內，站穩月線 ≥40 且轉弱 ≤10</dd>
-        <dt><span class="ph p6" style="font-size:13px;padding:2px 8px">確認</span></dt><dd>連續兩個完整週主流族群 ≥10，且兩週轉弱平均 ≤3。2024-08、2026-07 兩次只到轉好起點就退回，沒有確認</dd>
-        <dt><span class="ph p5" style="font-size:13px;padding:2px 8px">退潮</span></dt><dd>延續中時主流族群不到上週一半，且轉弱 ≥20</dd>
+        <dt><span class="ph p6" style="font-size:13px;padding:2px 8px">確認</span></dt><dd>連續兩個完整週主流族群 ≥10，且兩週轉弱平均 ≤3，當日轉弱 5 日均 &lt;20。2024-08、2026-07 兩次只到轉好起點就退回，沒有確認</dd>
+        <dt><span class="ph p5" style="font-size:13px;padding:2px 8px">退潮</span></dt><dd>延續中時主流族群不到上週一半（週一、週二改比最近兩個完整週），且轉弱 ≥20；之後維持到轉弱 ≥30（惡化）、重新確認，或轉弱回落到 20 以下（回到延續中）</dd>
         <dt><span class="ph p1" style="font-size:13px;padding:2px 8px">惡化</span></dt><dd>轉弱 ≥30</dd>
       </dl>
     </div>
@@ -474,7 +475,9 @@ function contSummary(i){
 }
 // 展開列：有當天漲跌就依漲幅列出；沒有（過去日期未上榜）只列名稱
 function memRow(r, d, n){
-  const all = (META.members || {})[r.t] || [];
+  const latest = d.live || d.d === D[D.length - 1].d;
+  // 最新一天／盤中只列近期仍有成交的成分股（排除已下市、轉投控前舊代號）；過去日期列當時全部成分股
+  const all = ((latest ? META.members_active : null) || META.members || {})[r.t] || [];
   let body, note = '';
   if (r.mem) {
     const got = new Set(r.mem.map(x => x[0]));
@@ -492,11 +495,11 @@ function drawTable(i){
   const G = META.groups || [], GO = ['電子', '傳產'], go = g => { const k = GO.indexOf(g); return k < 0 ? 9 : k; };
   const rows = TH.map((t, ti) => [t, ti]).filter(([t, ti]) => d.t[ti].length).map(([t, ti]) => { const r = d.t[ti]; return {t, mem: r[5] || null, g: G[ti] || '傳產', hit: r[0], avg: r[1], ge3: r[2], n: r[3], ge3r: r[3] ? r[2] / r[3] : 0, c5: count(ti, i, 5), c20: count(ti, i, 20), st: streak(ti, i),
     lab: (d.L || '')[ti] || '-', labo: LAB_ORD[(d.L || '')[ti]] || 0, wm: ((d.w || {})[ti] || [0])[0], wmc: ((d.w || {})[ti] || [0,0])[1], ms: ((d.w || {})[ti] || [0,0,0])[2], cs: ((d.w || {})[ti] || [0,0,0,0])[3],
-    few: ((META.members || {})[t] || []).length <= 5}; });
+    few: ((META.members_active || META.members || {})[t] || []).length <= 5}; });
   rows.sort((a, b) => { const sk = sortKey === 'ge3' ? 'ge3r' : sortKey === 'lab' ? 'labo' : sortKey, x = a[sk] ?? -999, y = b[sk] ?? -999; return go(a.g) - go(b.g) || (typeof x === 'string' ? sortDir * x.localeCompare(y) : sortDir * (x - y)); });
   const cols = [['t','題材'],['avg','均漲'],['ge3','≥3%'],['c5','近5日'],['c20','近20日'],['st','連續'],['lab','狀態'],['wm','本週主流'],['ms','主流週'],['cs','延續週']];
   $('all').innerHTML = `<thead><tr>${cols.map(([k, n]) => `<th data-k="${k}" class="${k === sortKey ? 'sorted' : ''}">${n}${k === sortKey ? (sortDir < 0 ? ' ▼' : ' ▲') : ''}</th>`).join('')}</tr></thead><tbody>`
-    + rows.map((r, k) => (k === 0 || rows[k-1].g !== r.g ? `<tr class="grp"><td colspan="${cols.length}"><span class="gl">${r.g}</span></td></tr>` : '') + `<tr class="${r.hit ? 'hit' : ''}"><td class="tn" data-t="${r.t}"><span class="car">${OPEN.has(r.t) ? '▾' : '▸'}</span>${r.t}${r.few ? '<sup class="few" title="成分股 5 檔以下，一檔變動影響一致性 20～33%">少</sup>' : ''}</td><td class="${cls(r.avg)}">${pct(r.avg)}</td><td>${r.ge3}/${r.n}</td><td>${r.c5}</td><td>${r.c20}</td><td>${r.st || ''}</td><td>${LAB[r.lab] ? `<span class="lab lab-${r.lab}">${LAB[r.lab]}</span>` : '—'}</td><td><span class="wk wk${r.wm}">${r.wm || '·'}</span></td><td>${r.ms ? `<span class="${r.wm < 3 ? 'carry' : ''}">${r.ms}</span>` : ''}</td><td>${r.cs ? `<span class="${r.wmc < 3 ? 'carry' : ''}">${r.cs}</span>` : ''}</td></tr>` + (OPEN.has(r.t) ? memRow(r, d, cols.length) : '')).join('') + '</tbody>';
+    + rows.map((r, k) => (k === 0 || rows[k-1].g !== r.g ? `<tr class="grp"><td colspan="${cols.length}"><span class="gl">${r.g}</span></td></tr>` : '') + `<tr class="${r.hit ? 'hit' : ''}"><td class="tn" data-t="${r.t}"><span class="car">${OPEN.has(r.t) ? '▾' : '▸'}</span>${r.t}${r.few ? '<sup class="few" title="成分股 5 檔以下，一檔變動影響一致性 20～33%">少</sup>' : ''}</td><td class="${cls(r.avg)}">${pct(r.avg)}</td><td>${r.ge3}/${r.n}${geTxt(r.t) === 2 ? '<sup class="few" title="低波動族群，此欄為 ≥2% 家數">2%</sup>' : ''}</td><td>${r.c5}</td><td>${r.c20}</td><td>${r.st || ''}</td><td>${LAB[r.lab] ? `<span class="lab lab-${r.lab}">${LAB[r.lab]}</span>` : '—'}</td><td><span class="wk wk${r.wm}">${r.wm || '·'}</span></td><td>${r.ms ? `<span class="${r.wm < 3 ? 'carry' : ''}">${r.ms}</span>` : ''}</td><td>${r.cs ? `<span class="${r.wmc < 3 ? 'carry' : ''}">${r.cs}</span>` : ''}</td></tr>` + (OPEN.has(r.t) ? memRow(r, d, cols.length) : '')).join('') + '</tbody>';
   $('all').querySelectorAll('td.tn').forEach(td => td.onclick = () => { const t = td.dataset.t; OPEN.has(t) ? OPEN.delete(t) : OPEN.add(t); drawLiveable(drawTable); });
   $('all').querySelectorAll('th').forEach(th => th.onclick = () => {
     const k = th.dataset.k; if (k === sortKey) sortDir = -sortDir; else { sortKey = k; sortDir = k === 't' ? 1 : -1; }

@@ -14,13 +14,47 @@
 
 週欄位（ISO 週）：本週主流天數、本週主流或延續天數；主流週／延續週＝一週 ≥3 天。
 連續週數容許中斷 1 週（中斷那週不計入），連續 2 週未達才歸零；本週未達 3 天時沿用上週為止的連續數。
+規則 C02（Ed 2026-10-23 確認，依審查意見修正）：
+  1. 每週最後一個交易日收盤即結算該週（原為下週一才結算）。最新一日是否為該週最後交易日：
+     該週其餘平日都已過去（當日無資料）或列於證交所休市日期表，即視為該週結束。
+  2. 交易日少於 3 天的週（春節、連假等短週）不計入：既不算達標，也不算中斷。
 """
 import datetime
+
+
+def week_end_flags(days):
+    """每日是否為該 ISO 週最後一個交易日（C02）。歷史日看下一筆資料是否換週；
+    最新一日看該週剩餘平日是否都已過去或為公告休市日（查不到休市表時視為未結束）。"""
+    n = len(days)
+    dt = [datetime.date(int(d['d'][:4]), int(d['d'][4:6]), int(d['d'][6:])) for d in days]
+    wk = [x.isocalendar()[:2] for x in dt]
+    flags = [k < n - 1 and wk[k + 1] != wk[k] for k in range(n)]
+    if n:
+        last = dt[-1]
+        today = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).date()
+        rest = [last + datetime.timedelta(days=i) for i in range(1, 5 - last.weekday())]  # 同週其餘週一～週五
+        import os
+        cf = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'closed.txt')
+        extra = set(open(cf).read().split()) if os.path.exists(cf) else set()
+
+        def closed(x):
+            if x.strftime('%Y%m%d') in extra:
+                return True  # 臨時停止交易（颱風等），記於 data/closed.txt
+            if x < today:
+                return True  # 已過去且沒有資料（休市、颱風停止交易）
+            try:
+                import quotes
+                return quotes.is_holiday(x)
+            except Exception:
+                return False
+        flags[-1] = all(closed(x) for x in rest)
+    return flags, wk
 
 C = dict(ma=20, hi=60, near=0.97, cons_main=0.70, cons_cont=0.50, cons_weak=0.40, hits_main=8, week_min=3)
 MIN_MEMBERS = 3
 MIN_MEMBERS_EXCEPT = {'航空': 2}  # Ed 2026-10-21：航空放寬為 2 檔
-RULE = 'C01'
+RULE = 'C02'
+SHORT_WEEK = 3  # 交易日少於此數的週不計入（C02）
 
 
 def compute(days, qs, th, names):
@@ -81,12 +115,21 @@ def compute(days, qs, th, names):
             else:
                 lab = 'S'
             labels[k][ti] = lab
-    # 週欄位
-    wk = [datetime.date(int(d['d'][:4]), int(d['d'][4:6]), int(d['d'][6:])).isocalendar()[:2] for d in days]
-    st = [{'m': [0, 0], 'c': [0, 0]} for _ in names]  # [連續週數, 連續未達週數]
+    # 週欄位（C02：每週最後交易日收盤即結算；交易日 <3 的短週不計入）
+    wend, wk = week_end_flags(days)
+    st = [{'m': [0, 0], 'c': [0, 0]} for _ in names]  # [連續週數, 連續未達週數]（已結算週）
     cur = [[0, 0] for _ in names]  # 本週 [主流天數, 主流或延續天數]
+    ndays = 0  # 本週已過交易日數
     for k, d in enumerate(days):
-        if k and wk[k] != wk[k - 1]:  # 上週結束：結算
+        if k and wk[k] != wk[k - 1]:
+            cur = [[0, 0] for _ in names]
+            ndays = 0
+        ndays += 1
+        for ti in range(len(names)):
+            lab = labels[k][ti]
+            cur[ti][0] += lab == 'M'
+            cur[ti][1] += lab in ('M', 'C')
+        if wend[k] and ndays >= SHORT_WEEK:  # 本週結束：結算（短週不結算）
             for ti in range(len(names)):
                 for key, cnt in (('m', cur[ti][0]), ('c', cur[ti][1])):
                     s = st[ti][key]
@@ -96,15 +139,15 @@ def compute(days, qs, th, names):
                         s[1] += 1
                         if s[1] >= 2:
                             s[0] = 0
-                cur[ti] = [0, 0]
         out = {}
         for ti in range(len(names)):
-            lab = labels[k][ti]
-            cur[ti][0] += lab == 'M'
-            cur[ti][1] += lab in ('M', 'C')
-            ms = st[ti]['m'][0] + (1 if cur[ti][0] >= C['week_min'] else 0)
-            cs = st[ti]['c'][0] + (1 if cur[ti][1] >= C['week_min'] else 0)
+            if wend[k]:  # 已結算（或短週不計）：直接顯示結算後週數
+                ms, cs = st[ti]['m'][0], st[ti]['c'][0]
+            else:
+                ms = st[ti]['m'][0] + (1 if cur[ti][0] >= C['week_min'] else 0)
+                cs = st[ti]['c'][0] + (1 if cur[ti][1] >= C['week_min'] else 0)
             if cur[ti][0] or cur[ti][1] or ms or cs:
                 out[ti] = [cur[ti][0], cur[ti][1], ms, cs]
         d['L'] = ''.join(l or '-' for l in labels[k])
         d['w'] = out
+        d['we'] = 1 if wend[k] else 0  # 該週已結束（供市場階段判斷完整週；輸出前移除）
