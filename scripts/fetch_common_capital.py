@@ -13,7 +13,7 @@ HDR = {'User-Agent': 'Mozilla/5.0', 'Referer': 'https://mopsov.twse.com.tw/mops/
 
 
 def get(c, y, q):
-    body = f'step=1&firstin=1&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id={c}&year={y}&season={q:02d}'.encode()
+    body = f'step=2&firstin=1&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id={c}&year={y}&season={q:02d}'.encode()
     return urllib.request.urlopen(urllib.request.Request(URL, data=body, headers=HDR), timeout=60).read().decode('utf-8', 'replace')
 
 
