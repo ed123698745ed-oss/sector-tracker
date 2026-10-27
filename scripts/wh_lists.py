@@ -75,6 +75,7 @@ def main():
     byq_path = os.path.join(ROOT, 'cache', 'wh_twse_byq.json')
     byq = json.load(open(byq_path)) if os.path.exists(byq_path) else {}
     adj_log = {}
+    rank80 = set()  # 曾進上市市值前 80 者：配股率資料的抓取範圍（含邊界緩衝）
 
     # 每月最後交易日索引
     ends = {}
@@ -107,13 +108,16 @@ def main():
                     fx *= r
                 if fx != 1.0: adj_log.setdefault(c, []).append((ym, round(fx, 3)))
                 tw_cap[c] = round(last[c] * n * fx / 1e8, 1)
-            rec['twse'] = sorted(tw_cap.items(), key=lambda x: (-x[1], -last[x[0]], x[0]))[:50]
+            rk = sorted(tw_cap.items(), key=lambda x: (-x[1], -last[x[0]], x[0]))
+            rec['twse'] = rk[:50]
+            for c, _ in rk[:80]: rank80.add(c)
         cap_any = {**tw_cap, **otc_cap}
         rec['otc'] = sorted(otc_cap.items(), key=lambda x: (-x[1], -last[x[0]], x[0]))[:30]
         rec['hp'] = sorted(((c, p) for c, p in last.items()), key=lambda x: (-x[1], -cap_any.get(x[0], 0), x[0]))[:30]
         out[ym] = rec
     json.dump(out, open(os.path.join(ROOT, 'config', 'wh_lists.json'), 'w'), ensure_ascii=False, separators=(',', ':'), sort_keys=True)
     json.dump({'events': events, 'adj': adj_log, 'unsplit': unsplit}, open(os.path.join(ROOT, 'cache', 'wh_share_events.json'), 'w'), ensure_ascii=False)
+    json.dump(sorted(rank80), open(os.path.join(ROOT, 'cache', 'wh_rank80.json'), 'w'))
     print('months', len(out), 'with twse', sum('twse' in v for v in out.values()))
 
 

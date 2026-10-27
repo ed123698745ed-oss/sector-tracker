@@ -1,0 +1,36 @@
+name: 抓除權息公司股利分派（配股率）
+
+on:
+  push:
+    paths: ['test/DIV_TRIGGER']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: div-fetch
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 抓取（最多 5 小時，被擋時程式自行退避；每 20 份提交一次）
+        run: |
+          git config user.name "sector-tracker-bot"
+          git config user.email "actions@users.noreply.github.com"
+          timeout 300m python3 scripts/fetch_dividend.py config/div_targets.json || true
+      - name: 提交
+        if: always()
+        run: |
+          git config user.name "sector-tracker-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add archive/raw/mops_div
+          git commit -m "股利分派原始檔 [skip ci]" || exit 0
+          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done
