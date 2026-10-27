@@ -52,6 +52,11 @@ def parse_q(path):
     return out
 
 
+def parse_sig(path):
+    import hashlib
+    return hashlib.md5(gzip.open(path).read()).hexdigest()
+
+
 def avail_quarter(ym):
     """月底可用的最新季別 (民國年, 季)"""
     y, m = int(ym[:4]), int(ym[4:])
@@ -70,6 +75,13 @@ def main():
         if m:
             qs[(int(m[1]), int(m[2]))] = parse_q(os.path.join(raw, f))
     keys = sorted(qs)
+    # 防錯：觀測站偶爾回傳別季內容（曾發生 114Q4、115Q2 拿到別季），各季原始檔內容不得重複
+    sig = {}
+    for k in keys:
+        eqsig = parse_sig(os.path.join(raw, 'sii_%03d_%02d.html.gz' % k))
+        if eqsig in sig:
+            sys.exit('季報內容重複：%s 與 %s，請重抓' % (k, sig[eqsig]))
+        sig[eqsig] = k
     dates = json.load(gzip.open(os.path.join(ROOT, 'cache', 'wh_px.json.gz'), 'rt', encoding='utf-8'))['dates']
     months = sorted({d[:6] for d in dates})
     out, note = {}, {'missing_quarter': [], 'late': {}, 'par_not_10': {}}
@@ -78,9 +90,12 @@ def main():
         if q not in qs:
             note['missing_quarter'].append(ym); continue
         rec = {c: v[0] for c, v in qs[q].items()}
-        # 剛上市者：用其後最早一季
-        later = [k for k in keys if k > q]
-        for k in later:
+        # 該季彙總表缺該公司：先用前一季（不偷看未來），再缺（剛上市）才用其後最早一季並標記
+        prev = [k for k in keys if k < q][-1:]
+        for k in prev:
+            for c, v in qs[k].items():
+                rec.setdefault(c, v[0])
+        for k in [k for k in keys if k > q]:
             for c, v in qs[k].items():
                 if c not in rec:
                     rec[c] = v[0]; note['late'].setdefault(ym, []).append(c)
