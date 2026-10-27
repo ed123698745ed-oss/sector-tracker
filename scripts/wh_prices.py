@@ -48,7 +48,8 @@ def parse(market, path):
 
 
 def main():
-    days = sorted(f[:8] for f in os.listdir(os.path.join(ROOT, 'data', 'quotes')) if f.endswith('.json'))
+    # 權值高價股分頁歷史自 2015 年起（上市股數財報自 2014Q3 起可用）；data/quotes 另有更早資料供其他研究使用
+    days = sorted(f[:8] for f in os.listdir(os.path.join(ROOT, 'data', 'quotes')) if f.endswith('.json') and f[:8] >= '20150101')
     px, sh, mkt, name = {}, {}, {}, {}
     n = len(days)
     for i, d in enumerate(days):
