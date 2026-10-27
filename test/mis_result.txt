@@ -657,3 +657,9 @@ requests 13 errors 0 last_error
 quote_time_range ['10:15:23'] ['11:02:27']
 hits 1 軟體雲端(C)
 
+run_at 2026-10-27 11:11:59
+codes 610 returned 175 priced 170 seconds 79.6
+requests 14 errors 1 last_error <urlopen error _ssl.c:993: The handshake operation timed out>
+quote_time_range ['10:15:37'] ['11:11:43']
+hits 1 軟體雲端(C)
+
