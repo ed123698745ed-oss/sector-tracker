@@ -591,3 +591,9 @@ requests 13 errors 0 last_error
 quote_time_range ['09:00:03'] ['09:11:21']
 hits 2 化合物半導體(A) 光通訊/矽光子(A)
 
+run_at 2026-10-27 09:22:10
+codes 610 returned 175 priced 162 seconds 90.6
+requests 13 errors 0 last_error 
+quote_time_range ['09:13:14'] ['09:21:46']
+hits 1 封測(B)
+
