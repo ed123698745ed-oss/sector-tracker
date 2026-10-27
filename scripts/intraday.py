@@ -39,14 +39,17 @@ def members():
 
 
 def market_of():
-    # 以最近一日上市原始檔判斷上市／上櫃
-    f = sorted(glob.glob(f'{ROOT}/archive/raw/twse/*.json.gz'))[-1]
-    tw = json.load(gzip.open(f, 'rt'))
-    s = set()
-    for t in tw.get('tables', []):
-        if '每日收盤行情' in (t.get('title') or ''):
-            s |= {r[0] for r in t['data']}
-    return s
+    # 以最近一份「有收盤行情」的上市原始檔判斷上市／上櫃。
+    # 休市日（例如 2026-10-26 補假）也可能存下空白原始檔，必須往前找，否則全部上市股會被當成上櫃股查詢而查無資料
+    for f in sorted(glob.glob(f'{ROOT}/archive/raw/twse/*.json.gz'), reverse=True):
+        tw = json.load(gzip.open(f, 'rt'))
+        s = set()
+        for t in tw.get('tables', []):
+            if '每日收盤行情' in (t.get('title') or ''):
+                s |= {r[0] for r in t['data']}
+        if s:
+            return s
+    return set()
 
 
 def fetch(codes, tse):

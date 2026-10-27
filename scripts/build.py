@@ -73,7 +73,13 @@ def market_caps(th):
     cap = {}
     sp = f'{ROOT}/config/shares.json'
     shares = json.load(open(sp)) if os.path.exists(sp) else {}
-    tws = sorted(glob.glob(f'{ROOT}/archive/raw/twse/*.json.gz'))
+    # 取最近一份有資料的原始檔（休市日可能存下空白檔）
+    def last_with_data(mk):  # 最近一份有資料的原始檔（休市日可能存下空白檔）
+        for f in sorted(glob.glob(f'{ROOT}/archive/raw/{mk}/*.json.gz'), reverse=True):
+            if any(t.get('data') for t in json.load(gzip.open(f, 'rt')).get('tables', [])):
+                return [f]
+        return []
+    tws = last_with_data('twse')
     if tws and shares:
         for t in json.load(gzip.open(tws[-1], 'rt')).get('tables', []):
             if '每日收盤行情' in (t.get('title') or ''):
@@ -82,7 +88,7 @@ def market_caps(th):
                     c, px = r[0], num(r[ic])
                     if px and c in shares:
                         cap[c] = px * shares[c] / 1e8
-    tps = sorted(glob.glob(f'{ROOT}/archive/raw/tpex/*.json.gz'))
+    tps = last_with_data('tpex')
     if tps:
         for t in json.load(gzip.open(tps[-1], 'rt')).get('tables', []):
             f = [x.strip() for x in t.get('fields', [])]
