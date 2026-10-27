@@ -31,3 +31,18 @@ BODY  |公開資訊觀測站|公司股利分派情形|（經股東會確認後�
 2026-10-27T16:45:59Z t05st09_new v4 http=200 bytes=3243 配股=0 查無=0 安全性=0 | step=1&firstin=1&off=1&TYPEK=sii&co_id=1519&year=113
 BEST r1.html
 BODY  |公開資訊觀測站|決定分配股息及紅利或其他利益之基準日公告|公司代號：1519 公司名稱：華城|決定分派股息及紅利或其他利益之基準日公告|公告日期|申報序號|主旨|種類|內容|修正後現金股利發放日|113/07/10|1|公告本公司113年度配發現金股利暨盈餘轉增資發行新股基準日|無|TDR除權(息)公告|查無所需資料|分配收益公告|查無所需資料|證券商發行指數投資證券處理準則應公告事項|查無所需資料|try { if(!document.querySelector('#table01')){ var table01 = document.createElement("div"); table01.id = "table01"; document.body.appendChild(table01); if(document.querySelector("#div01")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement("script"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i|input[name=run]').remove(); }; }; } catch (erro
+== t108sb19 1519 114 list 2026-10-27T17:31:34Z bytes=4299
+<form action='/mops/web/ajax_t108sb22' name='t108sb22_fm1' id='t108sb22_fm1' method='post' onsubmit='return false;'>
+<input type='hidden' name='firstin' value='true' />
+<input type=hidden name='colorchg' value=''>
+<input type=hidden name='TYPEK' value='sii'>
+<input type=hidden name=isnew value='false'>
+<input type=hidden name=id value=''>
+<input type=hidden name=DATE1 >
+<input type=hidden name=SEQ_NO >
+<input type=hidden name=COMP >
+<input type=hidden name='kind' value=''>
+<input type=hidden name='SKIND' value='G'>
+<input type=hidden name=step value='2'>
+<input type='button' value='詳細資料' onclick='document.t108sb22_fm1.DATE1.value="20250708";document.t108sb22_fm1.SEQ_NO.value="1";document.t108sb22_fm1.COMP.value="1519";openWindow(this.form ,"");'>
+LIST 公告日期|申報序號|主旨|種類|內容|修正後現金股利發放日|114/07/11|1|公告本公司114年度配發現金股利暨盈餘轉增資發行新股基準日|無|TDR除權(息)公告|查無所需資料|分配收益公告|查無所需資料|證券商發行指數投資證券處理準則應公告事項|查無所需資料|try { if(!document.querySelector('#table01')){ var table01 = document.createElement("div"); table01.id = "table01"; document.body.appendChild(table01); if(document.querySelector("#div01")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScrip
