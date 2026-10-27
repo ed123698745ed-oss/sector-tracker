@@ -14,11 +14,14 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: 測試 1101、2881 各一季
+      - name: 測試金控查詢參數
         run: |
-          for c in 1101 2881; do
-            code=$(curl -sS -m 60 -A "Mozilla/5.0" -e "https://mopsov.twse.com.tw/mops/web/t164sb03" -o r_$c.html -w "%{http_code}" -d "step=1&firstin=1&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=$c&year=113&season=03" https://mopsov.twse.com.tw/mops/web/ajax_t164sb03 || echo ERR)
-            echo "$(date -u +%FT%TZ) $c http=$code bytes=$(wc -c < r_$c.html) 普通股股本=$(grep -c 普通股股本 r_$c.html) 安全性=$(grep -c 安全性 r_$c.html) 公司選單=$(grep -c 28810001 r_$c.html)" >> test/pref_probe.txt
+          i=0
+          for body in "step=1&firstin=1&off=1&queryName=co_id&inpuType=co_id&TYPEK=sii&isnew=false&co_id=2881&year=113&season=03" "step=1&firstin=true&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=2881&year=113&season=03" "step=2&firstin=1&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=2881&year=113&season=03"; do
+            i=$((i+1))
+            code=$(curl -sS -m 60 -A "Mozilla/5.0" -e "https://mopsov.twse.com.tw/mops/web/t164sb03" -o r.html -w "%{http_code}" -d "$body" https://mopsov.twse.com.tw/mops/web/ajax_t164sb03 || echo ERR)
+            echo "$(date -u +%FT%TZ) v$i http=$code bytes=$(wc -c < r.html) 普通股股本=$(grep -c 普通股股本 r.html) 安全性=$(grep -c 安全性 r.html) 公司選單=$(grep -c 28810001 r.html) | $body" >> test/pref_probe.txt
+            [ $i = 1 ] && grep -o '<form[^>]*>\|<input[^>]*>\|onclick="[^"]*"' r.html | head -15 >> test/pref_probe.txt
             sleep 20
           done
           git config user.name "sector-tracker-bot"; git config user.email "actions@users.noreply.github.com"
