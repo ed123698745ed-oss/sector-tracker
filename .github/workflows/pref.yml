@@ -21,8 +21,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: 抓取（最多 5 小時，被擋時程式自行退避）
-        run: timeout 300m python3 scripts/fetch_common_capital.py config/pref_targets.json || true
+      - name: 抓取（最多 5 小時，被擋時程式自行退避；每 10 份提交一次）
+        run: |
+          git config user.name "sector-tracker-bot"
+          git config user.email "actions@users.noreply.github.com"
+          timeout 300m python3 scripts/fetch_common_capital.py config/pref_targets.json || true
       - name: 提交
         if: always()
         run: |
