@@ -105,6 +105,7 @@ def main():
             if par != 10:
                 note['par_not_10'].setdefault(c, {})['%d Q%d' % k] = par
     json.dump(out, open(os.path.join(ROOT, 'cache', 'wh_twse_shares.json'), 'w'), separators=(',', ':'))
+    json.dump({'%03d%02d' % k: {c: v[0] for c, v in qs[k].items()} for k in keys}, open(os.path.join(ROOT, 'cache', 'wh_twse_byq.json'), 'w'), separators=(',', ':'))
     json.dump(note, open(os.path.join(ROOT, 'cache', 'wh_twse_shares_note.json'), 'w'), ensure_ascii=False, indent=1)
     print('quarters', len(keys), 'months', len(out), 'missing', note['missing_quarter'])
 

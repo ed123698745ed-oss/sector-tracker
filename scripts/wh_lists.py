@@ -6,7 +6,8 @@
   twse 上市權值前 50：收盤價 × 普通股股數（財報股本推算，見 twse_shares.py；尚未完成時略過）
 月底無成交者以該月最後一筆收盤計；當月完全無成交不納入。
 上市股數另做事件調整：財報季底之後到排名日之間，若有證交所公告的減資恢復買賣、變更面額恢復買賣或除權（配股），
-股數乘上「停止買賣前收盤÷恢復買賣參考價」，避免事件後到下季財報前股數過時。
+股數乘上「停止買賣前收盤÷恢復買賣參考價」，避免事件後到下季財報前股數過時；
+若該季財報股數相對前一季的變化已約等於事件比值（例：面額變更基準日在季底前、恢復買賣在季底後），不重複調整。
 輸出：config/wh_lists.json  {"YYYYMM"(排名月): {"asof": 排名日, "hp": [[代號, 數值], ...], "otc": [...], "twse": [...]}}
 """
 import gzip, json, os, sys
@@ -50,6 +51,8 @@ def main():
                     continue
             events.setdefault(c, []).append((ds, prev / ref))
     qend = {1: '0331', 2: '0630', 3: '0930', 4: '1231'}
+    byq_path = os.path.join(ROOT, 'cache', 'wh_twse_byq.json')
+    byq = json.load(open(byq_path)) if os.path.exists(byq_path) else {}
     adj_log = {}
 
     # 每月最後交易日索引
@@ -60,6 +63,8 @@ def main():
     for i, ds in enumerate(dates):
         starts.setdefault(ds[:6], i)
 
+    # 最新一個月尚未結束（資料最後一天所在月份），不排名
+    ends.pop(dates[-1][:6], None)
     out = {}
     for ym, ie in sorted(ends.items()):
         i0 = starts[ym]
@@ -83,8 +88,13 @@ def main():
             for c, n in tw[ym].items():
                 if c not in last or (c in osh and osh[c][ie]): continue
                 fx = 1.0
+                pq = (ry, qq - 1) if qq > 1 else (ry - 1, 4)
+                s_now, s_prev = byq.get('%03d%02d' % (ry, qq), {}).get(c), byq.get('%03d%02d' % pq, {}).get(c)
                 for ds_, r in events.get(c, []):
-                    if qd < ds_ <= dates[ie]: fx *= r
+                    if not (qd < ds_ <= dates[ie]): continue
+                    # 事件生效早於季底、季報股數已反映（季報股數較前季的變化≈事件比值）時不重複調整
+                    if s_now and s_prev and abs((s_now / s_prev) / r - 1) < 0.15: continue
+                    fx *= r
                 if fx != 1.0: adj_log.setdefault(c, []).append((ym, round(fx, 3)))
                 cap.append((c, round(last[c][0] * n * fx / 1e8, 1)))
             rec['twse'] = sorted(cap, key=lambda x: -x[1])[:50]
