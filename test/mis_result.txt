@@ -687,3 +687,9 @@ requests 13 errors 0 last_error
 quote_time_range ['11:00:26'] ['11:51:27']
 hits 2 軟體雲端(ABC) 工具機(A)
 
+run_at 2026-10-27 12:01:51
+codes 610 returned 175 priced 172 seconds 53.2
+requests 13 errors 0 last_error 
+quote_time_range ['11:00:26'] ['12:01:30']
+hits 2 軟體雲端(ABC) 工具機(A)
+
