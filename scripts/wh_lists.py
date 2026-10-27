@@ -87,14 +87,19 @@ def main():
             if kind == 'TWT49U':
                 typ = r[6].strip()
                 if typ == '息': continue
-                if typ == '權息':
-                    s = stock_rate(c, ds, prev, ref)
+                # 減除股利參考價＝只扣股利（現金＋股票）後的參考價；與除權息參考價不同時代表含現金增資除權（證交所附註）
+                dref = f(r[10]) or ref
+                if abs(dref - ref) > 0.005:
+                    unsplit.append((ds, c, 'cash_capital_increase'))
+                if typ == '權':
+                    s = prev / dref - 1
+                else:
+                    s = stock_rate(c, ds, prev, dref)
                     if s is None:
-                        unsplit.append((ds, c, 'stock_rate_missing'))
-                    elif s > 0:
-                        events.setdefault(c, []).append((ds, 1 + s, 'ex'))
-                    continue
-                events.setdefault(c, []).append((ds, prev / ref, 'ex')); continue
+                        unsplit.append((ds, c, 'stock_rate_missing')); continue
+                if s > 1e-6:
+                    events.setdefault(c, []).append((ds, 1 + s, 'ex'))
+                continue
             events.setdefault(c, []).append((ds, prev / ref, 'halt'))
     qend = {1: '0331', 2: '0630', 3: '0930', 4: '1231'}
     byq_path = os.path.join(ROOT, 'cache', 'wh_twse_byq.json')
