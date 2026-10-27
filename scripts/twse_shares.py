@@ -7,8 +7,10 @@
 
 時點：月底排名只用當時已過申報期限的最新一季：Q1→5 月底起、Q2→8 月底起、Q3→11 月底起、
 年報→次年 3 月底起（一般業與金控期限都在該月內）。
-當時可用季別查無該公司（例：剛上市）時，改用其後最早一季並標記 late，不推估。
-輸出：cache/wh_twse_shares.json {YYYYMM: {代號: 股數}}、cache/wh_twse_shares_note.json（late 與面額紀錄）
+當時可用季別查無該公司時，改用前一季；仍查無（剛上市、首份季報尚未到期）則不給股數，該公司不排名（Ed 2026-10-27）。
+特別股：有上市特別股且曾進前 50 的公司，以個別資產負債表的「普通股股本」取代「股本」（archive/raw/mops_bs_co，
+由 fetch_common_capital.py 抓取）；該季個別報表尚未取得時沿用股本並記入 note.pref_missing。
+輸出：cache/wh_twse_shares.json {YYYYMM: {代號: 股數}}、cache/wh_twse_byq.json（各季）、cache/wh_twse_shares_note.json
 """
 import gzip, json, os, re, sys
 
@@ -52,6 +54,16 @@ def parse_q(path):
     return out
 
 
+def common_capital(path, y=None, q=None):
+    """個別資產負債表的「普通股股本」（千元）；找不到或期別不符（防觀測站回傳別季）回傳 None"""
+    import re as _re
+    s = _re.sub(r'\s+', ' ', _re.sub('<[^>]+>', ' ', gzip.open(path, 'rt', encoding='utf-8', errors='replace').read()))
+    if y and q and f'民國{y}年第{q}季' not in s:
+        return None
+    m = _re.search(r'普通股股本\s+([\d,]+)', s)
+    return float(m[1].replace(',', '')) if m else None
+
+
 def parse_sig(path):
     import hashlib
     return hashlib.md5(gzip.open(path).read()).hexdigest()
@@ -75,6 +87,21 @@ def main():
         if m:
             qs[(int(m[1]), int(m[2]))] = parse_q(os.path.join(raw, f))
     keys = sorted(qs)
+    # 特別股：以普通股股本重算股數（面額沿用彙總表推得者）
+    co = os.path.join(ROOT, 'archive', 'raw', 'mops_bs_co')
+    pref_used, pref_missing = [], []
+    pref_codes = set()
+    if os.path.isdir(co):
+        for f in sorted(os.listdir(co)):
+            m = re.match(r'(\d{4})_(\d{3})_(\d{2})\.html\.gz$', f)
+            if not m: continue
+            pref_codes.add(m[1])
+            k = (int(m[2]), int(m[3]))
+            cc = common_capital(os.path.join(co, f), k[0], k[1])
+            if k in qs and m[1] in qs[k] and cc:
+                sh, par = qs[k][m[1]]
+                qs[k][m[1]] = (round(cc * 1000 / par), par)
+                pref_used.append(f[:-8])
     # 防錯：觀測站偶爾回傳別季內容（曾發生 114Q4、115Q2 拿到別季），各季原始檔內容不得重複
     sig = {}
     for k in keys:
@@ -84,7 +111,7 @@ def main():
         sig[eqsig] = k
     dates = json.load(gzip.open(os.path.join(ROOT, 'cache', 'wh_px.json.gz'), 'rt', encoding='utf-8'))['dates']
     months = sorted({d[:6] for d in dates})
-    out, note = {}, {'missing_quarter': [], 'late': {}, 'par_not_10': {}}
+    out, note = {}, {'missing_quarter': [], 'pref_used': pref_used, 'par_not_10': {}}
     for ym in months:
         q = avail_quarter(ym)
         if q not in qs:
@@ -95,10 +122,6 @@ def main():
         for k in prev:
             for c, v in qs[k].items():
                 rec.setdefault(c, v[0])
-        for k in [k for k in keys if k > q]:
-            for c, v in qs[k].items():
-                if c not in rec:
-                    rec[c] = v[0]; note['late'].setdefault(ym, []).append(c)
         out[ym] = rec
     for k in keys:
         for c, (_, par) in qs[k].items():
