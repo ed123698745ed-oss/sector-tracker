@@ -1,2 +1,19 @@
 2026-10-27T11:17:07Z 1101 http=200 bytes=49248 普通股股本=1 安全性=0 公司選單=0
 2026-10-27T11:17:28Z 2881 http=200 bytes=9603 普通股股本=0 安全性=0 公司選單=1
+2026-10-27T11:18:57Z v1 http=200 bytes=9603 普通股股本=0 安全性=0 公司選單=1 | step=1&firstin=1&off=1&queryName=co_id&inpuType=co_id&TYPEK=sii&isnew=false&co_id=2881&year=113&season=03
+<form action='/mops/web/ajax_t164sb03' method='post' name='fm1' id='fm1' onsubmit='return false;'>
+<input type='hidden' name="id" id="id" value="">
+<input type='hidden' name="key" id="key" value="">
+<input type='hidden' name="TYPEK" id="TYPEK" value="sii">
+<input type='hidden' name="step" id="step" value="2">
+<input type='hidden' name="year" id="year" value="113">
+<input type='hidden' name="season" id="season" value="3">
+<input type='hidden' name="co_id" id="co_id" value="">
+<input type='hidden' name="firstin" id="firstin" value="1">
+<input type='button' value='詳細資料' onclick='document.fm1.co_id.value="2881";ajax1(this.form,"table01");'>
+<input type='button' value='詳細資料' onclick='document.fm1.co_id.value="5828";ajax1(this.form,"table01");'>
+<input type='button' value='詳細資料' onclick='document.fm1.co_id.value="000960";ajax1(this.form,"table01");'>
+<input type='button' value='詳細資料' onclick='document.fm1.co_id.value="5836";ajax1(this.form,"table01");'>
+<input type='button' value='詳細資料' onclick='document.fm1.co_id.value="5865";ajax1(this.form,"table01");'>
+2026-10-27T11:19:19Z v2 http=200 bytes=9606 普通股股本=0 安全性=0 公司選單=1 | step=1&firstin=true&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=2881&year=113&season=03
+2026-10-27T11:19:41Z v3 http=200 bytes=42460 普通股股本=1 安全性=0 公司選單=0 | step=2&firstin=1&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=2881&year=113&season=03
