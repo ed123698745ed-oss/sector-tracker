@@ -48,10 +48,17 @@ def main():
     edir = os.path.join(ROOT, 'archive', 'raw', 'twse_events')
     from mops_div import parse_div
     div_cache = {}
+    ovp = os.path.join(ROOT, 'config', 'div_overrides.json')
+    div_override = json.load(open(ovp)) if os.path.exists(ovp) else {}
 
     def stock_rate(c, ds, prev, ref):
         """權息事件的配股率 s（新股數＝舊股數×(1+s)）：取該年度股東會決議的配股（元/股）÷面額，
         並以「(前收盤−現金股利)÷(1+s)≈參考價」驗證（誤差<1%）；查無資料或驗證不過回傳 None"""
+        ov = div_override.get(c, {}).get(ds)
+        if ov:
+            s = ov['stock'] / par_of(c, ds)
+            if abs((prev - ov['cash']) / (1 + s) / ref - 1) < 0.01:
+                return s
         y = int(ds[:4]) - 1911
         for yy in (y, y - 1):
             k = (c, yy)
