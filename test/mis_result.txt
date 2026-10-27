@@ -603,3 +603,9 @@ requests 13 errors 0 last_error
 quote_time_range ['09:13:57'] ['09:31:36']
 hits 2 封測(B) 軟體雲端(C)
 
+run_at 2026-10-27 09:41:31
+codes 610 returned 175 priced 167 seconds 50.0
+requests 13 errors 0 last_error 
+quote_time_range ['09:13:57'] ['09:41:18']
+hits 3 化合物半導體(A) 光通訊/矽光子(A) 軟體雲端(C)
+
