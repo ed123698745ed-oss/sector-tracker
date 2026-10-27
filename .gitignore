@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 archive/raw/mops_bs/tmp.html
 cache/
+archive/raw/mops_bs_co/*.html.gz  # 抓取進行中暫時忽略，完成後移除此行並提交
