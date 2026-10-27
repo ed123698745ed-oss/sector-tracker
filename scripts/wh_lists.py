@@ -58,8 +58,10 @@ def main():
             if k not in div_cache:
                 fp = os.path.join(ROOT, 'archive', 'raw', 'mops_div', '%s_%d.html.gz' % k)
                 div_cache[k] = parse_div(fp) if os.path.exists(fp) else None
-            for cash, stock, par in div_cache[k] or []:
-                s = stock / par
+            for cash, stock, _par_page in div_cache[k] or []:
+                # 觀測站頁面的面額是「目前」面額（例：國巨 2025 年面額變更為 2.5 元後，舊年度頁面也顯示 2.5），
+                # 改用事件當時由財報推得的面額
+                s = stock / par_of(c, ds)
                 if abs((prev - cash) / (1 + s) / ref - 1) < 0.01:
                     return s
         return None
@@ -97,7 +99,10 @@ def main():
                 else:
                     s = stock_rate(c, ds, prev, dref)
                     if s is None:
-                        unsplit.append((ds, c, 'stock_rate_missing')); continue
+                        unsplit.append((ds, c, 'stock_rate_missing'))
+                        # 敏感度測試用：WH_UNRESOLVED=max 時以上限（假設無現金股利）調整；正式名單不調整
+                        if os.environ.get('WH_UNRESOLVED') != 'max': continue
+                        s = prev / dref - 1
                 if s > 1e-6:
                     events.setdefault(c, []).append((ds, 1 + s, 'ex'))
                 continue
