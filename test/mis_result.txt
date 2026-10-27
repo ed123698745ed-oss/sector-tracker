@@ -579,3 +579,9 @@ quote_time_range ['13:30:00'] ['13:30:00']
 hits 1 軟體雲端(ABC)
 skip: quote date 20261022 != today（休市或尚無今日報價），不更新 intraday.json
 
+run_at 2026-10-27 09:01:47
+codes 610 returned 175 priced 99 seconds 49.0
+requests 13 errors 0 last_error 
+quote_time_range ['08:50:37'] ['09:01:33']
+hits 2 光通訊/矽光子(A) 軟體雲端(A)
+
