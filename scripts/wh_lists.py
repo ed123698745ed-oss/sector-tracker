@@ -9,10 +9,12 @@
 上市股數另做事件調整：財報季底之後到排名日之間，若有證交所公告的減資恢復買賣、變更面額恢復買賣或除權（配股），
 股數乘上新股數÷舊股數：面額變更、彌補虧損減資、配股＝停止買賣前收盤÷恢復買賣參考價；
 退還股款（現金減資）每股退還面額，減資比率 k＝(前收盤−參考價)÷(面額−參考價)，比值＝1−k；
-若該季財報股數相對前一季的變化已約等於事件比值（例：面額變更基準日在季底前、恢復買賣在季底後），不重複調整。
+權息：比值＝1＋配股率（股東會決議配股元/股÷面額，以參考價驗證，見 mops_div.py）。
+是否已反映於季報：季報股數較前季的變動幅度達事件幅度 80%～125% 才視為已反映（減資／變更面額另須停止買賣始於季底前）；
+否則一律調整（Eve 2026-10-27 複審：原 15% 容差會漏調小額配股，例：合庫金 2021/9 配股約 2%）。
 輸出：config/wh_lists.json  {"YYYYMM"(排名月): {"asof": 排名日, "hp": [[代號, 數值], ...], "otc": [...], "twse": [...]}}
 """
-import gzip, json, os, sys
+import gzip, json, math, os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from twse_shares import avail_quarter  # noqa: E402
@@ -26,9 +28,9 @@ def main():
     tw_path = os.path.join(ROOT, 'cache', 'wh_twse_shares.json')
     tw = json.load(open(tw_path)) if os.path.exists(tw_path) else None  # {YYYYMM: {代號: 股數}}
 
-    # 股數事件（只用證交所官方公告）：減資恢復買賣 TWTAUU、變更面額恢復買賣 TWTB8U、除權（配股）TWT49U「權」。
-    # 比值＝停止買賣前（除權前）收盤÷恢復買賣（除權）參考價＝新股數÷舊股數。
-    # 「權息」同時配股配息無法拆開，不調整，只記錄比值>1.2 者供檢查。
+    # 股數事件（證交所官方公告）：減資恢復買賣 TWTAUU、變更面額恢復買賣 TWTB8U、除權 TWT49U「權」「權息」。
+    # 比值＝新股數÷舊股數：「權」、面額變更、彌補虧損減資＝前收盤÷參考價；退還股款見下；
+    # 「權息」以股東會決議配股率（公開資訊觀測站 t05st09）計算，並以參考價驗證。
     import glob, re as _re
     events, unsplit = {}, []
     note_path = os.path.join(ROOT, 'cache', 'wh_twse_shares_note.json')
@@ -43,6 +45,23 @@ def main():
             if (ky, kq) < (y, q): best = v
         return best
     edir = os.path.join(ROOT, 'archive', 'raw', 'twse_events')
+    from mops_div import parse_div
+    div_cache = {}
+
+    def stock_rate(c, ds, prev, ref):
+        """權息事件的配股率 s（新股數＝舊股數×(1+s)）：取該年度股東會決議的配股（元/股）÷面額，
+        並以「(前收盤−現金股利)÷(1+s)≈參考價」驗證（誤差<1%）；查無資料或驗證不過回傳 None"""
+        y = int(ds[:4]) - 1911
+        for yy in (y, y - 1):
+            k = (c, yy)
+            if k not in div_cache:
+                fp = os.path.join(ROOT, 'archive', 'raw', 'mops_div', '%s_%d.html.gz' % k)
+                div_cache[k] = parse_div(fp) if os.path.exists(fp) else None
+            for cash, stock, par in div_cache[k] or []:
+                s = stock / par
+                if abs((prev - cash) / (1 + s) / ref - 1) < 0.01:
+                    return s
+        return None
 
     def roc(s):
         m = _re.match(r'(\d+)\D+(\d+)\D+(\d+)', s)
@@ -62,20 +81,38 @@ def main():
                 if abs(par - ref) > 0.01:
                     k = (prev - ref) / (par - ref)
                     if 0 < k < 1:
-                        events.setdefault(c, []).append((ds, 1 - k)); continue
+                        events.setdefault(c, []).append((ds, 1 - k, 'halt')); continue
                 unsplit.append((ds, c, 'cash_reduction_unsolved'))
                 continue
             if kind == 'TWT49U':
-                if r[6].strip() == '息': continue
-                if r[6].strip() != '權':
-                    if prev / ref > 1.2: unsplit.append((ds, c, round(prev / ref, 3)))
+                typ = r[6].strip()
+                if typ == '息': continue
+                if typ == '權息':
+                    s = stock_rate(c, ds, prev, ref)
+                    if s is None:
+                        unsplit.append((ds, c, 'stock_rate_missing'))
+                    elif s > 0:
+                        events.setdefault(c, []).append((ds, 1 + s, 'ex'))
                     continue
-            events.setdefault(c, []).append((ds, prev / ref))
+                events.setdefault(c, []).append((ds, prev / ref, 'ex')); continue
+            events.setdefault(c, []).append((ds, prev / ref, 'halt'))
     qend = {1: '0331', 2: '0630', 3: '0930', 4: '1231'}
     byq_path = os.path.join(ROOT, 'cache', 'wh_twse_byq.json')
     byq = json.load(open(byq_path)) if os.path.exists(byq_path) else {}
     adj_log = {}
     rank80 = set()  # 曾進上市市值前 80 者：配股率資料的抓取範圍（含邊界緩衝）
+
+    didx = {ds: i for i, ds in enumerate(dates)}
+
+    def halt_start(c, ds):
+        """恢復買賣日之前最後一個有成交的交易日（停止買賣始日前一日）"""
+        arr = px.get(c) or []
+        i = didx.get(ds)
+        if i is None:
+            i = next((j for j, d0 in enumerate(dates) if d0 >= ds), len(dates))
+        for j in range(i - 1, -1, -1):
+            if arr and arr[j]: return dates[j]
+        return '00000000'
 
     # 每月最後交易日索引
     ends = {}
@@ -101,10 +138,16 @@ def main():
                 if c not in last or c in otc_cap: continue
                 fx = 1.0
                 s_now, s_prev = byq.get('%03d%02d' % (ry, qq), {}).get(c), byq.get('%03d%02d' % pq, {}).get(c)
-                for ds_, r in events.get(c, []):
+                for ds_, r, kd in events.get(c, []):
                     if not (qd < ds_ <= dates[ie]): continue
-                    # 事件生效早於季底、季報股數已反映（季報股數較前季的變化≈事件比值）時不重複調整
-                    if s_now and s_prev and abs((s_now / s_prev) / r - 1) < 0.15: continue
+                    # 是否已反映於季報：季報股數相對前一季的變動幅度（對數）須達事件變動幅度的 80%～125%
+                    # 才視為已反映（Eve 2026-10-27 複審：原「比值相差 15%」會把股數未變的小額配股誤判為已反映，
+                    # 例：合庫金 2021/9 配股約 2%）。除權事件部分公司會把股東會已通過的待分配股票股利列入季報
+                    # 「股本」（例：緯穎 2026Q2），故以股數變動判定；減資／變更面額另須停止買賣始於季底以前。
+                    if s_now and s_prev and abs(math.log(r)) > 1e-6:
+                        share = math.log(s_now / s_prev) / math.log(r)
+                        if 0.8 <= share <= 1.25 and (kd == 'ex' or halt_start(c, ds_) <= qd):
+                            continue
                     fx *= r
                 if fx != 1.0: adj_log.setdefault(c, []).append((ym, round(fx, 3)))
                 tw_cap[c] = round(last[c] * n * fx / 1e8, 1)
