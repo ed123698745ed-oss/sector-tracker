@@ -14,15 +14,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: 測試金控查詢參數
+      - name: 執行測試腳本
         run: |
-          i=0
-          for body in "step=1&firstin=1&off=1&queryName=co_id&inpuType=co_id&TYPEK=sii&isnew=false&co_id=2881&year=113&season=03" "step=1&firstin=true&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=2881&year=113&season=03" "step=2&firstin=1&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=2881&year=113&season=03"; do
-            i=$((i+1))
-            code=$(curl -sS -m 60 -A "Mozilla/5.0" -e "https://mopsov.twse.com.tw/mops/web/t164sb03" -o r.html -w "%{http_code}" -d "$body" https://mopsov.twse.com.tw/mops/web/ajax_t164sb03 || echo ERR)
-            echo "$(date -u +%FT%TZ) v$i http=$code bytes=$(wc -c < r.html) 普通股股本=$(grep -c 普通股股本 r.html) 安全性=$(grep -c 安全性 r.html) 公司選單=$(grep -c 28810001 r.html) | $body" >> test/pref_probe.txt
-            [ $i = 1 ] && grep -o '<form[^>]*>\|<input[^>]*>\|onclick="[^"]*"' r.html | head -15 >> test/pref_probe.txt
-            sleep 20
-          done
+          bash test/probe.sh
           git config user.name "sector-tracker-bot"; git config user.email "actions@users.noreply.github.com"
           git add test/pref_probe.txt; git commit -qm "特別股抓取連線測試結果 [skip ci]"; for i in 1 2 3; do git pull --rebase -q && git push -q && break; sleep 5; done
