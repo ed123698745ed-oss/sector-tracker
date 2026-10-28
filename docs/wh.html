@@ -139,7 +139,7 @@ td.num{font-size:15px}
 const G = {all:'全市場', twse:'上市市值前50', otc:'上櫃市值前30', hp:'高價股前30'};
 const DIST = ['≤-9','-9~-5','-5~-3','-3~-1','-1~0','0','0~1','1~3','3~5','5~9','≥9'];
 const DDL = ['<5%','5–10%','10–20%','20–30%','30–50%','≥50%'];
-let W, idx, ddG = 'all', ddR = 750, stG = 'twse', sortK = 'pct', sortD = -1;
+let W, idx, ddG = 'all', ddR = 750, stG = 'twse', sortK = 'cap', sortD = -1;
 const $ = s => document.querySelector(s);
 const fmt = (v, d=1) => v == null ? '—' : v.toFixed(d);
 const pctS = (a, b) => b ? (a / b * 100) : null;
@@ -153,7 +153,7 @@ fetch('wh.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).then(w 
   sel.onchange = () => { idx = +sel.value; draw(); };
   tabs('#gtabs', G, () => ddG, v => { ddG = v; drawDD(); drawTrend(); });
   tabs('#rtabs', {250:'1 年', 750:'3 年', 1500:'6 年', 99999:'全部'}, () => String(ddR), v => { ddR = +v; drawDD(); drawTrend(); });
-  tabs('#stabs', {twse:G.twse, otc:G.otc, hp:G.hp}, () => stG, v => { stG = v; drawTable(); });
+  tabs('#stabs', {twse:G.twse, otc:G.otc, hp:G.hp}, () => stG, v => { stG = v; sortK = v === 'hp' ? 'px' : 'cap'; sortD = -1; drawTable(); });
   draw();
 }).catch(e => { $('#sub').textContent = '資料讀取失敗：' + e; });
 
@@ -290,7 +290,7 @@ function hover(sel, s, e, x, fn){
 function drawTable(){
   const latest = idx === W.dates.length - 1;
   $('#stockdate').textContent = latest ? `資料日 ${fd(W.stock_date)}` : `個股表只提供最新交易日（${fd(W.stock_date)}）`;
-  const cols = [['c','代號'],['n','名稱'],['px','收盤'],['pct','漲跌%'],['ytd','今年%'],['r20','近20日%'],['dd','距高點%'],['ma','均線'],['hi','創高']];
+  const cols = [['c','代號'],['n','名稱'],['px','收盤'],['cap','市值(億)'],['pct','漲跌%'],['ytd','今年%'],['r20','近20日%'],['dd','距高點%'],['ma','均線'],['hi','創高']];
   const rows = W.stocks.filter(r => r.g.includes(stG)).sort((a, b) => {
     const va = a[sortK], vb = b[sortK]; if (va == null) return 1; if (vb == null) return -1;
     return (typeof va === 'string' ? va.localeCompare(vb) : va - vb) * sortD; });
@@ -298,7 +298,7 @@ function drawTable(){
   for (const r of rows) {
     const dots = a => a.map(v => `<span class="dot ${v ? 'on' : 'off'}"></span>`).join('');
     h += `<tr><td>${r.c}</td><td>${r.n}${r.g.filter(x => x !== stG).map(x => `<span class="tag">${{twse:'上市50',otc:'上櫃30',hp:'高價30'}[x]}</span>`).join('')}</td>
-      <td class="num">${r.px == null ? '—' : r.px.toLocaleString('zh-TW')}</td><td class="num ${cls(r.pct)}">${fmt(r.pct,2)}</td>
+      <td class="num">${r.px == null ? '—' : r.px.toLocaleString('zh-TW')}</td><td class="num">${r.cap == null ? '—' : r.cap.toLocaleString('zh-TW')}</td><td class="num ${cls(r.pct)}">${fmt(r.pct,2)}</td>
       <td class="num ${cls(r.ytd)}">${fmt(r.ytd)}</td><td class="num ${cls(r.r20)}">${fmt(r.r20)}</td><td class="num">${fmt(r.dd)}</td>
       <td>${dots(r.ma)}</td><td>${dots(r.hi)}</td></tr>`;
   }

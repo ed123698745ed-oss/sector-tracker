@@ -156,6 +156,10 @@ def main():
     # 最新交易日個股表（四組成員聯集）
     t = T - 1; ds = dates[t]; yb = ybase.get(str(int(ds[:4]) - 1))
     mem = {g: (members(ds, g) or []) for g in ['twse', 'otc', 'hp']}
+    # 市值（億）＝最新收盤 × 發行股數（上市：最近一份證交所 MI_QFIIS；上櫃：櫃買當日發行股數）
+    qdir = os.path.join(ROOT, 'archive', 'raw', 'twse_qfiis')
+    qlast = max((f for f in os.listdir(qdir) if f[:8] <= ds), default=None)
+    qsh = {r[0].strip(): int(r[3].replace(',', '')) for r in json.load(gzip.open(os.path.join(qdir, qlast)))['data']} if qlast else {}
     rows = []
     for c in sorted(set(sum(mem.values(), []))):
         k = ci.get(c)
@@ -165,7 +169,10 @@ def main():
             return round(float(a / adj[t - n, k] - 1) * 100, 2) if t >= n and not np.isnan(adj[t - n, k]) and not np.isnan(a) else None
         rows.append({
             'c': c, 'n': name.get(c, ''), 'g': [g for g in mem if c in mem[g]],
-            'px': None if np.isnan(close[t, k]) else close[t, k], 'pct': None if np.isnan(pct[t, k]) else round(float(pct[t, k]), 2),
+            'px': None if np.isnan(close[t, k]) else close[t, k],
+            'cap': (lambda sh: round(close[t, k] * sh / 1e8) if sh and not np.isnan(close[t, k]) else None)(
+                (osh[c][t] if c in osh else None) or qsh.get(c)),  # 上櫃轉上市者上櫃股數停在轉市前，改取上市
+            'pct': None if np.isnan(pct[t, k]) else round(float(pct[t, k]), 2),
             'ytd': round(float(a / adj[yb, k] - 1) * 100, 2) if yb is not None and not np.isnan(adj[yb, k]) else None,
             'r20': r(20), 'dd': None if np.isnan(a) else round(float((1 - a / hi250in[t, k]) * 100), 1),
             'ma': [None if age[t, k] < n else bool(a > ma[n][t, k]) for n in (20, 60, 120, 240)],
