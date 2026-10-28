@@ -4,7 +4,7 @@
 名單：每月最後交易日排名、次月使用（config/wh_lists.json）；當月尚未產生名單時沿用最近一期。
 價格：還原價＝以交易所每日漲跌%（對參考價，已含除權息）連乘；無成交日沿用前值、不計入當日漲跌。
 指標（每日、每組）：
-  有效家數、上漲／平盤／下跌、漲停（交易所漲停價）
+  有效家數、上漲／平盤／下跌、漲停（交易所漲停價）、跌停（收盤＝依參考價與升降單位推得的跌停價）
   漲跌幅分布：≤-9%、-9～-5、-5～-3、-3～-1、-1～0、0、0～1、1～3、3～5、5～9、≥9%（含漲停）
   站上 20/60/120/240 日均線比例（還原收盤嚴格大於簡單均線；上市未滿 N 日者不計入分母）
   創 20/60/250 日新高／新低家數（還原收盤高於／低於前 N 日最高／最低收盤；歷史不足不計）
@@ -12,7 +12,7 @@
   今年以來還原報酬中位數（去年最後交易日為基準；年內新上市者不計）
 另附加權指數收盤，以及最新交易日的個股表。
 """
-import gzip, json, os, re
+import gzip, json, math, os, re
 
 import numpy as np
 
@@ -20,6 +20,19 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 COMMON = re.compile(r'^[1-9]\d{3}$')
 BUCKETS = [-9, -5, -3, -1, 0]          # 下界由小到大；0 單列平盤
 DD = [5, 10, 20, 30, 50]
+
+
+def tick(p):
+    return 0.01 if p < 10 else 0.05 if p < 50 else 0.1 if p < 100 else 0.5 if p < 500 else 1 if p < 1000 else 5
+
+
+def limit_down(lim):
+    """跌停價：參考價×(1−漲跌幅限制) 向上取至升降單位；參考價由漲跌%（兩位小數）反推，容許 0.1 個升降單位誤差"""
+    t = tick(lim)
+    v = math.ceil(lim / t - 0.1) * t
+    if tick(v) != t:
+        t = tick(v); v = math.ceil(lim / t - 0.1) * t
+    return round(v, 2)
 
 
 def taiex_level(ds):
@@ -49,6 +62,12 @@ def main():
                 pct[t, k] = v[0]; lu[t, k] = bool(v[2]) if len(v) > 2 else False
     close = np.array([[px[c][t] if px[c][t] else np.nan for c in codes] for t in range(T)])
     traded = ~np.isnan(close) & ~np.isnan(pct)
+    ld = np.zeros((T, N), bool)
+    for t, ds in enumerate(dates):
+        lim_pct = 0.93 if ds < '20150601' else 0.90
+        for k in np.where(traded[t] & (pct[t] <= -6.5))[0]:
+            c = close[t, k]; ref = c / (1 + pct[t, k] / 100)
+            ld[t, k] = abs(c - limit_down(ref * lim_pct)) < 1e-6  # 收盤低於跌停價者（首五日無漲跌幅等）不算
     # 還原價：首日以收盤為起點，之後以漲跌% 連乘；無成交沿用
     adj = np.full((T, N), np.nan)
     last = np.full(N, np.nan)
@@ -91,7 +110,7 @@ def main():
 
     is_otc = {c: (c in osh) for c in codes}
     G = ['all', 'twse', 'otc', 'hp']
-    out = {g: {k: [] for k in ['n', 'up', 'flat', 'down', 'lu', 'dist', 'ma', 'mad', 'hi', 'lo', 'hld', 'dd', 'ytd']} for g in G}
+    out = {g: {k: [] for k in ['n', 'up', 'flat', 'down', 'lu', 'ld', 'dist', 'ma', 'mad', 'hi', 'lo', 'hld', 'dd', 'ytd']} for g in G}
     taiex = []
     for t, ds in enumerate(dates):
         taiex.append(taiex_level(ds))
@@ -108,7 +127,7 @@ def main():
                 continue
             p = pct[t, idx]
             o['n'].append(int(len(idx))); o['up'].append(int((p > 0).sum())); o['flat'].append(int((p == 0).sum()))
-            o['down'].append(int((p < 0).sum())); o['lu'].append(int(lu[t, idx].sum()))
+            o['down'].append(int((p < 0).sum())); o['lu'].append(int(lu[t, idx].sum())); o['ld'].append(int(ld[t, idx].sum()))
             dist = [int((p <= -9).sum()), int(((p > -9) & (p <= -5)).sum()), int(((p > -5) & (p <= -3)).sum()),
                     int(((p > -3) & (p <= -1)).sum()), int(((p > -1) & (p < 0)).sum()), int((p == 0).sum()),
                     int(((p > 0) & (p < 1)).sum()), int(((p >= 1) & (p < 3)).sum()), int(((p >= 3) & (p < 5)).sum()),

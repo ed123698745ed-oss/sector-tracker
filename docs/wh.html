@@ -182,7 +182,7 @@ function drawDist(){
   if (n == null) return;
   const u = o.up[idx], f = o.flat[idx], d = o.down[idx];
   $('#udbar').innerHTML = `<span style="width:${u/n*100}%;background:var(--up)"></span><span style="width:${f/n*100}%;background:var(--flat)"></span><span style="width:${d/n*100}%;background:var(--down)"></span>`;
-  $('#udleg').innerHTML = `<span class="up">上漲 <b class="num">${u}</b>（${fmt(u/n*100)}%）</span><span class="flat">平盤 <b class="num">${f}</b></span><span class="down">下跌 <b class="num">${d}</b>（${fmt(d/n*100)}%）</span><span>漲停 <b class="num">${o.lu[idx]}</b></span><span>有效 ${n} 家</span>`;
+  $('#udleg').innerHTML = `<span class="up">上漲 <b class="num">${u}</b>（${fmt(u/n*100)}%）</span><span class="flat">平盤 <b class="num">${f}</b></span><span class="down">下跌 <b class="num">${d}</b>（${fmt(d/n*100)}%）</span><span class="up">漲停 <b class="num">${o.lu[idx]}</b></span><span class="down">跌停 <b class="num">${o.ld ? o.ld[idx] : '—'}</b></span><span>有效 ${n} 家</span>`;
   const v = o.dist[idx], mx = Math.max(...v), Wd = 420, H = 170, bw = Wd / v.length;
   let g = '';
   v.forEach((x, i) => {
@@ -200,8 +200,8 @@ function drawCards(){
     const o = W.groups[g]; if (o.n[idx] == null) continue;
     const n = o.n[idx], ma = o.ma[idx], mad = o.mad[idx], hi = o.hi[idx], lo = o.lo[idx], hd = o.hld[idx];
     h += `<div class="card"><h3>${G[g]}<span class="tag">${n} 檔</span></h3>
-      <div class="k">上漲／下跌 <b><span class="up">${o.up[idx]}</span>／<span class="down">${o.down[idx]}</span></b></div>
-      <div class="k">上漲比例 <b>${fmt(o.up[idx]/n*100)}%</b></div>
+      ${g === 'all' ? '' : `<div class="k">上漲／下跌 <b><span class="up">${o.up[idx]}</span>／<span class="down">${o.down[idx]}</span></b></div>
+      <div class="k">上漲比例 <b>${fmt(o.up[idx]/n*100)}%</b></div>`}
       <div class="k">月線／季線上 <b>${fmt(pctS(ma[0],mad[0]),0)}%／${fmt(pctS(ma[1],mad[1]),0)}%</b></div>
       <div class="k">半年／年線上 <b>${fmt(pctS(ma[2],mad[2]),0)}%／${fmt(pctS(ma[3],mad[3]),0)}%</b></div>
       <div class="k">新高 20／60／250 <b class="up">${hi.join('／')}</b></div>
