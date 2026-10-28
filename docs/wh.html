@@ -202,8 +202,7 @@ function drawCards(){
     h += `<div class="card"><h3>${G[g]}<span class="tag">${n} 檔</span></h3>
       ${g === 'all' ? '' : `<div class="k">上漲／下跌 <b><span class="up">${o.up[idx]}</span>／<span class="down">${o.down[idx]}</span></b></div>
       <div class="k">上漲比例 <b>${fmt(o.up[idx]/n*100)}%</b></div>`}
-      <div class="k">月線／季線上 <b>${fmt(pctS(ma[0],mad[0]),0)}%／${fmt(pctS(ma[1],mad[1]),0)}%</b></div>
-      <div class="k">半年／年線上 <b>${fmt(pctS(ma[2],mad[2]),0)}%／${fmt(pctS(ma[3],mad[3]),0)}%</b></div>
+      <div class="k">站上 月／季／半年／年線 <b>${[0,1,2,3].map(k => fmt(pctS(ma[k],mad[k]),0)).join('／')}%</b></div>
       <div class="k">新高 20／60／250 <b class="up">${hi.join('／')}</b></div>
       <div class="k">新低 20／60／250 <b class="down">${lo.join('／')}</b></div>
       <div class="k">今年報酬中位數 <b class="${cls(o.ytd[idx])}">${fmt(o.ytd[idx])}%</b></div></div>`;
