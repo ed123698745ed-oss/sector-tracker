@@ -61,6 +61,31 @@ def main():
             if k is not None:
                 pct[t, k] = v[0]; lu[t, k] = bool(v[2]) if len(v) > 2 else False
     close = np.array([[px[c][t] if px[c][t] else np.nan for c in codes] for t in range(T)])
+    # 上市減資、變更面額（分割）恢復買賣首日：每日行情檔無漲跌%（不比價），改以證交所公告的恢復買賣參考價計算，
+    # 否則還原價會漏掉當日漲跌（例：國巨 2025/8/25 面額分割恢復買賣）
+    ev = {}
+    edir = os.path.join(ROOT, 'archive', 'raw', 'twse_events')
+    for fn in os.listdir(edir):
+        if not fn.startswith(('TWTAUU', 'TWTB8U')): continue
+        for r in json.load(open(os.path.join(edir, fn))).get('data') or []:
+            y, m, dd = r[0].split('/')
+            try: ev[('%d%s%s' % (int(y) + 1911, m, dd), r[1].strip())] = float(r[4].replace(',', ''))
+            except ValueError: pass
+    import bisect
+    fixed = 0
+    for (ds, c), ref in ev.items():
+        k = ci.get(c); t0 = bisect.bisect_left(dates, ds)
+        if k is None or ref <= 0: continue
+        for t in range(t0, min(t0 + 3, T)):  # 公告日期偶有早於實際恢復買賣日一天
+            if not np.isnan(close[t, k]):
+                if np.isnan(pct[t, k]): pct[t, k] = (close[t, k] / ref - 1) * 100; fixed += 1
+                break
+    # 上櫃轉上市首日：上市行情檔無漲跌%，以前一交易日上櫃收盤計算
+    for k in range(N):
+        for t in np.where(np.isnan(pct[:, k]) & ~np.isnan(close[:, k]))[0]:
+            if t > 0 and not np.isnan(close[t - 1, k]):
+                pct[t, k] = (close[t, k] / close[t - 1, k] - 1) * 100; fixed += 1
+    print('無漲跌%的交易日補算：', fixed)
     traded = ~np.isnan(close) & ~np.isnan(pct)
     ld = np.zeros((T, N), bool)
     for t, ds in enumerate(dates):
