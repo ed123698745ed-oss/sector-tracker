@@ -1,109 +1,30 @@
-== https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20040211&type=ALLBUT0999&response=json http=200 bytes=108601
-stat OK keys ['tables', 'type', 'params', 'stat', 'date']
- table None [] 0
- table None [] 0
- table None [] 0
- table None [] 0
- table None [] 0
- table None [] 0
- table 093年02月11日 大盤統計資訊 ['成交統計', '成交金額(元)', '成交股數(股)', '成交筆數'] 17
- table None [] 0
- table 093年02月11日 每日收盤行情(全部(不含權證、牛熊證、可展延牛熊證)) ['證券代號', '證券名稱', '成交股數', '成交筆數', '成交金額', '開盤價', '最高價', '最低價', '收盤價', '漲跌(+/-)'] 711
- table None [] 0
-== https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20040510&type=ALLBUT0999&response=json http=200 bytes=106734
-stat OK keys ['tables', 'type', 'params', 'stat', 'date']
- table None [] 0
- table None [] 0
- table None [] 0
- table None [] 0
- table None [] 0
- table None [] 0
- table 093年05月10日 大盤統計資訊 ['成交統計', '成交金額(元)', '成交股數(股)', '成交筆數'] 17
- table None [] 0
- table 093年05月10日 每日收盤行情(全部(不含權證、牛熊證、可展延牛熊證)) ['證券代號', '證券名稱', '成交股數', '成交筆數', '成交金額', '開盤價', '最高價', '最低價', '收盤價', '漲跌(+/-)'] 706
- table None [] 0
-== https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20061229&type=ALLBUT0999&response=json http=200 bytes=110179
-stat OK keys ['tables', 'type', 'params', 'stat', 'date']
- table None [] 0
- table None [] 0
- table None [] 0
- table None [] 0
- table None [] 0
- table None [] 0
- table 095年12月29日 大盤統計資訊 ['成交統計', '成交金額(元)', '成交股數(股)', '成交筆數'] 17
- table None [] 0
- table 095年12月29日 每日收盤行情(全部(不含權證、牛熊證、可展延牛熊證)) ['證券代號', '證券名稱', '成交股數', '成交筆數', '成交金額', '開盤價', '最高價', '最低價', '收盤價', '漲跌(+/-)'] 705
- table None [] 0
-== https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20070102&type=ALLBUT0999&response=json http=200 bytes=110838
-stat OK keys ['tables', 'type', 'params', 'stat', 'date']
- table None [] 0
- table None [] 0
- table None [] 0
- table None [] 0
- table None [] 0
- table None [] 0
- table 096年01月02日 大盤統計資訊 ['成交統計', '成交金額(元)', '成交股數(股)', '成交筆數'] 17
- table None [] 0
- table 096年01月02日 每日收盤行情(全部(不含權證、牛熊證、可展延牛熊證)) ['證券代號', '證券名稱', '成交股數', '成交筆數', '成交金額', '開盤價', '最高價', '最低價', '收盤價', '漲跌(+/-)'] 705
- table None [] 0
-== https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20100104&type=ALLBUT0999&response=json http=200 bytes=130269
-stat OK keys ['tables', 'type', 'params', 'stat', 'date']
- table 099年01月04日 價格指數(臺灣證券交易所) ['指數', '收盤指數', '漲跌(+/-)', '漲跌點數', '漲跌百分比(%)', '特殊處理註記'] 42
- table None [] 0
- table None [] 0
- table 報酬指數(臺灣證券交易所) ['報酬指數', '收盤指數', '漲跌(+/-)', '漲跌點數', '漲跌百分比(%)', '特殊處理註記'] 32
- table None [] 0
- table None [] 0
- table 099年01月04日 大盤統計資訊 ['成交統計', '成交金額(元)', '成交股數(股)', '成交筆數'] 17
- table None [] 0
- table 099年01月04日 每日收盤行情(全部(不含權證、牛熊證、可展延牛熊證)) ['證券代號', '證券名稱', '成交股數', '成交筆數', '成交金額', '開盤價', '最高價', '最低價', '收盤價', '漲跌(+/-)'] 780
- table None [] 0
-== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2007%2F01%2F02&type=EW&response=json http=200 bytes=664
+== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2007%2F07%2F02&type=EW&response=json http=200 bytes=108701
 stat ok keys ['tables', 'date', 'flagField', 'stat']
- table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 0
-== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2006%2F12%2F29&type=EW&response=json http=200 bytes=664
+ table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 826
+== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2008%2F01%2F02&type=EW&response=json http=200 bytes=139074
 stat ok keys ['tables', 'date', 'flagField', 'stat']
- table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 0
-== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2004%2F05%2F10&type=EW&response=json http=200 bytes=664
+ table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 1109
+== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2008%2F07%2F01&type=EW&response=json http=200 bytes=119934
 stat ok keys ['tables', 'date', 'flagField', 'stat']
- table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 0
-== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2010%2F01%2F04&type=EW&response=json http=200 bytes=159037
+ table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 950
+== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2009%2F01%2F05&type=EW&response=json http=200 bytes=94266
 stat ok keys ['tables', 'date', 'flagField', 'stat']
- table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 1260
-== https://www.twse.com.tw/rwd/zh/fund/MI_QFIIS?date=20040227&selectType=ALLBUT0999&response=json http=200 bytes=98675
-stat OK keys ['stat', 'date', 'selectType', 'title', 'hints', 'fields', 'data', 'notes']
- fields ['證券代號', '證券名稱', '國際證券編碼', '發行股數', '外資尚可投資股數', '全體外資持有股數', '外資尚可投資比率', '全體外資持股比率'] 953 ['0001', '鴻運', 'TW0000001007', '500,000,000', '414,951,000', '85,049,000']
-== https://www.twse.com.tw/rwd/zh/fund/MI_QFIIS?date=20061229&selectType=ALLBUT0999&response=json http=200 bytes=78566
-stat OK keys ['stat', 'date', 'selectType', 'title', 'hints', 'fields', 'data', 'notes']
- fields ['證券代號', '證券名稱', '國際證券編碼', '發行股數', '外資尚可投資股數', '全體外資持有股數', '外資尚可投資比率', '全體外資持股比率'] 701 ['0015', '富邦', 'TW0000015007', '500,000,000', '287,465,000', '212,535,000']
-== https://www.twse.com.tw/rwd/zh/fund/MI_QFIIS?date=20070131&selectType=ALLBUT0999&response=json http=200 bytes=78088
-stat OK keys ['stat', 'date', 'selectType', 'title', 'hints', 'fields', 'data', 'notes']
- fields ['證券代號', '證券名稱', '國際證券編碼', '發行股數', '外資尚可投資股數', '全體外資持有股數', '外資尚可投資比率', '全體外資持股比率'] 700 ['0015', '富邦', 'TW0000015007', '500,000,000', '284,242,000', '215,758,000']
-== https://www.twse.com.tw/rwd/zh/fund/MI_QFIIS?date=20091231&selectType=ALLBUT0999&response=json http=200 bytes=91361
-stat OK keys ['stat', 'date', 'selectType', 'title', 'hints', 'fields', 'data', 'notes']
- fields ['證券代號', '證券名稱', '國際證券編碼', '發行股數', '外資及陸資尚可投資股數', '全體外資及陸資持有股數', '外資及陸資尚可投資比率', '全體外資及陸資持股比率'] 773 ['0015', '富邦', 'TW0000015007', '500,000,000', '236,084,000', '263,916,000']
-== https://www.twse.com.tw/rwd/zh/exRight/TWT49U?startDate=20040101&endDate=20041231&response=json http=200 bytes=102074
-stat OK keys ['stat', 'title', 'fields', 'data', 'extraNotes', 'notes', 'formula', 'strDate']
- fields ['資料日期', '股票代號', '股票名稱', '除權息前收盤價', '除權息參考價', '權值', '息值', '權值+息值'] 508 ['93年01月13日', '1227', '佳格', '9.30', '8.80', 0.0]
-== https://www.twse.com.tw/rwd/zh/reducation/TWTAUU?startDate=20040101&endDate=20041231&response=json http=200 bytes=68
-stat 查詢開始日期小於100年1月1日，請重新查詢! keys ['stat']
-== https://www.twse.com.tw/rwd/zh/change/TWTB8U?startDate=20040101&endDate=20041231&response=json http=200 bytes=479
-stat OK keys ['stat', 'params', 'title', 'fields', 'data', 'notes']
- fields ['恢復買賣日期', '股票代號', '名稱', '停止買賣前收盤價格', '恢復買賣參考價', '漲停價格', '跌停價格', '開盤競價基準'] 0 []
-== https://www.twse.com.tw/rwd/zh/exRight/TWT49U?startDate=20080101&endDate=20081231&response=json http=200 bytes=125028
-stat OK keys ['stat', 'title', 'fields', 'data', 'extraNotes', 'notes', 'formula', 'strDate']
- fields ['資料日期', '股票代號', '股票名稱', '除權息前收盤價', '除權息參考價', '權值', '息值', '權值+息值'] 609 ['97年01月02日', '3315', '宣昶', '53.50', '53.15', 0.35]
-== https://www.twse.com.tw/rwd/zh/reducation/TWTAUU?startDate=20080101&endDate=20081231&response=json http=200 bytes=68
-stat 查詢開始日期小於100年1月1日，請重新查詢! keys ['stat']
-== https://www.twse.com.tw/rwd/zh/change/TWTB8U?startDate=20080101&endDate=20081231&response=json http=200 bytes=479
-stat OK keys ['stat', 'params', 'title', 'fields', 'data', 'notes']
- fields ['恢復買賣日期', '股票代號', '名稱', '停止買賣前收盤價格', '恢復買賣參考價', '漲停價格', '跌停價格', '開盤競價基準'] 0 []
-== https://www.twse.com.tw/rwd/zh/exRight/TWT49U?startDate=20110101&endDate=20111231&response=json http=200 bytes=142555
-stat OK keys ['stat', 'title', 'fields', 'data', 'extraNotes', 'notes', 'formula', 'strDate']
- fields ['資料日期', '股票代號', '股票名稱', '除權息前收盤價', '除權息參考價', '權值+息值', '權/息', '漲停價格'] 729 ['100年01月05日', '3017', '奇鋐', '34.65', '34.19', '0.459923']
-== https://www.twse.com.tw/rwd/zh/reducation/TWTAUU?startDate=20110101&endDate=20111231&response=json http=200 bytes=3349
-stat OK keys ['stat', 'title', 'fields', 'data', 'notes', 'formula', 'strDate', 'endDate']
- fields ['恢復買賣日期', '股票代號', '名稱', '停止買賣前收盤價格', '恢復買賣參考價', '漲停價格', '跌停價格', '開盤競價基準'] 21 ['100/01/25', '2412', '中華電', '73.10', '88.87', '95.00']
-== https://www.twse.com.tw/rwd/zh/change/TWTB8U?startDate=20110101&endDate=20111231&response=json http=200 bytes=479
-stat OK keys ['stat', 'params', 'title', 'fields', 'data', 'notes']
- fields ['恢復買賣日期', '股票代號', '名稱', '停止買賣前收盤價格', '恢復買賣參考價', '漲停價格', '跌停價格', '開盤競價基準'] 0 []
+ table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 762
+== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2009%2F07%2F01&type=EW&response=json http=200 bytes=100123
+stat ok keys ['tables', 'date', 'flagField', 'stat']
+ table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 790
+== https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_no1430/stk_wn1430_result.php?l=zh-tw&d=96/01/02&se=EW http=200 bytes=146765
+stat ok keys ['tables', 'date', 'flagField', 'stat']
+ table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 1020
+== https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_no1430/stk_wn1430_result.php?l=zh-tw&d=93/05/10&se=EW http=200 bytes=146765
+stat ok keys ['tables', 'date', 'flagField', 'stat']
+ table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 1020
+== https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_no1430/stk_wn1430_result.php?l=zh-tw&d=99/01/04&se=EW http=200 bytes=146765
+stat ok keys ['tables', 'date', 'flagField', 'stat']
+ table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 1020
+== https://www.twse.com.tw/rwd/zh/TAIEX/MI_5MINS_HIST?date=20040201&response=json http=200 bytes=1352
+stat OK keys ['stat', 'title', 'date', 'fields', 'data', 'total']
+ fields ['日期', '開盤指數', '最高指數', '最低指數', '收盤指數'] 20 [' 93/02/02', '6,379.98', '6,388.97', '6,319.96', '6,319.96']
+== https://www.twse.com.tw/rwd/zh/afterTrading/FMTQIK?date=20040201&response=json http=200 bytes=2119
+stat OK keys ['stat', 'date', 'title', 'hints', 'fields', 'data', 'notes']
+ fields ['日期', '成交股數', '成交金額', '成交筆數', '發行量加權股價指數', '漲跌點數'] 20 [' 93/02/02', '6,267,834,164', '122,489,623,575', '1,000,621', '6,319.96', '-55.42']
