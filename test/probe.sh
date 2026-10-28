@@ -18,11 +18,7 @@ PY
   sleep 6
 }
 T=https://www.twse.com.tw/rwd/zh
-for ds in 20040211 20040510 20061229 20070102 20100104; do probe "$T/afterTrading/MI_INDEX?date=$ds&type=ALLBUT0999&response=json"; done
-for d in 2007/01/02 2006/12/29 2004/05/10 2010/01/04; do probe "https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=${d//\//%2F}&type=EW&response=json"; done
-for ds in 20040227 20061229 20070131 20091231; do probe "$T/fund/MI_QFIIS?date=$ds&selectType=ALLBUT0999&response=json"; done
-for y in 2004 2008 2011; do
-  probe "$T/exRight/TWT49U?startDate=${y}0101&endDate=${y}1231&response=json"
-  probe "$T/reducation/TWTAUU?startDate=${y}0101&endDate=${y}1231&response=json"
-  probe "$T/change/TWTB8U?startDate=${y}0101&endDate=${y}1231&response=json"
-done
+for d in 2007/07/02 2008/01/02 2008/07/01 2009/01/05 2009/07/01; do probe "https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=${d//\//%2F}&type=EW&response=json"; done
+for d in 96/01/02 93/05/10 99/01/04; do probe "https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_no1430/stk_wn1430_result.php?l=zh-tw&d=$d&se=EW"; done
+probe "$T/TAIEX/MI_5MINS_HIST?date=20040201&response=json"
+probe "$T/afterTrading/FMTQIK?date=20040201&response=json"
