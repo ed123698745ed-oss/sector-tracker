@@ -1,0 +1,36 @@
+name: 權值高價股歷史延伸資料
+
+on:
+  push:
+    paths: ['test/WHEXT_TRIGGER']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: whext
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 抓取
+        run: |
+          git config user.name "sector-tracker-bot"
+          git config user.email "actions@users.noreply.github.com"
+          timeout 320m python3 scripts/wh_ext_fetch.py
+      - name: 提交
+        if: always()
+        run: |
+          git config user.name "sector-tracker-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add archive/raw/twse_fmtqik archive/raw/twse_events archive/raw/twse_qfiis
+          git commit -m "權值高價股歷史延伸資料 [skip ci]" || exit 0
+          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done

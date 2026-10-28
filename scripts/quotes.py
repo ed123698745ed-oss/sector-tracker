@@ -20,6 +20,7 @@ UA = {'User-Agent': 'Mozilla/5.0 (sector-tracker)'}
 
 
 LIMIT_CHANGE = '20150601'  # 漲跌幅限制由 7% 放寬為 10%
+TPEX_START = '20070702'  # 櫃買 afterTrading/otc 有資料的最早月份（2007/1 查無、2007/7 起有）
 
 
 def tick(p):
@@ -241,6 +242,10 @@ def save(ds, tw, tp, exref=None, prevtp=None, lastclose=None, exall=None, exref_
     if not q:
         return False  # 休市
     if not tp or not parse_tpex(tp):
+        if ds < TPEX_START:  # 櫃買網站日收盤行情最早只到 2007 年中，之前只存上市
+            os.makedirs(OUT, exist_ok=True)
+            json.dump({'date': ds, 'taiex': taiex, 'q': q}, open(f'{OUT}/{ds}.json', 'w'), separators=(',', ':'))
+            return True
         raise SystemExit(f'{ds} 上市有資料但上櫃無資料，停止，不產生不完整檔案')
     q.update(parse_tpex(tp, prevtp, ds, exref_tpex))
     os.makedirs(OUT, exist_ok=True)
