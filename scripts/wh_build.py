@@ -35,16 +35,32 @@ def limit_down(lim):
     return round(v, 2)
 
 
+_FM = {}
+
+
+def taiex_fmtqik(ds):
+    """2009 年以前 MI_INDEX 無指數表：改用大盤日成交資訊 FMTQIK 的加權指數收盤"""
+    ym = ds[:6]
+    if ym not in _FM:
+        p = os.path.join(ROOT, 'archive', 'raw', 'twse_fmtqik', ym + '.json')
+        _FM[ym] = {}
+        if os.path.exists(p):
+            for r in json.load(open(p)).get('data') or []:
+                a, b, c = r[0].strip().split('/')
+                _FM[ym]['%d%s%s' % (int(a) + 1911, b, c)] = float(r[4].replace(',', ''))
+    return _FM[ym].get(ds)
+
+
 def taiex_level(ds):
     p = os.path.join(ROOT, 'archive', 'raw', 'twse', ds + '.json.gz')
-    if not os.path.exists(p): return None
+    if not os.path.exists(p) or ds < '20090101': return taiex_fmtqik(ds)
     for t in json.load(gzip.open(p)).get('tables') or []:
         if '價格指數' in (t.get('title') or ''):
             for r in t.get('data') or []:
                 if '發行量加權股價指數' in r[0]:
                     try: return float(r[1].replace(',', ''))
                     except ValueError: return None
-    return None
+    return taiex_fmtqik(ds)
 
 
 def main():

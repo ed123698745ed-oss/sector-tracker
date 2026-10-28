@@ -96,11 +96,22 @@ def main():
         except ValueError: return None
     for fp in sorted(glob.glob(os.path.join(edir, '*.json'))):
         kind = os.path.basename(fp)[:6]
-        for r in json.load(open(fp)).get('data') or []:
+        jf = json.load(open(fp)); flds = [x.strip() for x in jf.get('fields') or []]
+        i_why = flds.index('減資原因') if '減資原因' in flds else None
+        old49 = kind == 'TWT49U' and '權/息' not in flds and '息值' in flds  # 2010 年以前格式：權值、息值分列
+        for r in jf.get('data') or []:
             prev, ref = f(r[3]), f(r[4])
             if not prev or not ref: continue
             ds, c = roc(r[0]), r[1].strip()
-            if kind == 'TWTAUU' and '退還' in (r[9] or ''):
+            if old49:
+                wv, xv = f(r[flds.index('權值')]) or 0, f(r[flds.index('息值')]) or 0
+                if wv <= 0: continue  # 純除息
+                s = (prev - xv) / ref - 1  # 參考價＝(前收盤−息值)÷(1＋配股率)
+                if s > 1e-6: events.setdefault(c, []).append((ds, 1 + s, 'ex'))
+                continue
+            if kind == 'TWTAUU' and i_why is None:
+                unsplit.append((ds, c, 'reduction_reason_unknown'))  # 2011 年格式無減資原因欄
+            if kind == 'TWTAUU' and i_why is not None and '退還' in (r[i_why] or ''):
                 par = par_of(c, ds)
                 if abs(par - ref) > 0.01:
                     k = (prev - ref) / (par - ref)
@@ -109,10 +120,10 @@ def main():
                 unsplit.append((ds, c, 'cash_reduction_unsolved'))
                 continue
             if kind == 'TWT49U':
-                typ = r[6].strip()
+                typ = r[flds.index('權/息')].strip()
                 if typ == '息': continue
                 # 減除股利參考價＝只扣股利（現金＋股票）後的參考價；與除權息參考價不同時代表含現金增資除權（證交所附註）
-                dref = f(r[10]) or ref
+                dref = (f(r[flds.index('減除股利參考價')]) if '減除股利參考價' in flds else None) or ref
                 if abs(dref - ref) > 0.005:
                     unsplit.append((ds, c, 'cash_capital_increase'))  # 依 Ed 決定不調整，待下一季財報反映
                 if typ == '權':
