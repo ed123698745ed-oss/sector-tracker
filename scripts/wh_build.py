@@ -7,8 +7,8 @@
   有效家數、上漲／平盤／下跌、漲停（交易所漲停價）、跌停（收盤＝依參考價與升降單位推得的跌停價）
   漲跌幅分布：≤-9%、-9～-5、-5～-3、-3～-1、-1～0、0、0～1、1～3、3～5、5～9、≥9%（含漲停）
   站上 20/60/120/240 日均線比例（還原收盤嚴格大於簡單均線；上市未滿 N 日者不計入分母）
-  創 20/60/250 日新高／新低家數（還原收盤高於／低於前 N 日最高／最低收盤；歷史不足不計）
-  離近 250 日最高還原收盤的距離分布：<5%、5～10、10～20、20～30、30～50、≥50%
+  創 20/60/250 日新高／新低家數（當日最高價高於前 N 日最高價／當日最低價低於前 N 日最低價，皆為還原值；歷史不足不計）
+  收盤離近 250 日最高價（含當日、還原值）的距離分布：<5%、5～10、10～20、20～30、30～50、≥50%
   今年以來還原報酬中位數（去年最後交易日為基準；年內新上市者不計）
 另附加權指數收盤，以及最新交易日的個股表。
 """
@@ -104,10 +104,16 @@ def main():
         adj[t] = last
     age = np.cumsum(~np.isnan(adj), axis=0)  # 已上市交易日數
 
-    def rolling(fn, n):
+    # 盤中最高／最低的還原值＝還原收盤 × 當日最高（最低）÷ 收盤；無成交日不計
+    hraw = np.array([[d['hi'][c][t] or np.nan for c in codes] for t in range(T)])
+    lraw = np.array([[d['lo'][c][t] or np.nan for c in codes] for t in range(T)])
+    adjH = np.where(traded, adj * hraw / close, np.nan)
+    adjL = np.where(traded, adj * lraw / close, np.nan)
+
+    def rolling(fn, n, src):
         out = np.full((T, N), np.nan)
         for t in range(n, T):
-            out[t] = fn(adj[t - n:t], axis=0)  # 前 n 日（不含當日）
+            out[t] = fn(src[t - n:t], axis=0)  # 前 n 日（不含當日）
         return out
     ma = {}
     for n in (20, 60, 120, 240):
@@ -115,11 +121,11 @@ def main():
         s = np.full((T, N), np.nan)
         s[n - 1:] = cs[n - 1:] - np.vstack([np.zeros((1, N)), cs[:-n]])
         ma[n] = s / n
-    hi = {n: rolling(np.nanmax, n) for n in (20, 60, 250)}
-    lo = {n: rolling(np.nanmin, n) for n in (20, 60, 250)}
+    hi = {n: rolling(np.nanmax, n, adjH) for n in (20, 60, 250)}  # 前 n 日最高價
+    lo = {n: rolling(np.nanmin, n, adjL) for n in (20, 60, 250)}  # 前 n 日最低價
     hi250in = np.full((T, N), np.nan)
     for t in range(T):
-        hi250in[t] = np.nanmax(adj[max(0, t - 249):t + 1], axis=0)
+        hi250in[t] = np.nanmax(adjH[max(0, t - 249):t + 1], axis=0)  # 近 250 日（含當日）最高價
     # 年初基準
     ybase = {}
     for t, ds in enumerate(dates):
@@ -168,7 +174,7 @@ def main():
             for n in (20, 60, 250):
                 ok = (age[t, idx] > n)
                 hd.append(int(ok.sum()))
-                h.append(int((a[ok] > hi[n][t, idx][ok]).sum())); l.append(int((a[ok] < lo[n][t, idx][ok]).sum()))
+                h.append(int((adjH[t, idx][ok] > hi[n][t, idx][ok]).sum())); l.append(int((adjL[t, idx][ok] < lo[n][t, idx][ok]).sum()))
             o['hi'].append(h); o['lo'].append(l); o['hld'].append(hd)
             dd = (1 - a / hi250in[t, idx]) * 100
             o['dd'].append([int((dd < 5).sum())] + [int(((dd >= DD[i]) & (dd < DD[i + 1])).sum()) for i in range(4)] + [int((dd >= 50).sum())])
@@ -201,8 +207,8 @@ def main():
             'ytd': round(float(a / adj[yb, k] - 1) * 100, 2) if yb is not None and not np.isnan(adj[yb, k]) else None,
             'r20': r(20), 'dd': None if np.isnan(a) else round(float((1 - a / hi250in[t, k]) * 100), 1),
             'ma': [None if age[t, k] < n else bool(a > ma[n][t, k]) for n in (20, 60, 120, 240)],
-            'hi': [bool(age[t, k] > n and a > hi[n][t, k]) for n in (20, 60, 250)],
-            'lo': [bool(age[t, k] > n and a < lo[n][t, k]) for n in (20, 60, 250)],
+            'hi': [bool(age[t, k] > n and adjH[t, k] > hi[n][t, k]) for n in (20, 60, 250)],
+            'lo': [bool(age[t, k] > n and adjL[t, k] < lo[n][t, k]) for n in (20, 60, 250)],
         })
     lists_out = {ym: {g: [c for c, _ in lists[ym][g]] for g in ['twse', 'otc', 'hp']} | {'asof': lists[ym]['asof']} for ym in yms}
     res = {'dates': dates, 'taiex': taiex, 'groups': out, 'stocks': rows, 'stock_date': ds, 'lists': lists_out, 'names': {c: name.get(c, '') for c in set(c for v in lists_out.values() for g in ('twse', 'otc', 'hp') for c in v[g])}}
