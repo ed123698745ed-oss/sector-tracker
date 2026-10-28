@@ -96,10 +96,12 @@ def main():
             if not np.isnan(close[t, k]):
                 if np.isnan(pct[t, k]): pct[t, k] = (close[t, k] / ref - 1) * 100; fixed += 1
                 break
-    # 上櫃轉上市首日：上市行情檔無漲跌%，以前一交易日上櫃收盤計算
-    for k in range(N):
+    # 上櫃轉上市首日：上市行情檔無漲跌%，以前一交易日上櫃收盤計算（前一日有上櫃發行股數、當日沒有＝已轉市）。
+    # 其他無漲跌%的日子（例：2007 年上櫃除權息日查無參考價）不補，避免把除權息缺口算成漲跌
+    for k, c in enumerate(codes):
+        if c not in osh: continue
         for t in np.where(np.isnan(pct[:, k]) & ~np.isnan(close[:, k]))[0]:
-            if t > 0 and not np.isnan(close[t - 1, k]):
+            if t > 0 and not np.isnan(close[t - 1, k]) and osh[c][t - 1] and not osh[c][t]:
                 pct[t, k] = (close[t, k] / close[t - 1, k] - 1) * 100; fixed += 1
     print('無漲跌%的交易日補算：', fixed)
     traded = ~np.isnan(close) & ~np.isnan(pct)
