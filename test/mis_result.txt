@@ -753,3 +753,9 @@ requests 13 errors 0 last_error
 quote_time_range ['13:30:00'] ['13:30:00']
 hits 2 軟體雲端(ABC) 工具機(AB)
 
+run_at 2026-10-28 09:02:09
+codes 610 returned 610 priced 505 seconds 60.9
+requests 13 errors 0 last_error 
+quote_time_range ['08:56:21'] ['09:02:00']
+hits 17 IP/ASIC(AB) 網通/高速介面IC(A) 矽晶圓(A) 記憶體(A) 功率元件(A) 化合物半導體(AB) 先進封裝設備(A) 封測(AB) 測試介面(A) 載板(B) CCL(AB) PCB/伺服器板(A) 散熱(AB) 連接器/線材(AB) 被動元件(AB) 光通訊/矽光子(AB) 低軌衛星(A)
+
