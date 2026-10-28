@@ -131,7 +131,7 @@ td.num{font-size:15px}
 
   <div class="note">
     只供觀察，不是交易訊號。名單每月最後交易日收盤排名、次月使用：上市市值前 50、上櫃市值前 30（市值＝收盤×證交所／櫃買發行股數）、上市櫃普通股收盤價前 30（高價股）。
-    歷史名單以當時資料重建；上市股數取自證交所每日發行股數，近期分割、配股、減資尚未反映時以事件倍率補正，現金增資待新股上市後反映。歷史月份排名第 50 名附近可能有個別誤差。資料來源：證交所、櫃買中心。
+    資料期間：上市 2004/02 起、上櫃 2007/07 起（之前上櫃組與全市場只含上市）。歷史名單以當時資料重建；上市股數取自證交所每日發行股數，近期分割、配股、減資尚未反映時以事件倍率補正，現金增資待新股上市後反映；2011 年以前證交所無減資公告表，2007 年部分上櫃除權息日查無參考價，當日漲跌不計。歷史月份排名第 50 名附近可能有個別誤差。資料來源：證交所、櫃買中心。
   </div>
 </div>
 <div id="tip"></div>
@@ -152,7 +152,7 @@ fetch('wh.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).then(w 
   for (let i = w.dates.length - 1; i >= Math.max(0, w.dates.length - 260); i--) sel.add(new Option(fd(w.dates[i]), i));
   sel.onchange = () => { idx = +sel.value; draw(); };
   tabs('#gtabs', G, () => ddG, v => { ddG = v; drawDD(); drawTrend(); });
-  tabs('#rtabs', {250:'1 年', 750:'3 年', 1500:'6 年', 99999:'全部'}, () => String(ddR), v => { ddR = +v; drawDD(); drawTrend(); });
+  tabs('#rtabs', {250:'1 年', 750:'3 年', 1500:'6 年', 2500:'10 年', 99999:'全部'}, () => String(ddR), v => { ddR = +v; drawDD(); drawTrend(); });
   tabs('#stabs', {twse:G.twse, otc:G.otc, hp:G.hp}, () => stG, v => { stG = v; sortK = v === 'hp' ? 'px' : 'cap'; sortD = -1; drawTable(); });
   draw();
 }).catch(e => { $('#sub').textContent = '資料讀取失敗：' + e; });
@@ -214,7 +214,7 @@ function xAxis(s, e, Wd, x){
   let g = '', last = '';
   for (let i = s; i <= e; i++) {
     const y = W.dates[i].slice(0,4), m = W.dates[i].slice(4,6);
-    const lab = (e - s > 500) ? (m === '01' ? y : '') : ((m === '01' || m === '07') ? y.slice(2) + '/' + m : '');
+    const lab = (e - s > 2000) ? (m === '01' && +y % 3 === 0 ? y : '') : (e - s > 500) ? (m === '01' ? y : '') : ((m === '01' || m === '07') ? y.slice(2) + '/' + m : '');
     if (lab && lab !== last && (i === s || W.dates[i-1].slice(4,6) !== m)) { g += `<line x1="${x(i)}" x2="${x(i)}" y1="0" y2="100%" stroke="var(--line)"/><text x="${x(i)+2}" y="11">${lab}</text>`; last = lab; }
   }
   return g;
@@ -223,8 +223,8 @@ function drawDD(){
   const [s, e] = range(), o = W.groups[ddG], Wd = 420, top = 70, H = 260, ch = H - top - 6;
   const x = i => (i - s) / Math.max(1, e - s) * Wd;
   // 指數
-  const tv = W.taiex.slice(s, e+1).filter(v => v), tmin = Math.min(...tv), tmax = Math.max(...tv);
-  const ty = v => 14 + (1 - (v - tmin) / (tmax - tmin || 1)) * (top - 24);
+  const tv = W.taiex.slice(s, e+1).filter(v => v).map(Math.log), tmin = Math.min(...tv), tmax = Math.max(...tv);
+  const ty = v => 14 + (1 - (Math.log(v) - tmin) / (tmax - tmin || 1)) * (top - 24);  // 對數刻度，長期間才看得出早期起伏
   let tp = '';
   for (let i = s; i <= e; i++) if (W.taiex[i]) tp += (tp ? 'L' : 'M') + x(i).toFixed(1) + ' ' + ty(W.taiex[i]).toFixed(1);
   // 堆疊
@@ -241,7 +241,7 @@ function drawDD(){
     const p = 'M' + L.map(q => q[0].toFixed(1) + ' ' + yy(q[2]).toFixed(1)).join('L') + 'L' + L.slice().reverse().map(q => q[0].toFixed(1) + ' ' + yy(q[1]).toFixed(1)).join('L') + 'Z';
     g += `<path d="${p}" fill="var(${cols[k]})"/>`;
   });
-  g += `<path d="${tp}" fill="none" stroke="var(--fg)" stroke-width="1.3"/><text x="${Wd-2}" y="${top-6}" text-anchor="end">加權指數</text>`;
+  g += `<path d="${tp}" fill="none" stroke="var(--fg)" stroke-width="1.3"/><text x="${Wd-2}" y="${top-6}" text-anchor="end">加權指數（對數）</text>`;
   g += `<rect x="0" y="0" width="${Wd}" height="${H}" fill="transparent" id="ddhit"/>`;
   $('#ddchart').innerHTML = g;
   const d = o.dd[idx], n = d ? d.reduce((a,b)=>a+b,0) : 0;
