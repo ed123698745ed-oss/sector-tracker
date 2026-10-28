@@ -17,7 +17,7 @@ audit/wh_skipped_events_*.csv（Eve 2026-10-28 R04 複審：富邦媒 2021/7/5 �
 否則一律調整（Eve 2026-10-27 複審：原 15% 容差會漏調小額配股，例：合庫金 2021/9 配股約 2%）。
 輸出：config/wh_lists.json  {"YYYYMM"(排名月): {"asof": 排名日, "hp": [[代號, 數值], ...], "otc": [...], "twse": [...]}}
 """
-import gzip, json, math, os, sys
+import gzip, json, math, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from twse_shares import avail_quarter  # noqa: E402
@@ -132,6 +132,20 @@ def main():
     rank80 = set()  # 曾進上市市值前 80 者：配股率資料的抓取範圍（含邊界緩衝）
 
     didx = {ds: i for i, ds in enumerate(dates)}
+    # 股數來源：WH_SHARES=qfiis 用證交所 MI_QFIIS 發行股數（R06 起），否則沿用財報推算（R05 以前）
+    SRC = os.environ.get('WH_SHARES', 'mops')
+    qf = {}
+    if SRC == 'qfiis':
+        qdir = os.path.join(ROOT, 'archive', 'raw', 'twse_qfiis')
+        for fn in os.listdir(qdir):
+            j = json.load(gzip.open(os.path.join(qdir, fn)))
+            qf[fn[:8]] = {r[0].strip(): int(r[3].replace(',', '')) for r in j['data']
+                          if re.fullmatch(r'[1-9]\d{3}', r[0].strip()) and not r[0].startswith('91')}
+    qf_dates = sorted(qf)
+
+    def shift_days(ds, k):
+        import datetime as _dt
+        return (_dt.date(int(ds[:4]), int(ds[4:6]), int(ds[6:])) + _dt.timedelta(days=k)).strftime('%Y%m%d')
 
     def halt_start(c, ds):
         """恢復買賣日之前最後一個有成交的交易日（停止買賣始日前一日）"""
@@ -160,7 +174,24 @@ def main():
         rec = {'asof': dates[ie]}
         tw_cap = {}
         detail_m = {}
-        if tw and ym in tw:
+        if SRC == 'qfiis' and dates[ie] in qf:
+            # 股數＝證交所 MI_QFIIS 排名日「發行股數」；近 120 日內的股數事件若尚未反映於發行股數
+            # （與事件前一個月底的發行股數相比，變動幅度未達事件幅度 80%～125%），以事件倍率補上
+            qn = qf[dates[ie]]
+            for c, n in qn.items():
+                if c not in last or c in otc_cap or c not in px: continue
+                fx = 1.0; evs = []
+                for ds_, r, kd in events.get(c, []):
+                    if not (shift_days(dates[ie], -120) < ds_ <= dates[ie]): continue
+                    pm = max((m for m in qf_dates if m < ds_), default=None)
+                    s_pm = qf[pm].get(c) if pm else None
+                    if s_pm and abs(math.log(r)) > 1e-6 and 0.8 <= math.log(n / s_pm) / math.log(r) <= 1.25:
+                        continue
+                    fx *= r; evs.append([ds_, round(r, 9), kd])
+                if fx != 1.0: adj_log.setdefault(c, []).append((ym, round(fx, 3)))
+                tw_cap[c] = round(last[c] * n * fx / 1e8, 1)
+                detail_m[c] = {'close': last[c], 'q_shares': n, 'quarter': 'QFIIS' + dates[ie], 'factor': round(fx, 9), 'events': evs}
+        elif tw and ym in tw:
             ry, qq = avail_quarter(ym)
             qd = '%d%s' % (ry + 1911, qend[qq])
             pq = (ry, qq - 1) if qq > 1 else (ry - 1, 4)
@@ -183,6 +214,7 @@ def main():
                 tw_cap[c] = round(last[c] * n * fx / 1e8, 1)
                 detail_m[c] = {'close': last[c], 'q_shares': n, 'quarter': '%03d%02d' % (ry, qq), 'factor': round(fx, 9),
                                'events': [[ds_, round(r, 9), kd] for ds_, r, kd in events.get(c, []) if qd < ds_ <= dates[ie]]}
+        if tw_cap:
             rk = sorted(tw_cap.items(), key=lambda x: (-x[1], -last[x[0]], x[0]))
             rec['twse'] = rk[:50]
             detail[ym] = {c: dict(detail_m[c], cap=v, rank=i + 1) for i, (c, v) in enumerate(rk[:60])}
