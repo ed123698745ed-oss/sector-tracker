@@ -27,6 +27,8 @@ jobs:
       - if: always()
         run: |
           git config user.name "sector-tracker-bot" && git config user.email "actions@users.noreply.github.com"
+          # 除權息參考價快取由多個工作同時改寫，提交時會互相衝突導致推送失敗；屬可重抓的快取，不提交
+          git checkout -- data/exright_twse.json data/exright_tpex.json 2>/dev/null || true
           git add archive data && git commit -q -m "回補 job ${{ matrix.idx }} [skip ci]" || exit 0
           for i in 1 2 3 4 5 6; do git pull --rebase -q && git push -q && break; sleep $((RANDOM % 30 + 5)); done
   next:
