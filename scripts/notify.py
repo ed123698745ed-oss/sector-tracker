@@ -20,14 +20,22 @@ def main():
            f"轉弱 {mp[3]}（今日 {mp[0]}）／站穩月線 {mp[4]}／本週主流 {mp[5]}（上週 {mp[7]}）\n"
            f"只供觀察，不是交易訊號。\nhttps://ed123698745ed-oss.github.io/sector-tracker/")
     print(msg)
+    push(msg)
+
+
+def push(msg):
+    """推一則 LINE 文字訊息；沒設定 secrets 就只印出。失敗不拋錯（警示不能害主流程中斷）。"""
     tok, uid = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN'), os.environ.get('LINE_USER_ID')
     if not (tok and uid):
-        print('未設定 LINE secrets，略過推播'); return
+        print('未設定 LINE secrets，略過推播'); return False
     body = json.dumps({'to': uid, 'messages': [{'type': 'text', 'text': msg}]}).encode()
     req = urllib.request.Request('https://api.line.me/v2/bot/message/push', data=body,
                                  headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {tok}'})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        print('LINE', r.status)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            print('LINE', r.status); return True
+    except Exception as e:
+        print('LINE 推播失敗', e); return False
 
 
 if __name__ == '__main__':

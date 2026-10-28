@@ -127,6 +127,38 @@ def pct(x):
         return None
 
 
+COUNT_MIN = 0.9  # 回傳檔數低於前一交易日有成交檔數的 90% → 視為抓取異常
+
+
+def baseline(codes, today):
+    """前一交易日（今天以前最新一份 quotes）裡，這次要查的代號有幾檔有成交。"""
+    fs = sorted(f for f in glob.glob(f'{ROOT}/data/quotes/*.json') if os.path.basename(f)[:8] < today)
+    if not fs:
+        return None, None
+    d = json.load(open(fs[-1], encoding='utf-8'))
+    return os.path.basename(fs[-1])[:8], sum(c in d.get('q', {}) for c in codes)
+
+
+def alert_once(kind, day, text):
+    """同一天同一種警示只推一次（紀錄在 test/mis_alert.txt）。"""
+    f = f'{ROOT}/test/mis_alert.txt'
+    key = f'{day} {kind}'
+    seen = open(f, encoding='utf-8').read().split('\n') if os.path.exists(f) else []
+    if key in seen:
+        return
+    import notify
+    notify.push(text)
+    with open(f, 'a', encoding='utf-8') as fh:
+        fh.write(key + '\n')
+
+
+def log(lines):
+    os.makedirs(f'{ROOT}/test', exist_ok=True)
+    with open(f'{ROOT}/test/mis_result.txt', 'a', encoding='utf-8') as f:
+        f.write('\n'.join(lines) + '\n\n')
+    print('\n'.join(lines))
+
+
 def main():
     th, names = members()
     codes = sorted({c for v in th.values() for c in v})
@@ -171,18 +203,22 @@ def main():
     qdate = qd[0][0] if qd else None
     if qdate != now.strftime('%Y%m%d'):
         lines.append(f'skip: quote date {qdate} != today（休市或尚無今日報價），不更新 intraday.json')
-        os.makedirs(f'{ROOT}/test', exist_ok=True)
-        with open(f'{ROOT}/test/mis_result.txt', 'a', encoding='utf-8') as f:
-            f.write('\n'.join(lines) + '\n\n')
-        print('\n'.join(lines))
+        log(lines); return
+    # 回傳檔數檢查：明顯少於前一交易日 → 程式或資料源異常（2026-10-27 只回 175/610 檔事故），不更新並警示
+    bday, base = baseline(codes, qdate)
+    lines.append(f'count_check returned {len(q)} baseline {base} ({bday})')
+    if base and len(q) < base * COUNT_MIN:
+        lines.append(f'skip: returned {len(q)} < {COUNT_MIN:.0%} of {base}，不更新 intraday.json')
+        log(lines)
+        alert_once('count', qdate,
+                   f"【族群網站・盤中異常】{now.strftime('%m/%d %H:%M')}\n"
+                   f"盤中只抓到 {len(q)} 檔報價，前一交易日（{bday[4:6]}/{bday[6:]}）有 {base} 檔成交，低於 90%。\n"
+                   f"已停止更新盤中資料，網頁維持上一筆正常資料；請 Emit 檢查。")
         return
     out = {'date': qdate, 'time': now.strftime('%H:%M'),
            'quote_time': times[-1] if times else None, 'active': len(th), 'tx': tx, 'priced': got, 'total': len(codes), 'hits': rows, 'all': allr}
     json.dump(out, open(f'{ROOT}/docs/intraday.json', 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
-    os.makedirs(f'{ROOT}/test', exist_ok=True)
-    with open(f'{ROOT}/test/mis_result.txt', 'a', encoding='utf-8') as f:
-        f.write('\n'.join(lines) + '\n\n')
-    print('\n'.join(lines))
+    log(lines)
 
 
 if __name__ == '__main__':

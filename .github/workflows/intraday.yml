@@ -32,12 +32,15 @@ jobs:
         with:
           python-version: '3.12'
       - if: steps.tw.outputs.go == '1'
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
         run: python3 scripts/intraday.py
       - name: 提交
         if: steps.tw.outputs.go == '1'
         run: |
           git config user.name "sector-tracker-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add docs/intraday.json test/mis_result.txt
+          git add docs/intraday.json test/mis_result.txt test/mis_alert.txt 2>/dev/null || git add docs/intraday.json test/mis_result.txt
           git commit -m "盤中暫定 $(TZ=Asia/Taipei date +%H:%M)" || exit 0
           for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 5; done
