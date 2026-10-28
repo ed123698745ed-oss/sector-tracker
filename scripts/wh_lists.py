@@ -9,7 +9,9 @@
 上市股數另做事件調整：財報季底之後到排名日之間，若有證交所公告的減資恢復買賣、變更面額恢復買賣或除權（配股），
 股數乘上新股數÷舊股數：面額變更、彌補虧損減資、配股＝停止買賣前收盤÷恢復買賣參考價；
 退還股款（現金減資）每股退還面額，減資比率 k＝(前收盤−參考價)÷(面額−參考價)，比值＝1−k；
-權息：比值＝1＋配股率（股東會決議配股元/股÷面額，以參考價驗證，見 mops_div.py）。
+權息：比值＝1＋配股率；配股率依序取「除權息基準日公告」(mops_div_notice.py)、手動補登(config/div_overrides.json)、
+「股利分派情形」(mops_div.py)，面額用事件當時財報推得者，三者皆須通過參考價驗證（誤差<1%）；皆無者不調整並列入
+audit/wh_skipped_events_*.csv（Eve 2026-10-28 R04 複審：富邦媒 2021/7/5 配股 3 元曾被漏調）。
 是否已反映於季報：季報股數較前季的變動幅度達事件幅度 80%～125% 才視為已反映（減資／變更面額另須停止買賣始於季底前）；
 現金增資除權（減除股利參考價≠除權息參考價）不調整股數，新股待下一季財報反映（Ed 2026-10-27）；
 否則一律調整（Eve 2026-10-27 複審：原 15% 容差會漏調小額配股，例：合庫金 2021/9 配股約 2%）。
@@ -48,16 +50,24 @@ def main():
     edir = os.path.join(ROOT, 'archive', 'raw', 'twse_events')
     from mops_div import parse_div
     div_cache = {}
+    from mops_div_notice import parse_notice
+    notices = {}
+    for fp in glob.glob(os.path.join(ROOT, 'archive', 'raw', 'mops_div_notice', '*_*_*.html.gz')):
+        if fp.endswith('_list.html.gz'): continue
+        notices.setdefault(os.path.basename(fp)[:4], []).append(parse_notice(fp))
     ovp = os.path.join(ROOT, 'config', 'div_overrides.json')
     div_override = json.load(open(ovp)) if os.path.exists(ovp) else {}
 
     def stock_rate(c, ds, prev, ref):
         """權息事件的配股率 s（新股數＝舊股數×(1+s)）：取該年度股東會決議的配股（元/股）÷面額，
         並以「(前收盤−現金股利)÷(1+s)≈參考價」驗證（誤差<1%）；查無資料或驗證不過回傳 None"""
+        # 優先：除權息基準日公告（交易日相符者）→ 手動補登 → 股利分派情形；皆須通過參考價驗證
+        cands = [n for n in notices.get(c, []) if n['exdate'] == ds]
         ov = div_override.get(c, {}).get(ds)
-        if ov:
-            s = ov['stock'] / par_of(c, ds)
-            if abs((prev - ov['cash']) / (1 + s) / ref - 1) < 0.01:
+        if ov: cands.append(ov)
+        for n in cands:
+            s = n['stock'] / par_of(c, ds)
+            if abs((prev - n['cash']) / (1 + s) / ref - 1) < 0.01:
                 return s
         y = int(ds[:4]) - 1911
         for yy in (y, y - 1):
