@@ -98,7 +98,9 @@ def main():
         kind = os.path.basename(fp)[:6]
         jf = json.load(open(fp)); flds = [x.strip() for x in jf.get('fields') or []]
         i_why = flds.index('減資原因') if '減資原因' in flds else None
-        old49 = kind == 'TWT49U' and '權/息' not in flds and '息值' in flds  # 2010 年以前格式：權值、息值分列
+        # 權值、息值分列（2010 年以前格式）：配股率可直接由 (前收盤−息值)÷參考價−1 求得，不需觀測站股利資料。
+        # 限 2015 年以前，2015 起沿用凍結名單（R06）的算法
+        old49 = kind == 'TWT49U' and '息值' in flds and '權值' in flds and os.path.basename(fp)[7:11] < '2015'
         for r in jf.get('data') or []:
             prev, ref = f(r[3]), f(r[4])
             if not prev or not ref: continue
