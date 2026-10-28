@@ -1,69 +1,109 @@
-2026-10-27T11:17:07Z 1101 http=200 bytes=49248 普通股股本=1 安全性=0 公司選單=0
-2026-10-27T11:17:28Z 2881 http=200 bytes=9603 普通股股本=0 安全性=0 公司選單=1
-2026-10-27T11:18:57Z v1 http=200 bytes=9603 普通股股本=0 安全性=0 公司選單=1 | step=1&firstin=1&off=1&queryName=co_id&inpuType=co_id&TYPEK=sii&isnew=false&co_id=2881&year=113&season=03
-<form action='/mops/web/ajax_t164sb03' method='post' name='fm1' id='fm1' onsubmit='return false;'>
-<input type='hidden' name="id" id="id" value="">
-<input type='hidden' name="key" id="key" value="">
-<input type='hidden' name="TYPEK" id="TYPEK" value="sii">
-<input type='hidden' name="step" id="step" value="2">
-<input type='hidden' name="year" id="year" value="113">
-<input type='hidden' name="season" id="season" value="3">
-<input type='hidden' name="co_id" id="co_id" value="">
-<input type='hidden' name="firstin" id="firstin" value="1">
-<input type='button' value='詳細資料' onclick='document.fm1.co_id.value="2881";ajax1(this.form,"table01");'>
-<input type='button' value='詳細資料' onclick='document.fm1.co_id.value="5828";ajax1(this.form,"table01");'>
-<input type='button' value='詳細資料' onclick='document.fm1.co_id.value="000960";ajax1(this.form,"table01");'>
-<input type='button' value='詳細資料' onclick='document.fm1.co_id.value="5836";ajax1(this.form,"table01");'>
-<input type='button' value='詳細資料' onclick='document.fm1.co_id.value="5865";ajax1(this.form,"table01");'>
-2026-10-27T11:19:19Z v2 http=200 bytes=9606 普通股股本=0 安全性=0 公司選單=1 | step=1&firstin=true&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=2881&year=113&season=03
-2026-10-27T11:19:41Z v3 http=200 bytes=42460 普通股股本=1 安全性=0 公司選單=0 | step=2&firstin=1&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=2881&year=113&season=03
-2026-10-27T14:47:14Z t05st09_2 v1 http=200 bytes=2501 合庫=0 安全性=0 | step=1&firstin=1&off=1&isQuery=Y&TYPEK=sii&year=110&qryType=1
-2026-10-27T14:47:35Z t05st09_2 v2 http=200 bytes=2501 合庫=0 安全性=0 | encodeURIComponent=1&step=1&firstin=1&off=1&isQuery=Y&TYPEK=sii&year=110&qryType=1
-2026-10-27T14:47:55Z t05st09_2 v3 http=200 bytes=2501 合庫=0 安全性=0 | step=1&firstin=1&off=1&TYPEK=sii&year=110&qryType=1
-HEAD  |公開資訊觀測站|請輸入公司代號！|try { if(!document.querySelector('#table01')){ var table01 = document.createElement("div"); table01.id = "table01"; document.body.appendChild(table01); if(document.querySelector("#div01")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement("script"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i|input[name=run]').remove(); }; }; } catch (error) { console.error("Script Error:", error); }; |
-5880  |公開資訊觀測站|請輸入公司代號！|try { if(!document.querySelector('#table01')){ var table01 = document.createElement("div"); table01.id = "table01"; document.body.appendChild(table01); if(document.querySelector("#div01")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('f
-2026-10-27T14:49:46Z t05st09 v1 http=200 bytes=7155 配股=1 安全性=0 | step=1&firstin=1&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=2892&year=110
-2026-10-27T14:50:07Z t05st09 v2 http=200 bytes=7155 配股=1 安全性=0 | step=2&firstin=1&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=2892&year=110
-BODY  |公開資訊觀測站|公司股利分派情形|（經股東會確認後適用）|本資料由 (上市公司) 第一金 公司提供|股利|年度|股東會|日期|期|別|期初|未分|配盈|餘/待|彌補|虧損|(元)|本期|淨利|(淨損)|(元)|可分|配盈|餘|(元)|分配|後期|末未|分配|盈餘|(元)|股東配發內容|摘錄公|司章程-|股利分|派部分|普通股|每股面額|盈餘分配|之現金股利|(元/股)|法定盈餘|公積、資本|公積發放|之現金(元/股)|股東配發|之現金(股利)|總金額(元)|盈餘轉|增資配股|(元/股)|法定盈餘|公積、資本|公積轉|增資配股|(元/股)|股東配股|總股數(股)|109&nbsp;|110/06/25&nbsp;|1&nbsp;|7,854,557,417&nbsp;|16,807,541,411&nbsp;|22,632,973,338&nbsp;|9,797,172,268&nbsp;|0.90000000&nbsp;|0.0&nbsp;|11,552,220,970&nbsp;|0.10000000&nbsp;|0.0&nbsp;|128,358,010&nbsp;|本公司為持續擴充規模與增加獲利能力，並兼顧相關法規，採取賸餘股利政策。分派條件、時機與金額：本公司年度決算如有盈餘，應先依法繳納稅捐並彌補以往年度虧損、提列法定盈餘公積及依法令與業務實際需要提列或迴轉特別盈餘公積後，並得分派特別股股息，如尚有餘額，得再加計上年度累積未分派盈餘為股東股息及紅利之可分派數，提撥可分派數之百分之三十至一百，由董事會擬定分派案提請股東會決議之。 依據本公司營運規劃，分派現金股利與股票股利，惟現金股利不得低於當年度股東股息及紅利分派總額百分之十，餘為股票股利。倘每股分派現金股利不足Ｏ．一元時，除股東會另有決議外，不予分派。&nbsp;|新台幣 10.0000元&nbsp;|註：「可分配盈餘(元)」係指「期初未分配盈餘/待彌補虧損」加計「當年度損益依公司法規定於完納稅捐、彌補虧損、依相關法令提列法定盈餘公積與特別盈餘公積、及其他調整(或迴轉)事項後」之數額。|除權息交易日請至股東會及股利項下之除權息公告查詢|除權息參考價請至台灣證券交易所網頁(|www.twse.com.tw|)|或櫃檯買賣中心(|http://www.tpex.org.tw|)，點選市場公告項下之除權除息計算結果表查詢|try { if(!document.querySelector('#table01')){ var table01 = document.createElement("div"); table01.id = "table01"; document.body.appendChild(table01); if(document.querySelector("#div01")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement("script"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i|input[name=run]').remove(); }; }; } catch (error) { console.error("Script Error:", error); }; |
-2026-10-27T16:44:56Z t108sb19 v1 http=200 bytes=4299 配股=1 查無=3 安全性=0 | step=1&firstin=1&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=1519&year=113
-2026-10-27T16:45:17Z t108sb19 v2 http=200 bytes=4294 配股=1 查無=3 安全性=0 | step=1&firstin=1&off=1&TYPEK=sii&co_id=1519&year=113
-2026-10-27T16:45:38Z t05st09_new v3 http=200 bytes=3243 配股=0 查無=0 安全性=0 | step=1&firstin=1&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=1519&year=113
-2026-10-27T16:45:59Z t05st09_new v4 http=200 bytes=3243 配股=0 查無=0 安全性=0 | step=1&firstin=1&off=1&TYPEK=sii&co_id=1519&year=113
-BEST r1.html
-BODY  |公開資訊觀測站|決定分配股息及紅利或其他利益之基準日公告|公司代號：1519 公司名稱：華城|決定分派股息及紅利或其他利益之基準日公告|公告日期|申報序號|主旨|種類|內容|修正後現金股利發放日|113/07/10|1|公告本公司113年度配發現金股利暨盈餘轉增資發行新股基準日|無|TDR除權(息)公告|查無所需資料|分配收益公告|查無所需資料|證券商發行指數投資證券處理準則應公告事項|查無所需資料|try { if(!document.querySelector('#table01')){ var table01 = document.createElement("div"); table01.id = "table01"; document.body.appendChild(table01); if(document.querySelector("#div01")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement("script"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i|input[name=run]').remove(); }; }; } catch (erro
-== t108sb19 1519 114 list 2026-10-27T17:31:34Z bytes=4299
-<form action='/mops/web/ajax_t108sb22' name='t108sb22_fm1' id='t108sb22_fm1' method='post' onsubmit='return false;'>
-<input type='hidden' name='firstin' value='true' />
-<input type=hidden name='colorchg' value=''>
-<input type=hidden name='TYPEK' value='sii'>
-<input type=hidden name=isnew value='false'>
-<input type=hidden name=id value=''>
-<input type=hidden name=DATE1 >
-<input type=hidden name=SEQ_NO >
-<input type=hidden name=COMP >
-<input type=hidden name='kind' value=''>
-<input type=hidden name='SKIND' value='G'>
-<input type=hidden name=step value='2'>
-<input type='button' value='詳細資料' onclick='document.t108sb22_fm1.DATE1.value="20250708";document.t108sb22_fm1.SEQ_NO.value="1";document.t108sb22_fm1.COMP.value="1519";openWindow(this.form ,"");'>
-LIST 公告日期|申報序號|主旨|種類|內容|修正後現金股利發放日|114/07/11|1|公告本公司114年度配發現金股利暨盈餘轉增資發行新股基準日|無|TDR除權(息)公告|查無所需資料|分配收益公告|查無所需資料|證券商發行指數投資證券處理準則應公告事項|查無所需資料|try { if(!document.querySelector('#table01')){ var table01 = document.createElement("div"); table01.id = "table01"; document.body.appendChild(table01); if(document.querySelector("#div01")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScrip
-== t108sb22 1519 20250708 detail 2026-10-27T17:33:06Z bytes=13564
-DETAIL  |公開資訊觀測站|決定分派股息及紅利或其他利益之基準日公告|公司代號： 1519 公司名稱：華城|一、公告序號：|1|二、主旨：|公告本公司114年度配發現金股利暨盈餘轉增資發行新股基準日|三、依據：|1.金融監督管理委員會民國114年07月03日核准在案。|2.本公司於114年03月10日董事會決議通過現金股利。|3.本公司於114年06月13日股東常會決議通過股票股利。|4.本公司於114年07月10日董事會訂定113年除權及除息相關事宜。|四、股票停止過戶起訖日期：|114年07月29日 |至|114年08月02日 |債券換股權利證書及轉換公司債停止轉換(過戶)之起訖日期：|年 月 日 |至|年 月 日 |五、公告事項：|（一）年度：|114 |第|1 |次除權/除息|（二）原（定）發行股數總額及每股金額：|●分次發行|○全額發行|額 定：|500,000,000 |股、金額：|5,000,000,000 |元，每股面額：|新台幣 10.0000元 |已發行(含私募股票：|0 |股、未既得限制員工權利新股：|0 |股)：|287,164,403 |股、金額：|2,871,644,030 |元，每股面額：|新台幣 10.0000元 |已完成變更登記：|287,164,403 |股、金額：|2,871,644,030 |元，每股面額：|新台幣 10.0000元 |（三）訂立章程及最近一次修訂之日期：|58年08月04日訂定|114年06月13日修訂|（四）本次增資總額： |●除權須申報|○僅除息不須申報|＊（有償）現金增資：發行 |●普通股|○特別股|：|0 |股，每股認購金額：|0.00 |元/股(認購價格將於除權交易日前五個營業日申報)|其中 a.公開承銷：|0 |股，佔本次現金增資比率(%)：|0.00 |b.員工認購：|0 |股，佔本次現金增資比率(%)：|0.00 |c.原股東認購：|0 |股，佔本次現金增資比率(%)：|0.00 |現金增資繳款開始日：|年 月 日 |，現金增資繳款截止日：|年 月 日 |＊盈餘轉增資：|28,716,441.0 |股|＊法定盈餘公積、資本公積轉增資：|0.0 |股|＊共計|28,716,441 |股，金額：|287,164,410 |元|＊其他應公告事項：|無|（五）權利分派內容：|＊按基準日股東名簿記載之股東及其持有股份比例：|※除權--普通股：每壹股配發股票(股利)|1.00000000 |元（即每壹仟股無償配發盈餘轉增資|100.00000000 |股，每壹仟股無償配發法定盈餘公積、資本公積轉增資|0.00000000 |股），每壹仟股以每股新台幣|0.00 |元認購 |●普通股|○特別股|0.00000000 |股|※除息--普通股：每壹股配發現金(股利)|9.00000000 |元，（即每壹股盈餘分配|9.00000000 |元，每壹股法定盈餘公積、資本公積發放|0.00000000 |元)，現金配發總額|2,584,479,627 |元|＊股利所屬年度：|113年，股利所屬期間 年度 |＊本次增資發行新股之權利義務與原股份相同。|如有不同，請說明：|無|＊本公司普通股計有|0 |股不參與除權除息 （含庫藏股|0 |股、限制員工權利新股|0 |股及其他|0 |股），可參與權利分派之普通股|287,164,403 |股|（含未變更登記之已發行普通股|0 |，其中限制員工權利新股|0 |股）。|＊畸零股之處理方式：|股東於停過日起5日內向股務代理辦理拼湊成整股,拼湊不足或未拼湊之畸零股,授權董事長洽特定人按面額認購。|＊其他 現金股利分派係經114年03月10日董事會通過、股票股利分派係經114年06月13日股東會通過|＊現金股利發放日：|114年08月29日 |（發放現金股利時適用。）|＊其他應敘明事項：|無|（六）現金股利之一部或全部是否以外幣發放： ○是 ●否 |（七）增資後股份總額及金額：|1.本次增資後實收資本總額|3,158,808,440 |元 ，|315,880,844 |股（普通股）|2.每股面額|新台幣 10.0000元 |，分次發行。|3.特別股部分：|0 |股|（八）權利分派基準日：|114年08月02日 |除權/除息交易日：|114年07月25日 |（九）增資計劃/用途：|本公司為配合營運需要，充實公司之營運資金。|六、辦理過戶手續：|（一）辦理過戶日期時間：|114年07月28日 |16時30分 |前|（二）辦理過戶機構名稱：|台新綜合證券股份有限公司股務代理部|辦理過戶機構地址：|台北市建國北路一段九十六號B1|辦理過戶機構電話：|(02)2504-8125|（三）辦理過戶方式：|凡持有本公司股票而尚未辦理過戶之股東，請於民國114年7月28日下午4點30分前親臨本公司股務代理機構台新綜合證券股務代理部(台北市建國北路一段96號地下一樓) 辦理過戶手續，掛號郵寄者以民國114年7月28日（最後過戶日）郵戳日期為憑。凡參加台灣集中保管結算所股份有限公司進行集中辦理過戶者，本公司股務代理人將依其送交之資料逕行辦理過戶手續。|（四）其他：|1.本次現金股利發放至元為止(元以下捨去，不足一元之畸零款合計數，由小數點數字由大至小及戶號由前至後順序調整，至符合現金股利分配總額)，匯費及郵資由股東自行負擔。貴股東之現金股利帳號如未辦理變更、撤銷以致退匯，需自行負擔退匯改寄支票之郵資費用。|2.本次盈餘轉增資發行新股，配發不足一股之畸零股，股東可自停止過戶日起五日內，向本公司股務代理機構辦理拼湊一整股，拼湊不足或未拼湊之畸零股，依公司法第240條之規定，按面額折發現金至元為止(抵繳集保劃撥費用或無實體登錄費用)，並授權董事長洽特定人按面額承購。|3.本次增資股票俟呈奉主管機關核准變更登記30日內採無實體發行股票並以帳簿劃撥方式支付。屆時另行公告並分函通知各股東。|七、其他應公告事項：|無|八、特此公告|以上公告係由華城公司輸入，資料如有虛偽不實或事後變動或未依規定時限公告，均由該公司負其全責。|try { if(!document.querySelector('#table01')){ 
-== fund/MI_QFIIS?date=20151231&selectType=ALLBUT0999&response=json http=200 bytes=112169
-OK ['證券代號', '證券名稱', '國際證券編碼', '發行股數', '外資及陸資尚可投資股數', '全體外資及陸資持有股數', '外資及陸資尚可投資比率', '全體外資及陸資持股比率', '外資及陸資共用法令投資上限比率', '陸資法令投資上限比率', '與前日異動原因(註)', '最近一次上市公司申報外資及陸資持股異動日期'] 935
-['2311', '日月光', 'TW0002311008', '7,892,848,096', '1,658,011,377', '6,234,836,719']
-['2325', '矽品', 'TW0002325008', '3,116,361,139', '1,445,686,512', '1,670,674,627']
-['2330', '台積電', 'TW0002330008', '25,930,380,458', '5,909,287,811', '20,021,092,647']
-['2809', '京城銀', 'TW0002809001', '1,201,234,265', '928,237,708', '272,996,557']
-['2823', '中壽', 'TW0002823002', '3,340,146,700', '1,532,603,352', '1,807,543,348']
-['2881', '富邦金', 'TW0002881000', '10,233,603,995', '7,141,883,362', '3,091,720,633']
-['2888', '新光金', 'TW0002888005', '10,228,144,081', '7,947,446,793', '2,280,697,288']
-['3474', '華亞科', 'TW0003474003', '6,558,574,000', '3,305,080,928', '3,253,493,072']
-== fund/MI_QFIIS?date=20180330&selectType=ALLBUT0999&response=json http=200 bytes=125694
-OK ['證券代號', '證券名稱', '國際證券編碼', '發行股數', '外資及陸資尚可投資股數', '全體外資及陸資持有股數', '外資及陸資尚可投資比率', '全體外資及陸資持股比率', '外資及陸資共用法令投資上限比率', '陸資法令投資上限比率', '與前日異動原因(註)', '最近一次上市公司申報外資及陸資持股異動日期'] 1042
-['2311', '日月光', 'TW0002311008', '8,380,478,101', '1,863,143,749', '6,517,334,352']
-['2325', '矽品', 'TW0002325008', '3,116,361,139', '2,211,723,898', '904,637,241']
-['2330', '台積電', 'TW0002330008', '25,930,380,458', '5,483,474,932', '20,446,905,526']
-['2809', '京城銀', 'TW0002809001', '1,151,234,265', '871,310,401', '279,923,864']
-['2823', '中壽', 'TW0002823002', '3,786,398,400', '2,506,899,346', '1,279,499,054']
-['2881', '富邦金', 'TW0002881000', '10,233,603,995', '7,183,856,980', '3,049,747,015']
-['2888', '新光金', 'TW0002888005', '10,228,144,081', '7,161,011,797', '3,067,132,284']
+== https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20040211&type=ALLBUT0999&response=json http=200 bytes=108601
+stat OK keys ['tables', 'type', 'params', 'stat', 'date']
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table 093年02月11日 大盤統計資訊 ['成交統計', '成交金額(元)', '成交股數(股)', '成交筆數'] 17
+ table None [] 0
+ table 093年02月11日 每日收盤行情(全部(不含權證、牛熊證、可展延牛熊證)) ['證券代號', '證券名稱', '成交股數', '成交筆數', '成交金額', '開盤價', '最高價', '最低價', '收盤價', '漲跌(+/-)'] 711
+ table None [] 0
+== https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20040510&type=ALLBUT0999&response=json http=200 bytes=106734
+stat OK keys ['tables', 'type', 'params', 'stat', 'date']
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table 093年05月10日 大盤統計資訊 ['成交統計', '成交金額(元)', '成交股數(股)', '成交筆數'] 17
+ table None [] 0
+ table 093年05月10日 每日收盤行情(全部(不含權證、牛熊證、可展延牛熊證)) ['證券代號', '證券名稱', '成交股數', '成交筆數', '成交金額', '開盤價', '最高價', '最低價', '收盤價', '漲跌(+/-)'] 706
+ table None [] 0
+== https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20061229&type=ALLBUT0999&response=json http=200 bytes=110179
+stat OK keys ['tables', 'type', 'params', 'stat', 'date']
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table 095年12月29日 大盤統計資訊 ['成交統計', '成交金額(元)', '成交股數(股)', '成交筆數'] 17
+ table None [] 0
+ table 095年12月29日 每日收盤行情(全部(不含權證、牛熊證、可展延牛熊證)) ['證券代號', '證券名稱', '成交股數', '成交筆數', '成交金額', '開盤價', '最高價', '最低價', '收盤價', '漲跌(+/-)'] 705
+ table None [] 0
+== https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20070102&type=ALLBUT0999&response=json http=200 bytes=110838
+stat OK keys ['tables', 'type', 'params', 'stat', 'date']
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table None [] 0
+ table 096年01月02日 大盤統計資訊 ['成交統計', '成交金額(元)', '成交股數(股)', '成交筆數'] 17
+ table None [] 0
+ table 096年01月02日 每日收盤行情(全部(不含權證、牛熊證、可展延牛熊證)) ['證券代號', '證券名稱', '成交股數', '成交筆數', '成交金額', '開盤價', '最高價', '最低價', '收盤價', '漲跌(+/-)'] 705
+ table None [] 0
+== https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20100104&type=ALLBUT0999&response=json http=200 bytes=130269
+stat OK keys ['tables', 'type', 'params', 'stat', 'date']
+ table 099年01月04日 價格指數(臺灣證券交易所) ['指數', '收盤指數', '漲跌(+/-)', '漲跌點數', '漲跌百分比(%)', '特殊處理註記'] 42
+ table None [] 0
+ table None [] 0
+ table 報酬指數(臺灣證券交易所) ['報酬指數', '收盤指數', '漲跌(+/-)', '漲跌點數', '漲跌百分比(%)', '特殊處理註記'] 32
+ table None [] 0
+ table None [] 0
+ table 099年01月04日 大盤統計資訊 ['成交統計', '成交金額(元)', '成交股數(股)', '成交筆數'] 17
+ table None [] 0
+ table 099年01月04日 每日收盤行情(全部(不含權證、牛熊證、可展延牛熊證)) ['證券代號', '證券名稱', '成交股數', '成交筆數', '成交金額', '開盤價', '最高價', '最低價', '收盤價', '漲跌(+/-)'] 780
+ table None [] 0
+== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2007%2F01%2F02&type=EW&response=json http=200 bytes=664
+stat ok keys ['tables', 'date', 'flagField', 'stat']
+ table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 0
+== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2006%2F12%2F29&type=EW&response=json http=200 bytes=664
+stat ok keys ['tables', 'date', 'flagField', 'stat']
+ table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 0
+== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2004%2F05%2F10&type=EW&response=json http=200 bytes=664
+stat ok keys ['tables', 'date', 'flagField', 'stat']
+ table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 0
+== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2010%2F01%2F04&type=EW&response=json http=200 bytes=159037
+stat ok keys ['tables', 'date', 'flagField', 'stat']
+ table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 1260
+== https://www.twse.com.tw/rwd/zh/fund/MI_QFIIS?date=20040227&selectType=ALLBUT0999&response=json http=200 bytes=98675
+stat OK keys ['stat', 'date', 'selectType', 'title', 'hints', 'fields', 'data', 'notes']
+ fields ['證券代號', '證券名稱', '國際證券編碼', '發行股數', '外資尚可投資股數', '全體外資持有股數', '外資尚可投資比率', '全體外資持股比率'] 953 ['0001', '鴻運', 'TW0000001007', '500,000,000', '414,951,000', '85,049,000']
+== https://www.twse.com.tw/rwd/zh/fund/MI_QFIIS?date=20061229&selectType=ALLBUT0999&response=json http=200 bytes=78566
+stat OK keys ['stat', 'date', 'selectType', 'title', 'hints', 'fields', 'data', 'notes']
+ fields ['證券代號', '證券名稱', '國際證券編碼', '發行股數', '外資尚可投資股數', '全體外資持有股數', '外資尚可投資比率', '全體外資持股比率'] 701 ['0015', '富邦', 'TW0000015007', '500,000,000', '287,465,000', '212,535,000']
+== https://www.twse.com.tw/rwd/zh/fund/MI_QFIIS?date=20070131&selectType=ALLBUT0999&response=json http=200 bytes=78088
+stat OK keys ['stat', 'date', 'selectType', 'title', 'hints', 'fields', 'data', 'notes']
+ fields ['證券代號', '證券名稱', '國際證券編碼', '發行股數', '外資尚可投資股數', '全體外資持有股數', '外資尚可投資比率', '全體外資持股比率'] 700 ['0015', '富邦', 'TW0000015007', '500,000,000', '284,242,000', '215,758,000']
+== https://www.twse.com.tw/rwd/zh/fund/MI_QFIIS?date=20091231&selectType=ALLBUT0999&response=json http=200 bytes=91361
+stat OK keys ['stat', 'date', 'selectType', 'title', 'hints', 'fields', 'data', 'notes']
+ fields ['證券代號', '證券名稱', '國際證券編碼', '發行股數', '外資及陸資尚可投資股數', '全體外資及陸資持有股數', '外資及陸資尚可投資比率', '全體外資及陸資持股比率'] 773 ['0015', '富邦', 'TW0000015007', '500,000,000', '236,084,000', '263,916,000']
+== https://www.twse.com.tw/rwd/zh/exRight/TWT49U?startDate=20040101&endDate=20041231&response=json http=200 bytes=102074
+stat OK keys ['stat', 'title', 'fields', 'data', 'extraNotes', 'notes', 'formula', 'strDate']
+ fields ['資料日期', '股票代號', '股票名稱', '除權息前收盤價', '除權息參考價', '權值', '息值', '權值+息值'] 508 ['93年01月13日', '1227', '佳格', '9.30', '8.80', 0.0]
+== https://www.twse.com.tw/rwd/zh/reducation/TWTAUU?startDate=20040101&endDate=20041231&response=json http=200 bytes=68
+stat 查詢開始日期小於100年1月1日，請重新查詢! keys ['stat']
+== https://www.twse.com.tw/rwd/zh/change/TWTB8U?startDate=20040101&endDate=20041231&response=json http=200 bytes=479
+stat OK keys ['stat', 'params', 'title', 'fields', 'data', 'notes']
+ fields ['恢復買賣日期', '股票代號', '名稱', '停止買賣前收盤價格', '恢復買賣參考價', '漲停價格', '跌停價格', '開盤競價基準'] 0 []
+== https://www.twse.com.tw/rwd/zh/exRight/TWT49U?startDate=20080101&endDate=20081231&response=json http=200 bytes=125028
+stat OK keys ['stat', 'title', 'fields', 'data', 'extraNotes', 'notes', 'formula', 'strDate']
+ fields ['資料日期', '股票代號', '股票名稱', '除權息前收盤價', '除權息參考價', '權值', '息值', '權值+息值'] 609 ['97年01月02日', '3315', '宣昶', '53.50', '53.15', 0.35]
+== https://www.twse.com.tw/rwd/zh/reducation/TWTAUU?startDate=20080101&endDate=20081231&response=json http=200 bytes=68
+stat 查詢開始日期小於100年1月1日，請重新查詢! keys ['stat']
+== https://www.twse.com.tw/rwd/zh/change/TWTB8U?startDate=20080101&endDate=20081231&response=json http=200 bytes=479
+stat OK keys ['stat', 'params', 'title', 'fields', 'data', 'notes']
+ fields ['恢復買賣日期', '股票代號', '名稱', '停止買賣前收盤價格', '恢復買賣參考價', '漲停價格', '跌停價格', '開盤競價基準'] 0 []
+== https://www.twse.com.tw/rwd/zh/exRight/TWT49U?startDate=20110101&endDate=20111231&response=json http=200 bytes=142555
+stat OK keys ['stat', 'title', 'fields', 'data', 'extraNotes', 'notes', 'formula', 'strDate']
+ fields ['資料日期', '股票代號', '股票名稱', '除權息前收盤價', '除權息參考價', '權值+息值', '權/息', '漲停價格'] 729 ['100年01月05日', '3017', '奇鋐', '34.65', '34.19', '0.459923']
+== https://www.twse.com.tw/rwd/zh/reducation/TWTAUU?startDate=20110101&endDate=20111231&response=json http=200 bytes=3349
+stat OK keys ['stat', 'title', 'fields', 'data', 'notes', 'formula', 'strDate', 'endDate']
+ fields ['恢復買賣日期', '股票代號', '名稱', '停止買賣前收盤價格', '恢復買賣參考價', '漲停價格', '跌停價格', '開盤競價基準'] 21 ['100/01/25', '2412', '中華電', '73.10', '88.87', '95.00']
+== https://www.twse.com.tw/rwd/zh/change/TWTB8U?startDate=20110101&endDate=20111231&response=json http=200 bytes=479
+stat OK keys ['stat', 'params', 'title', 'fields', 'data', 'notes']
+ fields ['恢復買賣日期', '股票代號', '名稱', '停止買賣前收盤價格', '恢復買賣參考價', '漲停價格', '跌停價格', '開盤競價基準'] 0 []
