@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>權值與高價股觀察</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&display=swap">
+<style>
+:root{
+  --bg:#f4f6f9; --panel:#ffffff; --fg:#151a22; --muted:#5d6676; --line:#dfe3ea;
+  --accent:#3451c7; --accent-soft:#dbe2fb; --up:#cf3434; --down:#16804a; --flat:#7a8190; --chip:#eef1f6;
+  --d0:#1f3f8f; --d1:#3a6fc4; --d2:#86a9db; --d3:#f0c27a; --d4:#e07a45; --d5:#b8332b;
+  --num:"Barlow Condensed","Arial Narrow",ui-sans-serif,system-ui,sans-serif;
+  --body:system-ui,-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11141a; --panel:#191d25; --fg:#e9ecf1; --muted:#9aa3b2; --line:#2a303b;
+  --accent:#7d93f0; --accent-soft:#27304d; --up:#f06c6c; --down:#3fbf78; --flat:#8a92a1; --chip:#232834;
+  --d0:#5f86e0; --d1:#4c74c4; --d2:#3b5683; --d3:#9a7a43; --d4:#b4603a; --d5:#d0483f;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11141a; --panel:#191d25; --fg:#e9ecf1; --muted:#9aa3b2; --line:#2a303b;
+  --accent:#7d93f0; --accent-soft:#27304d; --up:#f06c6c; --down:#3fbf78; --flat:#8a92a1; --chip:#232834;
+  --d0:#5f86e0; --d1:#4c74c4; --d2:#3b5683; --d3:#9a7a43; --d4:#b4603a; --d5:#d0483f;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 var(--body)}
+.wrap{max-width:860px;margin:0 auto;padding-block:20px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:22px}
+nav{display:flex;gap:6px;font-size:14px}
+nav a{padding:5px 12px;border-radius:999px;color:var(--muted);text-decoration:none;background:var(--chip)}
+nav a[aria-current="page"]{background:var(--accent);color:#fff}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px}
+h1{margin:0;font-size:22px}
+.sub{color:var(--muted);font-size:13px}
+select,button{font:inherit;font-size:14px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+section{display:flex;flex-direction:column;gap:10px}
+h2{margin:0;font-size:16px}
+h2 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.num{font-family:var(--num);font-variant-numeric:tabular-nums}
+.up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--flat)}
+.idx{display:flex;flex-wrap:wrap;gap:8px 28px;align-items:baseline}
+.idx .big{font-family:var(--num);font-weight:700;font-size:44px;line-height:1}
+.idx .chg{font-family:var(--num);font-size:22px}
+.bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--chip)}
+.bar span{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.card h3{margin:0;font-size:15px}
+.card .k{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;color:var(--muted)}
+.card .k b{font-family:var(--num);font-size:17px;color:var(--fg);font-weight:700;white-space:nowrap}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs button{border-radius:999px;padding:4px 12px;background:var(--chip);border:none;color:var(--muted)}
+.tabs button[aria-pressed="true"]{background:var(--accent);color:#fff}
+svg{width:100%;height:auto;display:block}
+svg text{font:11px var(--num);fill:var(--muted)}
+.note{font-size:12px;color:var(--muted);line-height:1.6}
+.tblwrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap}
+th,td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--line)}
+th{position:sticky;top:0;background:var(--panel);cursor:pointer;color:var(--muted);font-weight:500;user-select:none}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+td.num{font-size:15px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin:0 1px}
+.on{background:var(--up)} .off{background:var(--line)}
+.tag{display:inline-block;font-size:11px;padding:0 6px;border-radius:999px;background:var(--chip);color:var(--muted);margin-left:3px}
+#tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px;display:none;z-index:9;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav aria-label="分頁"><a href="./">族群追蹤</a><a href="wh.html" aria-current="page">權值與高價股</a></nav>
+  <header>
+    <div>
+      <h1>權值與高價股觀察</h1>
+      <div class="sub" id="sub">讀取資料中…</div>
+    </div>
+    <label class="sub">交易日 <select id="day" aria-label="選擇交易日"></select></label>
+  </header>
+
+  <section>
+    <div class="panel idx" id="idx"></div>
+  </section>
+
+  <section>
+    <h2>全市場漲跌分布<small>上市櫃普通股</small></h2>
+    <div class="panel">
+      <div class="bar" id="udbar" aria-hidden="true"></div>
+      <div class="legend" id="udleg" style="margin:6px 0 10px"></div>
+      <svg id="dist" viewBox="0 0 420 170" role="img" aria-label="漲跌幅分布"></svg>
+    </div>
+  </section>
+
+  <section>
+    <h2>三組比較<small id="listinfo"></small></h2>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section>
+    <h2>離高點分布<small>離近 250 日最高還原收盤</small></h2>
+    <div class="tabs" id="gtabs"></div>
+    <div class="tabs" id="rtabs"></div>
+    <div class="panel">
+      <svg id="ddchart" viewBox="0 0 420 260" role="img" aria-label="離高點分布歷史"></svg>
+      <div class="legend" id="ddleg"></div>
+      <div class="note" id="ddnote"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>均線上比例與創高創低<small id="trendg"></small></h2>
+    <div class="panel">
+      <svg id="machart" viewBox="0 0 420 200" role="img" aria-label="站上均線比例歷史"></svg>
+      <div class="legend" id="maleg"></div>
+      <svg id="hlchart" viewBox="0 0 420 140" role="img" aria-label="創250日新高新低比例" style="margin-top:12px"></svg>
+      <div class="legend"><span><i style="background:var(--up)"></i>創 250 日新高比例</span><span><i style="background:var(--down)"></i>創 250 日新低比例</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>個股表<small id="stockdate"></small></h2>
+    <div class="tabs" id="stabs"></div>
+    <div class="tblwrap"><table id="tbl"></table></div>
+    <div class="note">均線欄依序為 20／60／120／240 日（紅點＝站上）；創高欄為 20／60／250 日。還原價以交易所每日漲跌%連乘，含除權息。</div>
+  </section>
+
+  <div class="note">
+    只供觀察，不是交易訊號。名單每月最後交易日收盤排名、次月使用：上市市值前 50、上櫃市值前 30（市值＝收盤×證交所／櫃買發行股數）、上市櫃普通股收盤價前 30（高價股）。
+    歷史名單以當時資料重建；上市股數取自證交所每日發行股數，近期分割、配股、減資尚未反映時以事件倍率補正，現金增資待新股上市後反映。歷史月份排名第 50 名附近可能有個別誤差。資料來源：證交所、櫃買中心。
+  </div>
+</div>
+<div id="tip"></div>
+<script>
+const G = {all:'全市場', twse:'上市市值前50', otc:'上櫃市值前30', hp:'高價股前30'};
+const DIST = ['≤-9','-9~-5','-5~-3','-3~-1','-1~0','0','0~1','1~3','3~5','5~9','≥9'];
+const DDL = ['<5%','5–10%','10–20%','20–30%','30–50%','≥50%'];
+let W, idx, ddG = 'all', ddR = 750, stG = 'twse', sortK = 'pct', sortD = -1;
+const $ = s => document.querySelector(s);
+const fmt = (v, d=1) => v == null ? '—' : v.toFixed(d);
+const pctS = (a, b) => b ? (a / b * 100) : null;
+const cls = v => v > 0 ? 'up' : v < 0 ? 'down' : 'flat';
+const fd = s => s.slice(0,4) + '/' + s.slice(4,6) + '/' + s.slice(6);
+
+fetch('wh.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).then(w => {
+  W = w; idx = w.dates.length - 1;
+  const sel = $('#day');
+  for (let i = w.dates.length - 1; i >= Math.max(0, w.dates.length - 260); i--) sel.add(new Option(fd(w.dates[i]), i));
+  sel.onchange = () => { idx = +sel.value; draw(); };
+  tabs('#gtabs', G, () => ddG, v => { ddG = v; drawDD(); drawTrend(); });
+  tabs('#rtabs', {250:'1 年', 750:'3 年', 1500:'6 年', 99999:'全部'}, () => String(ddR), v => { ddR = +v; drawDD(); drawTrend(); });
+  tabs('#stabs', {twse:G.twse, otc:G.otc, hp:G.hp}, () => stG, v => { stG = v; drawTable(); });
+  draw();
+}).catch(e => { $('#sub').textContent = '資料讀取失敗：' + e; });
+
+function tabs(sel, opts, get, set){
+  const el = $(sel); el.innerHTML = '';
+  for (const [k, v] of Object.entries(opts)) {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = v;
+    b.setAttribute('aria-pressed', String(get() === k));
+    b.onclick = () => { set(k); [...el.children].forEach(x => x.setAttribute('aria-pressed', String(x === b))); };
+    el.appendChild(b);
+  }
+}
+function draw(){
+  const ds = W.dates[idx];
+  $('#sub').textContent = `資料日 ${fd(ds)}・盤後`;
+  drawIdx(); drawDist(); drawCards(); drawDD(); drawTrend(); drawTable();
+}
+function drawIdx(){
+  const t = W.taiex[idx], p = W.taiex[idx-1];
+  const ch = t && p ? t - p : null, cp = ch != null ? ch / p * 100 : null;
+  $('#idx').innerHTML = `<div><div class="sub">加權指數</div><div class="big num">${t ? t.toLocaleString('zh-TW',{maximumFractionDigits:2}) : '—'}</div></div>
+    <div class="chg num ${cls(ch)}">${ch == null ? '' : (ch>0?'+':'') + ch.toFixed(2) + '（' + (cp>0?'+':'') + cp.toFixed(2) + '%）'}</div>`;
+}
+function drawDist(){
+  const o = W.groups.all, n = o.n[idx];
+  if (n == null) return;
+  const u = o.up[idx], f = o.flat[idx], d = o.down[idx];
+  $('#udbar').innerHTML = `<span style="width:${u/n*100}%;background:var(--up)"></span><span style="width:${f/n*100}%;background:var(--flat)"></span><span style="width:${d/n*100}%;background:var(--down)"></span>`;
+  $('#udleg').innerHTML = `<span class="up">上漲 <b class="num">${u}</b>（${fmt(u/n*100)}%）</span><span class="flat">平盤 <b class="num">${f}</b></span><span class="down">下跌 <b class="num">${d}</b>（${fmt(d/n*100)}%）</span><span>漲停 <b class="num">${o.lu[idx]}</b></span><span>有效 ${n} 家</span>`;
+  const v = o.dist[idx], mx = Math.max(...v), Wd = 420, H = 170, bw = Wd / v.length;
+  let g = '';
+  v.forEach((x, i) => {
+    const h = mx ? x / mx * (H - 40) : 0, col = i < 5 ? 'var(--down)' : i === 5 ? 'var(--flat)' : 'var(--up)';
+    g += `<rect x="${i*bw+4}" y="${H-22-h}" width="${bw-8}" height="${h}" rx="3" fill="${col}" opacity=".85"/>`;
+    g += `<text x="${i*bw+bw/2}" y="${H-24-h-3}" text-anchor="middle">${x}</text><text x="${i*bw+bw/2}" y="${H-6}" text-anchor="middle">${DIST[i]}</text>`;
+  });
+  $('#dist').innerHTML = g;
+}
+function drawCards(){
+  let h = '';
+  const ym = W.dates[idx].slice(0,6), lk = Object.keys(W.lists).filter(k => k < ym).pop();
+  $('#listinfo').textContent = lk ? `名單基準 ${fd(W.lists[lk].asof)} 收盤` : '';
+  for (const g of ['all','twse','otc','hp']) {
+    const o = W.groups[g]; if (o.n[idx] == null) continue;
+    const n = o.n[idx], ma = o.ma[idx], mad = o.mad[idx], hi = o.hi[idx], lo = o.lo[idx], hd = o.hld[idx];
+    h += `<div class="card"><h3>${G[g]}<span class="tag">${n} 檔</span></h3>
+      <div class="k">上漲／下跌 <b><span class="up">${o.up[idx]}</span>／<span class="down">${o.down[idx]}</span></b></div>
+      <div class="k">上漲比例 <b>${fmt(o.up[idx]/n*100)}%</b></div>
+      <div class="k">月線／季線上 <b>${fmt(pctS(ma[0],mad[0]),0)}%／${fmt(pctS(ma[1],mad[1]),0)}%</b></div>
+      <div class="k">半年／年線上 <b>${fmt(pctS(ma[2],mad[2]),0)}%／${fmt(pctS(ma[3],mad[3]),0)}%</b></div>
+      <div class="k">新高 20／60／250 <b class="up">${hi.join('／')}</b></div>
+      <div class="k">新低 20／60／250 <b class="down">${lo.join('／')}</b></div>
+      <div class="k">今年報酬中位數 <b class="${cls(o.ytd[idx])}">${fmt(o.ytd[idx])}%</b></div></div>`;
+  }
+  $('#cards').innerHTML = h;
+}
+function range(){ const s = Math.max(0, idx - ddR + 1); return [s, idx]; }
+function xAxis(s, e, Wd, x){
+  let g = '', last = '';
+  for (let i = s; i <= e; i++) {
+    const y = W.dates[i].slice(0,4), m = W.dates[i].slice(4,6);
+    const lab = (e - s > 500) ? (m === '01' ? y : '') : ((m === '01' || m === '07') ? y.slice(2) + '/' + m : '');
+    if (lab && lab !== last && (i === s || W.dates[i-1].slice(4,6) !== m)) { g += `<line x1="${x(i)}" x2="${x(i)}" y1="0" y2="100%" stroke="var(--line)"/><text x="${x(i)+2}" y="11">${lab}</text>`; last = lab; }
+  }
+  return g;
+}
+function drawDD(){
+  const [s, e] = range(), o = W.groups[ddG], Wd = 420, top = 70, H = 260, ch = H - top - 6;
+  const x = i => (i - s) / Math.max(1, e - s) * Wd;
+  // 指數
+  const tv = W.taiex.slice(s, e+1).filter(v => v), tmin = Math.min(...tv), tmax = Math.max(...tv);
+  const ty = v => 14 + (1 - (v - tmin) / (tmax - tmin || 1)) * (top - 24);
+  let tp = '';
+  for (let i = s; i <= e; i++) if (W.taiex[i]) tp += (tp ? 'L' : 'M') + x(i).toFixed(1) + ' ' + ty(W.taiex[i]).toFixed(1);
+  // 堆疊
+  const cols = ['--d0','--d1','--d2','--d3','--d4','--d5'];
+  let layers = cols.map(() => []);
+  for (let i = s; i <= e; i++) {
+    const d = o.dd[i]; if (!d) continue; const n = d.reduce((a,b) => a+b, 0); let acc = 0;
+    d.forEach((v, k) => { const y0 = acc / n; acc += v; layers[k].push([x(i), y0, acc / n]); });
+  }
+  let g = xAxis(s, e, Wd, x);
+  layers.forEach((L, k) => {
+    if (!L.length) return;
+    const yy = f => top + ch - f * ch;
+    const p = 'M' + L.map(q => q[0].toFixed(1) + ' ' + yy(q[2]).toFixed(1)).join('L') + 'L' + L.slice().reverse().map(q => q[0].toFixed(1) + ' ' + yy(q[1]).toFixed(1)).join('L') + 'Z';
+    g += `<path d="${p}" fill="var(${cols[k]})"/>`;
+  });
+  g += `<path d="${tp}" fill="none" stroke="var(--fg)" stroke-width="1.3"/><text x="${Wd-2}" y="${top-6}" text-anchor="end">加權指數</text>`;
+  g += `<rect x="0" y="0" width="${Wd}" height="${H}" fill="transparent" id="ddhit"/>`;
+  $('#ddchart').innerHTML = g;
+  const d = o.dd[idx], n = d ? d.reduce((a,b)=>a+b,0) : 0;
+  $('#ddleg').innerHTML = DDL.map((l, k) => `<span><i style="background:var(${cols[k]})"></i>${l} <b class="num">${d ? fmt(d[k]/n*100,1) : '—'}%</b></span>`).join('');
+  $('#ddnote').textContent = d ? `${G[ddG]}：${fd(W.dates[idx])} 回檔未滿 5% 占 ${fmt(d[0]/n*100)}%，回檔 20% 以上占 ${fmt((d[3]+d[4]+d[5])/n*100)}%。由下往上＝離高點越近→越遠。` : '';
+  hover('#ddhit', s, e, x, i => { const v = o.dd[i]; if (!v) return ''; const m = v.reduce((a,b)=>a+b,0);
+    return `${fd(W.dates[i])}<br>加權 ${W.taiex[i] ? W.taiex[i].toFixed(0) : '—'}<br>` + DDL.map((l,k) => `${l} ${fmt(v[k]/m*100)}%`).join('<br>'); });
+}
+function drawTrend(){
+  const [s, e] = range(), o = W.groups[ddG], Wd = 420, H = 200;
+  $('#trendg').textContent = G[ddG];
+  const x = i => (i - s) / Math.max(1, e - s) * Wd, y = v => 8 + (1 - v / 100) * (H - 20);
+  const lines = [[0,'月線','var(--d5)'],[1,'季線','var(--d3)'],[3,'年線','var(--d0)']];
+  let g = xAxis(s, e, Wd, x);
+  [0,50,100].forEach(v => g += `<line x1="0" x2="${Wd}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-dasharray="${v===50?'3 3':''}"/><text x="2" y="${v===100?y(v)+11:y(v)-2}">${v}%</text>`);
+  for (const [k, , c] of lines) {
+    let p = '';
+    for (let i = s; i <= e; i++) { const m = o.ma[i]; if (!m || !o.mad[i][k]) continue; p += (p ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(m[k] / o.mad[i][k] * 100).toFixed(1); }
+    g += `<path d="${p}" fill="none" stroke="${c}" stroke-width="1.4"/>`;
+  }
+  g += `<rect x="0" y="0" width="${Wd}" height="${H}" fill="transparent" id="mahit"/>`;
+  $('#machart').innerHTML = g;
+  $('#maleg').innerHTML = lines.map(([k,l,c]) => `<span><i style="background:${c}"></i>站上${l}比例 <b class="num">${o.ma[idx] ? fmt(pctS(o.ma[idx][k], o.mad[idx][k]),0) : '—'}%</b></span>`).join('');
+  hover('#mahit', s, e, x, i => o.ma[i] ? `${fd(W.dates[i])}<br>` + lines.map(([k,l]) => `站上${l} ${fmt(pctS(o.ma[i][k], o.mad[i][k]),0)}%`).join('<br>') : '');
+  // 創高創低
+  const H2 = 140, vals = [];
+  for (let i = s; i <= e; i++) if (o.hld[i] && o.hld[i][2]) vals.push(Math.max(o.hi[i][2], o.lo[i][2]) / o.hld[i][2] * 100);
+  const mx = Math.max(5, ...vals), y2 = v => 8 + (1 - v / mx) * (H2 - 20);
+  let g2 = xAxis(s, e, Wd, x), ph = '', pl = '';
+  for (let i = s; i <= e; i++) { const d = o.hld[i]; if (!d || !d[2]) continue; ph += (ph?'L':'M') + x(i).toFixed(1) + ' ' + y2(o.hi[i][2]/d[2]*100).toFixed(1); pl += (pl?'L':'M') + x(i).toFixed(1) + ' ' + y2(o.lo[i][2]/d[2]*100).toFixed(1); }
+  g2 += `<text x="2" y="18">${mx.toFixed(0)}%</text><path d="${ph}" fill="none" stroke="var(--up)" stroke-width="1.2"/><path d="${pl}" fill="none" stroke="var(--down)" stroke-width="1.2"/>`;
+  $('#hlchart').innerHTML = g2;
+}
+function hover(sel, s, e, x, fn){
+  const el = document.querySelector(sel), tip = $('#tip'); if (!el) return;
+  const svg = el.ownerSVGElement;
+  const mv = ev => { const r = svg.getBoundingClientRect(), cx = (ev.touches ? ev.touches[0].clientX : ev.clientX);
+    const i = Math.round(s + (cx - r.left) / r.width * (e - s)); if (i < s || i > e) return;
+    const h = fn(i); if (!h) return; tip.innerHTML = h; tip.style.display = 'block';
+    const cy = ev.touches ? ev.touches[0].clientY : ev.clientY;
+    tip.style.left = Math.min(window.innerWidth - tip.offsetWidth - 8, cx + 12) + 'px'; tip.style.top = (cy + 12) + 'px'; };
+  el.onmousemove = mv; el.ontouchstart = mv; el.ontouchmove = mv;
+  el.onmouseleave = () => tip.style.display = 'none'; el.ontouchend = () => setTimeout(() => tip.style.display = 'none', 1500);
+}
+function drawTable(){
+  const latest = idx === W.dates.length - 1;
+  $('#stockdate').textContent = latest ? `資料日 ${fd(W.stock_date)}` : `個股表只提供最新交易日（${fd(W.stock_date)}）`;
+  const cols = [['c','代號'],['n','名稱'],['px','收盤'],['pct','漲跌%'],['ytd','今年%'],['r20','近20日%'],['dd','距高點%'],['ma','均線'],['hi','創高']];
+  const rows = W.stocks.filter(r => r.g.includes(stG)).sort((a, b) => {
+    const va = a[sortK], vb = b[sortK]; if (va == null) return 1; if (vb == null) return -1;
+    return (typeof va === 'string' ? va.localeCompare(vb) : va - vb) * sortD; });
+  let h = '<thead><tr>' + cols.map(([k, l]) => `<th data-k="${k}">${l}${sortK === k ? (sortD > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('') + '</tr></thead><tbody>';
+  for (const r of rows) {
+    const dots = a => a.map(v => `<span class="dot ${v ? 'on' : 'off'}"></span>`).join('');
+    h += `<tr><td>${r.c}</td><td>${r.n}${r.g.filter(x => x !== stG).map(x => `<span class="tag">${{twse:'上市50',otc:'上櫃30',hp:'高價30'}[x]}</span>`).join('')}</td>
+      <td class="num">${r.px == null ? '—' : r.px.toLocaleString('zh-TW')}</td><td class="num ${cls(r.pct)}">${fmt(r.pct,2)}</td>
+      <td class="num ${cls(r.ytd)}">${fmt(r.ytd)}</td><td class="num ${cls(r.r20)}">${fmt(r.r20)}</td><td class="num">${fmt(r.dd)}</td>
+      <td>${dots(r.ma)}</td><td>${dots(r.hi)}</td></tr>`;
+  }
+  $('#tbl').innerHTML = h + '</tbody>';
+  $('#tbl').querySelectorAll('th').forEach(th => th.onclick = () => { const k = th.dataset.k; if (k === 'ma' || k === 'hi') return; sortD = sortK === k ? -sortD : -1; sortK = k; drawTable(); });
+}
+</script>
+</body>
+</html>

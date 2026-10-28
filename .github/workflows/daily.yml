@@ -54,12 +54,20 @@ jobs:
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
         run: python3 scripts/notify.py || true
+      - name: 權值與高價股分頁（月初更新名單、每日計算指標；失敗不影響族群頁）
+        if: steps.fetch.outputs.skip != '1'
+        continue-on-error: true
+        run: |
+          pip install -q numpy
+          python3 scripts/wh_monthly.py || echo "::warning::名單月更新失敗，沿用上月名單"
+          python3 scripts/wh_prices.py
+          python3 scripts/wh_build.py
       - name: 提交更新
         if: steps.fetch.outputs.skip != '1'
         run: |
           git config user.name "sector-tracker-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add archive data docs
+          git add archive data docs config/wh_lists.json
           if git diff --cached --quiet; then echo "沒有新資料"; exit 0; fi
           git commit -m "資料更新 $(TZ=Asia/Taipei date +%Y-%m-%d)"
           for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done

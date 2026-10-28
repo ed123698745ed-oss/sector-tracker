@@ -39,6 +39,8 @@ def main():
     import glob, re as _re
     events, unsplit = {}, []
     note_path = os.path.join(ROOT, 'cache', 'wh_twse_shares_note.json')
+    if not os.path.exists(note_path):  # GitHub Actions 無 cache：用已提交的面額表（同一份內容）
+        note_path = os.path.join(ROOT, 'config', 'wh_par_note.json')
     pnt = json.load(open(note_path)).get('par_not_10', {}) if os.path.exists(note_path) else {}
 
     def par_of(c, ds):
