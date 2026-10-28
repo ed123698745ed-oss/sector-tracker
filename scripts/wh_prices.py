@@ -50,8 +50,8 @@ def parse(market, path):
 
 
 def main():
-    # 權值高價股分頁歷史自 2015 年起（上市股數財報自 2014Q3 起可用）；data/quotes 另有更早資料供其他研究使用
-    days = sorted(f[:8] for f in os.listdir(os.path.join(ROOT, 'data', 'quotes')) if f.endswith('.json') and f[:8] >= '20150101')
+    # 2026-10-28 Ed 要求盡量往前延伸：使用 data/quotes 全部交易日（上市 2004/02 起、上櫃 2007/07 起）
+    days = sorted(f[:8] for f in os.listdir(os.path.join(ROOT, 'data', 'quotes')) if f.endswith('.json'))
     px, sh, mkt, name, hi, lo = {}, {}, {}, {}, {}, {}
     n = len(days)
     for i, d in enumerate(days):
