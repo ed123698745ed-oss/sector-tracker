@@ -795,3 +795,9 @@ requests 13 errors 0 last_error
 quote_time_range ['09:35:59'] ['10:02:33']
 hits 18 IP/ASIC(ABC) 網通/高速介面IC(AB) 矽晶圓(B) 記憶體(A) 功率元件(AB) 化合物半導體(ABC) 先進封裝設備(AB) 封測(AB) 測試介面(AB) CCL(AB) PCB/伺服器板(AB) 散熱(ABC) 連接器/線材(AB) 被動元件(AB) 光通訊/矽光子(ABC) 低軌衛星(AB) 光學鏡頭(A) 類比/PMIC(A)
 
+run_at 2026-10-28 10:11:59
+codes 610 returned 610 priced 609 seconds 65.7
+requests 13 errors 0 last_error 
+quote_time_range ['09:44:26'] ['10:11:42']
+hits 20 IP/ASIC(ABC) 網通/高速介面IC(ABC) 矽晶圓(B) 記憶體(A) 功率元件(AB) 化合物半導體(ABC) 先進封裝設備(AB) 封測(AB) 測試介面(AB) 廠務工程(B) CCL(AB) PCB/伺服器板(AB) 散熱(ABC) 連接器/線材(AB) 被動元件(AB) 光通訊/矽光子(ABC) 低軌衛星(AB) 工具機(B) 類比/PMIC(A) 檢測分析(A)
+
