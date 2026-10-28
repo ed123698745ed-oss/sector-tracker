@@ -27,13 +27,25 @@ def closed_days():
     return s
 
 
+def saturday_trading_days():
+    """週六補行交易日（例：2007/9/29）：取自已存的證交所 FMTQIK 月表"""
+    out, fd = set(), os.path.join(RAW, 'twse_fmtqik')
+    for fn in (os.listdir(fd) if os.path.isdir(fd) else []):
+        for r in json.load(open(os.path.join(fd, fn))).get('data') or []:
+            a, b, c = r[0].strip().split('/')
+            d = datetime.date(int(a) + 1911, int(b), int(c))
+            if d.weekday() >= 5: out.add(d.strftime('%Y%m%d'))
+    return out
+
+
 def missing():
     a, b = open(os.path.join(ROOT, 'backfill', 'REQUEST')).read().split()[:2]
     d, end = datetime.date.fromisoformat(a), datetime.date.fromisoformat(b)
     have, shut, out = set(os.listdir(quotes.OUT)), closed_days(), []
+    sat = saturday_trading_days()
     while d <= end:
         ds = d.strftime('%Y%m%d')
-        if d.weekday() < 5 and f'{ds}.json' not in have and ds not in shut:
+        if (d.weekday() < 5 or ds in sat) and f'{ds}.json' not in have and ds not in shut:
             out.append(ds)
         d += datetime.timedelta(days=1)
     return sorted(out, reverse=True)  # 由新到舊

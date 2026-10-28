@@ -153,7 +153,7 @@ def main():
     def members(ds, g):
         prev = [ym for ym in yms if ym < ds[:6]]
         if not prev: return None
-        return [c for c, _ in lists[prev[-1]][g]]
+        return [c for c, _ in lists[prev[-1]].get(g, [])]
 
     is_otc = {c: (c in osh) for c in codes}
     G = ['all', 'twse', 'otc', 'hp']
