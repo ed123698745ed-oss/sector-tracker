@@ -128,6 +128,7 @@ def main():
     byq_path = os.path.join(ROOT, 'cache', 'wh_twse_byq.json')
     byq = json.load(open(byq_path)) if os.path.exists(byq_path) else {}
     adj_log = {}
+    detail = {}  # 稽核用：各月上市前 60 的收盤、季報股數、事件倍率
     rank80 = set()  # 曾進上市市值前 80 者：配股率資料的抓取範圍（含邊界緩衝）
 
     didx = {ds: i for i, ds in enumerate(dates)}
@@ -158,6 +159,7 @@ def main():
         otc_cap = {c: round(p * osh[c][ie] / 1e8, 1) for c, p in last.items() if c in osh and osh[c][ie]}
         rec = {'asof': dates[ie]}
         tw_cap = {}
+        detail_m = {}
         if tw and ym in tw:
             ry, qq = avail_quarter(ym)
             qd = '%d%s' % (ry + 1911, qend[qq])
@@ -179,13 +181,17 @@ def main():
                     fx *= r
                 if fx != 1.0: adj_log.setdefault(c, []).append((ym, round(fx, 3)))
                 tw_cap[c] = round(last[c] * n * fx / 1e8, 1)
+                detail_m[c] = {'close': last[c], 'q_shares': n, 'quarter': '%03d%02d' % (ry, qq), 'factor': round(fx, 9),
+                               'events': [[ds_, round(r, 9), kd] for ds_, r, kd in events.get(c, []) if qd < ds_ <= dates[ie]]}
             rk = sorted(tw_cap.items(), key=lambda x: (-x[1], -last[x[0]], x[0]))
             rec['twse'] = rk[:50]
+            detail[ym] = {c: dict(detail_m[c], cap=v, rank=i + 1) for i, (c, v) in enumerate(rk[:60])}
             for c, _ in rk[:80]: rank80.add(c)
         cap_any = {**tw_cap, **otc_cap}
         rec['otc'] = sorted(otc_cap.items(), key=lambda x: (-x[1], -last[x[0]], x[0]))[:30]
         rec['hp'] = sorted(((c, p) for c, p in last.items()), key=lambda x: (-x[1], -cap_any.get(x[0], 0), x[0]))[:30]
         out[ym] = rec
+    json.dump(detail, open(os.path.join(ROOT, 'cache', 'wh_twse_detail%s.json' % ('_max' if os.environ.get('WH_UNRESOLVED') == 'max' else '')), 'w'), separators=(',', ':'))
     json.dump(out, open(os.path.join(ROOT, 'config', 'wh_lists.json'), 'w'), ensure_ascii=False, separators=(',', ':'), sort_keys=True)
     json.dump({'events': events, 'adj': adj_log, 'unsplit': unsplit}, open(os.path.join(ROOT, 'cache', 'wh_share_events.json'), 'w'), ensure_ascii=False)
     json.dump(sorted(rank80), open(os.path.join(ROOT, 'cache', 'wh_rank80.json'), 'w'))
