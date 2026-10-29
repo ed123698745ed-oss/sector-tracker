@@ -201,8 +201,8 @@ function drawCards(){
     const o = W.groups[g]; if (o.n[idx] == null) continue;
     const n = o.n[idx], ma = o.ma[idx], mad = o.mad[idx], hi = o.hi[idx], lo = o.lo[idx], hd = o.hld[idx];
     h += `<div class="card"><h3>${G[g]}<span class="tag">${n} 檔</span></h3>
-      ${g === 'all' ? '' : `<div class="k">上漲／下跌 <b><span class="up">${o.up[idx]}</span>／<span class="down">${o.down[idx]}</span></b></div>
-      <div class="k">上漲比例 <b>${fmt(o.up[idx]/n*100)}%</b></div>`}
+      <div class="k">上漲／下跌 <b><span class="up">${o.up[idx]}</span>／<span class="down">${o.down[idx]}</span></b></div>
+      <div class="k">上漲比例 <b>${fmt(o.up[idx]/n*100)}%</b></div>
       <div class="k">站上 月／季／半年／年線 <b>${[0,1,2,3].map(k => fmt(pctS(ma[k],mad[k]),0)).join('／')}%</b></div>
       <div class="k">新高 20／60／250 <b class="up">${hi.map((v, k) => hd[k] ? v : '—').join('／')}</b></div>
       <div class="k">新低 20／60／250 <b class="down">${lo.map((v, k) => hd[k] ? v : '—').join('／')}</b></div>
