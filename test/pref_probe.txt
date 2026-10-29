@@ -1,44 +1,27 @@
-== https://www.twse.com.tw/rwd/zh/exRight/TWT49UDetail?STK_NO=2311&T1=20100727&response=json http=200 bytes=490
-{"stat":"ok","fields":["股票代號","股票名稱","(每股配發現金股利)除息","(增資配股) 除權","A. 按普通股股東持股比例每千股無償配股","B. 員工紅利轉增資","C. (有償) 現金增資","每股認購金額","a. 公開承銷","b. 員工認購"," c. 原股東認購","按股東持股比例每千股認購"],"data":[["2311  ","日月光          ","0.359656 元／股","","99.9 股","0 股","0 股","0 元／股","0 股","0 股","0 股","0.00000000 股"]]}
-== https://www.twse.com.tw/exchangeReport/TWT49UDetail?STK_NO=2311&T1=20100727&response=json http=307 bytes=164
-<html>
-<head><title>307 Temporary Redirect</title></head>
-<body>
-<center><h1>307 Temporary Redirect</h1></center>
-<hr><center>nginx</center>
-</body>
-</html>
+== https://www.twse.com.tw/rwd/zh/company/newlisting?response=json http=200 bytes=97853
+{"stat":"OK","date":null,"title":"最近上市公司","fields":["公司代號","公司簡稱","申請日期","董事長","申請時股本(仟元)","上市審議委員會審議日期","交易所董事會通過上市日期","上市契約報請主管機關備查日期","證期局核准上市契約日期","股票上市買賣日期","承銷商","承銷價","備註"],"data":[["7710","東擎科技","115.06.05","李俊瑩","639,053","115.07.16","115.08.25","115.09.01","","115.10.27","元大",138.0,""],["6467","泰合","115.03.27","李世仁","523,711","115.05.07","115.05.19","115.05.28","","115.10.20","元大",105.6,"科技事業"],["8908","欣雄","115.07.27","朱文煌","3,153,327","","115.09.15","115.09.24","","115.10.16","第一金","","櫃轉市"],["7812","稜研科技*-創","115.05.25","張書維","1,511,526","115.06.30","115.07.21","115.07.30","","115.09.22","台新",60.0,"創新板，採無面額發行"],["7855","和運租車","115.04.14","劉源森","1,925,279","115.05.22","115.06.16","115.06.24","","115.08.11","台新",42.0,""],["2237","華德動能-創","114.12.23","蔡裕慶","1,217,929","115.02.03","115.02.24","115.03.09","","115.08.10","群益金鼎",26.66,"創新板"],["7689
+== https://www.twse.com.tw/rwd/zh/company/newlisting?date=2012&response=json http=200 bytes=3309
+{"stat":"OK","date":"2012","title":"最近上市公司","fields":["公司代號","公司簡稱","申請日期","董事長","申請時股本(仟元)","上市審議委員會審議日期","交易所董事會通過上市日期","上市契約報請主管機關備查日期","證期局核准上市契約日期","股票上市買賣日期","承銷商","承銷價","備註"],"data":[["8429","金麗-KY","101.06.28","莊春龍","1,075,275","101.08.22","101.09.25","101.10.05","","101.12.20","國泰",70.0,""],["1338","廣華-KY","101.07.31","余澤民","630,000","101.09.21","101.09.25","101.10.08","","101.12.19","兆豐",80.0,""],["5521","工信","101.09.20","陳煌銘","3,475,274","","101.11.20","101.11.26","","101.12.18","元富","","櫃轉市"],["2867","三商壽","101.09.05","劉中興","13,278,644","101.10.12","101.10.23","101.10.25","","101.12.18","台新綜合證券",15.8,""],["5269","祥碩","101.07.16","沈振來","474,860","101.08.24","101.10.23","101.10.25","","101.12.12","元大寶來證券",62.0,"科技事業"],["2923","鼎固-KY","100.04.12","張洪本","16,813,620","101.07.11","101.07.17","101.07.31","","101.12.07","富邦",20.0,""],["8114","振樺電","101.08.31","陳茂松","628,2
+== https://www.twse.com.tw/rwd/zh/company/applylisting?response=json http=200 bytes=109544
+{"stat":"ok","title":"申請上市公司","fields":["索引","公司代號","公司簡稱","申請日期","董事長","申請時股本(仟元)","上市審議委員會審議日期","交易所董事會通過上市日期","上市契約報請主管機關備查(主管機關核准)日期","股票上市買賣日期","承銷商","承銷價","備註"],"data":[[1,"7909","鈺祥","115/10/06","莊士杰","705,927","","","","","凱基","",""],[2,"6798","展逸","115/10/06","張憲銘","195,724","","","","","宏遠","","創新板"],[3,"7808","訊聯智藥","115/09/29","蔡政憲","700,000","","","","","台新","","創新板"],[4,"7871","安立璽榮-KY","115/09/22","陳泓愷","1,342,782","","","","","元大","","創新板第一上市"],[5,"7903","MaiCoin-KY","115/09/09","劉世偉","588,122","","","","","永豐金","","創新板第一上市"],[6,"6842","瑞宇","115/09/08","陳慧銘","242,803","115/10/20","","","","兆豐","","創新板"],[7,"8345","超秦","115/09/02","卓靖倫","600,080","115/10/22","","","","國泰","",""],[8,"7729","仲恩生醫","115/09/02","王玲美","806,822","115/10/28","","","","台中銀","","科技事業"],[9,"7901","大大寬頻","115/08/27","張銘志","600,000"
+== https://openapi.twse.com.tw/v1/opendata/t187ap03_L http=200 bytes=1331182
+[
+{"出表日期":"1151028","公司代號":"1101","公司名稱":"臺灣水泥股份有限公司","公司簡稱":"台泥","外國企業註冊地國":"－ ","產業別":"01","住址":"台北市中山北路2段113號","營利事業統一編號":"11913502","董事長":"張安平","總經理":"程耀輝","發言人":"葉毓君","發言人職稱":"永續長","代理發言人":"賴家柔","總機電話":"(02)2531-7099","成立日期":"19501229","上市日期":"19620209","普通股每股面額":"新台幣                 10.0000元","實收資本額":"77231817420","私募股數":"0","特別股":"200000000","編制財務報表類型":"1","股票過戶機構":"中國信託商業銀行代理部","過戶電話":"66365566","過戶地址":"台北市重慶南路一段83號5樓","簽證會計師事務所":"勤業眾信聯合會計師事務所","簽證會計師1":"翁雅玲","簽證會計師2":"邵志明","英文簡稱":"TCC","英文通訊地址":"No.113, Sec.2, Zhongshan N. Rd.,Taipei City 104,Taiwan (R.O.C.)","傳真機號碼":"(02)2531-6529","電子郵件信箱":"finance@taiwancement.com","網址":"https://www.tccgroupholdings.com/tw/","已發行普通股數或TDR原股發行股數":"7523181742
+== https://www.twse.com.tw/rwd/zh/company/suspendListing?response=json http=200 bytes=9078
+{"status":"ok","data":[["115/09/01","三商壽","2867"],["115/06/23","森崴能源","6806"],["115/03/27","晶睿","3454"],["115/01/22","億而得-創","6423"],["114/10/01","京城銀","2809"],["114/08/15","聯嘉光電","6288"],["114/07/24","新光金","2888"],["113/11/19","昶虹","2443"],["113/11/19","廷鑫","2358"],["113/09/02","中化","1701"],["112/12/15","亞太電","3682"],["112/06/26","誠創","3536"],["111/12/21","泰昇-KY","8480"],["111/09/26","新世紀","3383"],["111/09/26","華上","6289"],["111/08/25","定穎","6251"],["111/08/04","台開","2841"],["111/06/29","互億","6172"],["111/06/27","客思達-KY","2936"],["111/05/03","龍燈-KY","4141"],["111/04/21","永大","1507"],["111/03/18","精熙-DR","9188"],["111/03/03","基勝-KY","8427"],["111/01/27","英瑞-KY","1592"],["111/01/05","奇力新","2456"],["110/12/30","中壽","2823"],["110/12/13","友佳-DR","912398"],["110/11/01","台硝","1724"],["110/08/31","杜康-DR","911616"],["110/07/05","鈞泰","6131"],["110/04/01","康友-KY","6452"],["110/01/18","信昌化","4725"],["110/01/15","鎧勝-KY","5264"],["110/01/06","晶電","2448"],["110/01/06","隆達","3698"],["109/11/30","敦南","5305"],["109/11/10","東貝
+== https://www.tpex.org.tw/www/zh-tw/company/newlisting?response=json http=302 bytes=0
 
-== https://www.twse.com.tw/rwd/zh/exRight/TWT49UDetail?STK_NO=2888&T1=20130910&response=json http=200 bytes=490
-{"stat":"ok","fields":["股票代號","股票名稱","(每股配發現金股利)除息","(增資配股) 除權","A. 按普通股股東持股比例每千股無償配股","B. 員工紅利轉增資","C. (有償) 現金增資","每股認購金額","a. 公開承銷","b. 員工認購"," c. 原股東認購","按股東持股比例每千股認購"],"data":[["2888  ","新光金          ","0.029156 元／股","","26.2 股","0 股","0 股","0 元／股","0 股","0 股","0 股","0.00000000 股"]]}
-== https://www.twse.com.tw/exchangeReport/TWT49UDetail?STK_NO=2888&T1=20130910&response=json http=307 bytes=164
-<html>
-<head><title>307 Temporary Redirect</title></head>
-<body>
-<center><h1>307 Temporary Redirect</h1></center>
-<hr><center>nginx</center>
-</body>
-</html>
+== https://www.tpex.org.tw/www/zh-tw/listed/newListing?response=json http=302 bytes=0
 
-== https://www.twse.com.tw/rwd/zh/exRight/TWT49UDetail?STK_NO=6505&T1=20090707&response=json http=200 bytes=483
-{"stat":"ok","fields":["股票代號","股票名稱","(每股配發現金股利)除息","(增資配股) 除權","A. 按普通股股東持股比例每千股無償配股","B. 員工紅利轉增資","C. (有償) 現金增資","每股認購金額","a. 公開承銷","b. 員工認購"," c. 原股東認購","按股東持股比例每千股認購"],"data":[["6505  ","台塑化          ","1.2 元／股","","30 股","0 股","0 股","0 元／股","0 股","0 股","0 股","0.00000000 股"]]}
-== https://www.twse.com.tw/exchangeReport/TWT49UDetail?STK_NO=6505&T1=20090707&response=json http=307 bytes=164
-<html>
-<head><title>307 Temporary Redirect</title></head>
-<body>
-<center><h1>307 Temporary Redirect</h1></center>
-<hr><center>nginx</center>
-</body>
-</html>
-
-== https://www.twse.com.tw/rwd/zh/exRight/TWT49UDetail?STK_NO=2330&T1=20090715&response=json http=200 bytes=497
-{"stat":"ok","fields":["股票代號","股票名稱","(每股配發現金股利)除息","(增資配股) 除權","A. 按普通股股東持股比例每千股無償配股","B. 員工紅利轉增資","C. (有償) 現金增資","每股認購金額","a. 公開承銷","b. 員工認購"," c. 原股東認購","按股東持股比例每千股認購"],"data":[["2330  ","台積電          ","2.999892 元／股","","5 股","141,869,914 股","0 股","0 元／股","0 股","0 股","0 股","0.00000000 股"]]}
-== https://www.twse.com.tw/exchangeReport/TWT49UDetail?STK_NO=2330&T1=20090715&response=json http=307 bytes=164
-<html>
-<head><title>307 Temporary Redirect</title></head>
-<body>
-<center><h1>307 Temporary Redirect</h1></center>
-<hr><center>nginx</center>
-</body>
-</html>
-
+== https://www.tpex.org.tw/openapi/v1/tpex_mainboard_peratio_analysis http=200 bytes=157533
+[
+{"Date":"1151028","SecuritiesCompanyCode":"1240","CompanyName":"茂生農經","PriceEarningRatio":"10.02","DividendPerShare":"0.50000000","YieldRatio":"0.93","PriceBookRatio":"1.59"},
+{"Date":"1151028","SecuritiesCompanyCode":"1259","CompanyName":"安心","PriceEarningRatio":"18.50","DividendPerShare":"1.20000000","YieldRatio":"1.83","PriceBookRatio":"0.76"},
+{"Date":"1151028","SecuritiesCompanyCode":"1264","CompanyName":"德麥","PriceEarningRatio":"11.63","DividendPerShare":"15.00000000","YieldRatio":"6.09","PriceBookRatio":"2.57"},
+{"Date":"1151028","SecuritiesCompanyCode":"1268","CompanyName":"漢來美食","PriceEarningRatio":"13.39","DividendPerShare":"8.00000000","YieldRatio":"4.53","PriceBookRatio":"3.10"},
+{"Date":"1151028","SecuritiesCompanyCode":"1294","CompanyName":"漢田生技","PriceEarningRatio":"10.12","DividendPerShare":"5.00000000","YieldRatio":"10.12","PriceBookRatio":"1.83"},
+{"Date":"1151028","SecuritiesCompanyCode":"1295","CompanyName":"生合","PriceEarningRatio":"11.31","DividendPerShare":"3.00000000","YieldRatio":"6.44","PriceBookRatio":"1.23"},
+{"Date":"1151028","SecuritiesCompanyCode":"1336","CompanyName":"台翰","PriceEarningRatio":"23.67","DividendP
+== https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O http=200 bytes=1078149
+[
+{"Date":"1151028","SecuritiesCompanyCode":"1240","CompanyName":"茂生農經股份有限公司","CompanyAbbreviation":"茂生農經","Registration":"－ ","SecuritiesIndustryCode":"33","Address":"2F.,No.30,Sec. 1,Heping W.Rd.,Zhongzheng Dist.,Taipei City 100028TAIPEI,TAIWAN(R.O.C)","UnifiedBusinessNo.":"18795706","Chairman":"吳清德","GeneralManager":"吳清德","Spokesman":"林信鴻","TitleOfSpokesman":"公司治理主管","DeputySpokesperson":"邱紹齊","Telephone":"02-23671162","DateOfIncorporation":"19670218","DateOfListing":"20180808","ParValueOfCommonStock":"新台幣                 10.0000元","Paidin.Capital.NTDollars":"464439920","PrivateStock.shares":"0","PreferredStock.shares":"0","PreparationOfFinancialReportType":"1","StockTransferAgent":"元大證券股份有限公司股務代理部","StockTransferAgentTelephone":"02-2586-5859","StockTransferAgentAddress":"106045台北市大安區敦化南路二段67號地下1樓","AccountingFirm":"勤業眾信聯合會計師事務所","CPA.CharteredPublicAccountant.First":"陳重成","CPA.CharteredPublicAccountant.Second":"洪偉倫","Symbol":"MORNSUN　","Fax":"02-23640694","EmailAddress":"bedford@morn-sun.com.tw","WebAddress
