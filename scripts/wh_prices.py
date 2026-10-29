@@ -102,11 +102,12 @@ def event_limits():
     return out
 
 
-NOLIMIT_START = '20050301'   # 初次上市（櫃）普通股首五個交易日無漲跌幅限制自 2005/03/01 起適用
+NOLIMIT_START = '20050301'
+INNOV_NOLIMIT = '20230905'  # 創新板初次上市適用首五日無漲跌幅限制之生效日   # 初次上市（櫃）普通股首五個交易日無漲跌幅限制自 2005/03/01 起適用
 
 
 def initial_listings():
-    """初次上市日：證交所「最近上市公司」各年度清單（排除櫃轉市、股份轉換成立控股、創新板）；
+    """初次上市日：證交所「最近上市公司」各年度清單（排除櫃轉市、股份轉換成立控股、2023/09/05 前上市之創新板）；
     初次上櫃日：櫃買上櫃公司基本資料（僅現存公司）。回傳 ({代號: 上市日}, {代號: 上櫃日})"""
     tw, tp = {}, {}
     d = os.path.join(RAW, 'twse_newlisting')
@@ -114,11 +115,14 @@ def initial_listings():
         j = json.load(open(os.path.join(d, fn))); f = j['fields']
         for r in j.get('data') or []:
             note = r[f.index('備註')] or ''
-            # 排除：櫃轉市、股份轉換成立控股（營業細則第 63 條：上櫃轉上市不適用）；創新板初次上市仍有 10% 限制
+            # 排除：櫃轉市、股份轉換成立控股（營業細則第 63 條：上櫃轉上市不適用）；創新板 2023/09/05 前上市者首五日仍有 10% 限制
             # （官方漲跌停家數與盤中價格皆顯示首五日鎖漲跌停，如 6854、2432、6902）
-            if any(k in note for k in ('櫃轉市', '轉換', '轉投控', '轉金控', '下市', '創新板')): continue
+            if any(k in note for k in ('櫃轉市', '轉換', '轉投控', '轉金控', '下市')): continue
             a, b, c = r[f.index('股票上市買賣日期')].split('.')
-            tw[r[f.index('公司代號')].strip()] = '%d%s%s' % (int(a) + 1911, b, c)
+            d0 = '%d%s%s' % (int(a) + 1911, b, c)
+            # 創新板：2023/09/05 起初次上市才適用首五日無漲跌幅限制（Eve 2026-10-29 複核）；之前上市者仍有 10% 限制
+            if '創新板' in note and d0 < INNOV_NOLIMIT: continue
+            tw[r[f.index('公司代號')].strip()] = d0
     d = os.path.join(RAW, 'tpex_companies')
     for fn in sorted(os.listdir(d)) if os.path.isdir(d) else []:
         for r in json.load(open(os.path.join(d, fn))):
@@ -134,12 +138,14 @@ def main():
     n = len(days)
     # 首五日無漲跌幅：以初次上市（櫃）日起算的前 5 個交易日
     tw_ipo, tp_ipo = initial_listings()
-    nolim = set()
+    nolim, ipo_idx = set(), {}
     for mkt_, ipo in (('t', tw_ipo), ('o', tp_ipo)):
         for c, d0 in ipo.items():
             if d0 < NOLIMIT_START: continue
             k = next((i for i, x in enumerate(days) if x >= d0), None)
-            if k is not None: nolim |= {(mkt_, c, days[j]) for j in range(k, min(k + 5, n))}
+            if k is not None:
+                nolim |= {(mkt_, c, days[j]) for j in range(k, min(k + 5, n))}; ipo_idx[(mkt_, c)] = k
+    first_seen = {}   # 代號第一次出現的交易日索引（任一市場）；上市日前已在任一市場交易者不是初次上市（改列、轉市場）
     seen_tpex = set()
     nxt = {}   # 上櫃：前一交易日公布的次日漲跌停價
     first_tp = next(i for i, x in enumerate(days) if os.path.exists(os.path.join(RAW, 'tpex', x + '.json.gz')) and parse('tpex', os.path.join(RAW, 'tpex', x + '.json.gz')))
@@ -173,7 +179,9 @@ def main():
                         elif sg in ('+', '-', '') and df is not None:
                             ref = close - df if sg == '+' else close + df if sg == '-' else close
                             if ref > 0: up, dn = limits(ref, d)
-                if close and (('t' if m == 'twse' else 'o'), c, d) in nolim:
+                first_seen.setdefault(c, i)
+                mk_ = 't' if m == 'twse' else 'o'
+                if close and (mk_, c, d) in nolim and first_seen[c] >= ipo_idx[(mk_, c)]:
                     up = dn = None   # 初次上市（櫃）首五日無漲跌幅限制：不判定
                 if close and up and dn:
                     lim[c][i] = 1 if abs(close - up) < 1e-6 else -1 if abs(close - dn) < 1e-6 else 0
