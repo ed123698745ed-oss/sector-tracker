@@ -1,30 +1,44 @@
-== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2007%2F07%2F02&type=EW&response=json http=200 bytes=108701
-stat ok keys ['tables', 'date', 'flagField', 'stat']
- table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 826
-== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2008%2F01%2F02&type=EW&response=json http=200 bytes=139074
-stat ok keys ['tables', 'date', 'flagField', 'stat']
- table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 1109
-== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2008%2F07%2F01&type=EW&response=json http=200 bytes=119934
-stat ok keys ['tables', 'date', 'flagField', 'stat']
- table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 950
-== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2009%2F01%2F05&type=EW&response=json http=200 bytes=94266
-stat ok keys ['tables', 'date', 'flagField', 'stat']
- table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 762
-== https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2009%2F07%2F01&type=EW&response=json http=200 bytes=100123
-stat ok keys ['tables', 'date', 'flagField', 'stat']
- table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 790
-== https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_no1430/stk_wn1430_result.php?l=zh-tw&d=96/01/02&se=EW http=200 bytes=146765
-stat ok keys ['tables', 'date', 'flagField', 'stat']
- table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 1020
-== https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_no1430/stk_wn1430_result.php?l=zh-tw&d=93/05/10&se=EW http=200 bytes=146765
-stat ok keys ['tables', 'date', 'flagField', 'stat']
- table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 1020
-== https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_no1430/stk_wn1430_result.php?l=zh-tw&d=99/01/04&se=EW http=200 bytes=146765
-stat ok keys ['tables', 'date', 'flagField', 'stat']
- table 上櫃股票每日收盤行情(不含定價) ['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 '] 1020
-== https://www.twse.com.tw/rwd/zh/TAIEX/MI_5MINS_HIST?date=20040201&response=json http=200 bytes=1352
-stat OK keys ['stat', 'title', 'date', 'fields', 'data', 'total']
- fields ['日期', '開盤指數', '最高指數', '最低指數', '收盤指數'] 20 [' 93/02/02', '6,379.98', '6,388.97', '6,319.96', '6,319.96']
-== https://www.twse.com.tw/rwd/zh/afterTrading/FMTQIK?date=20040201&response=json http=200 bytes=2119
-stat OK keys ['stat', 'date', 'title', 'hints', 'fields', 'data', 'notes']
- fields ['日期', '成交股數', '成交金額', '成交筆數', '發行量加權股價指數', '漲跌點數'] 20 [' 93/02/02', '6,267,834,164', '122,489,623,575', '1,000,621', '6,319.96', '-55.42']
+== https://www.twse.com.tw/rwd/zh/exRight/TWT49UDetail?STK_NO=2311&T1=20100727&response=json http=200 bytes=490
+{"stat":"ok","fields":["股票代號","股票名稱","(每股配發現金股利)除息","(增資配股) 除權","A. 按普通股股東持股比例每千股無償配股","B. 員工紅利轉增資","C. (有償) 現金增資","每股認購金額","a. 公開承銷","b. 員工認購"," c. 原股東認購","按股東持股比例每千股認購"],"data":[["2311  ","日月光          ","0.359656 元／股","","99.9 股","0 股","0 股","0 元／股","0 股","0 股","0 股","0.00000000 股"]]}
+== https://www.twse.com.tw/exchangeReport/TWT49UDetail?STK_NO=2311&T1=20100727&response=json http=307 bytes=164
+<html>
+<head><title>307 Temporary Redirect</title></head>
+<body>
+<center><h1>307 Temporary Redirect</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+== https://www.twse.com.tw/rwd/zh/exRight/TWT49UDetail?STK_NO=2888&T1=20130910&response=json http=200 bytes=490
+{"stat":"ok","fields":["股票代號","股票名稱","(每股配發現金股利)除息","(增資配股) 除權","A. 按普通股股東持股比例每千股無償配股","B. 員工紅利轉增資","C. (有償) 現金增資","每股認購金額","a. 公開承銷","b. 員工認購"," c. 原股東認購","按股東持股比例每千股認購"],"data":[["2888  ","新光金          ","0.029156 元／股","","26.2 股","0 股","0 股","0 元／股","0 股","0 股","0 股","0.00000000 股"]]}
+== https://www.twse.com.tw/exchangeReport/TWT49UDetail?STK_NO=2888&T1=20130910&response=json http=307 bytes=164
+<html>
+<head><title>307 Temporary Redirect</title></head>
+<body>
+<center><h1>307 Temporary Redirect</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+== https://www.twse.com.tw/rwd/zh/exRight/TWT49UDetail?STK_NO=6505&T1=20090707&response=json http=200 bytes=483
+{"stat":"ok","fields":["股票代號","股票名稱","(每股配發現金股利)除息","(增資配股) 除權","A. 按普通股股東持股比例每千股無償配股","B. 員工紅利轉增資","C. (有償) 現金增資","每股認購金額","a. 公開承銷","b. 員工認購"," c. 原股東認購","按股東持股比例每千股認購"],"data":[["6505  ","台塑化          ","1.2 元／股","","30 股","0 股","0 股","0 元／股","0 股","0 股","0 股","0.00000000 股"]]}
+== https://www.twse.com.tw/exchangeReport/TWT49UDetail?STK_NO=6505&T1=20090707&response=json http=307 bytes=164
+<html>
+<head><title>307 Temporary Redirect</title></head>
+<body>
+<center><h1>307 Temporary Redirect</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+== https://www.twse.com.tw/rwd/zh/exRight/TWT49UDetail?STK_NO=2330&T1=20090715&response=json http=200 bytes=497
+{"stat":"ok","fields":["股票代號","股票名稱","(每股配發現金股利)除息","(增資配股) 除權","A. 按普通股股東持股比例每千股無償配股","B. 員工紅利轉增資","C. (有償) 現金增資","每股認購金額","a. 公開承銷","b. 員工認購"," c. 原股東認購","按股東持股比例每千股認購"],"data":[["2330  ","台積電          ","2.999892 元／股","","5 股","141,869,914 股","0 股","0 元／股","0 股","0 股","0 股","0.00000000 股"]]}
+== https://www.twse.com.tw/exchangeReport/TWT49UDetail?STK_NO=2330&T1=20090715&response=json http=307 bytes=164
+<html>
+<head><title>307 Temporary Redirect</title></head>
+<body>
+<center><h1>307 Temporary Redirect</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
