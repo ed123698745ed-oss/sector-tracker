@@ -1,0 +1,544 @@
+{
+  "generated_at": "2026-10-30T00:55:56+08:00",
+  "stock_date": "20261029",
+  "rule": "2026-10-29",
+  "endpoint": {
+    "start_inclusive": true,
+    "end_inclusive": true,
+    "calendar": "起迄為 YYYYMMDD 字串閉區間。兩端都納入。起迄若不是交易日，不另往內或往外平移，只計算 docs/wh.json dates 裡落在閉區間的交易日。",
+    "valid_day": "有效交易日＝閉區間內下跌分數 down 不是 null 的交易日。此口徑與 stock_date=20261029 的 5093 日相同（下跌與上漲分數都已可計算）。只有資金集中分數、下跌分數仍為 null 的暖機日不進分母。",
+    "state_days": "各狀態天數＝有效交易日之中 state 等於該狀態的天數。0 常態、-1 下跌瘋狂、1 上漲瘋狂、2 資金集中炒作。",
+    "share": "占比＝該狀態天數 / 有效交易日數。非常態占比＝（下跌+上漲+集中）/ 有效交易日數。有效交易日為 0 時占比為 null。",
+    "data_version": "狀態與分數來自 docs/wh.json（stock_date）。規則版本為 wh_extreme.RULE_ID。重算指令：python3 scripts/wh_extreme_audit.py events"
+  },
+  "snapshot": {
+    "stock_date": "20261029",
+    "trading_days": 5591,
+    "first_date": "20040211",
+    "last_date": "20261029",
+    "first_scored_date": "20060210",
+    "scored_days": 5093,
+    "abnormal_days": 695,
+    "abnormal_share": 0.13646181032790103,
+    "state_days_on_scored": {
+      "normal": 4398,
+      "down": 302,
+      "up": 277,
+      "conc": 116
+    },
+    "rule": "2026-10-29",
+    "definition": "有分數日＝down 不是 null。stock_date=20261029 時為 5093 日，其中 state≠0 為 695 日（13.65%）。"
+  },
+  "not_equivalent": {
+    "id": "2021-shipping-vs-concentration",
+    "title": "「2021 航運」與「資金集中」不可等同",
+    "text": "資金集中衡量的是：排除台積電（2330）之後，當日成交值前五大個股占其餘普通股成交值的比重，再取 5 日平均，最後做成 2005-01-01 起至當日（含）的 expanding 百分位。它描述成交值是否集中在少數股票，不是航運族群的漲跌、成分或產業狀態。2021 年 Ed 交審寫的航運約 91% 沒有附母體與起迄，不能用本年 state=2 的天數占比來核對或取代。即便在自訂的 2021 日曆年，資金集中也只占有效交易日的約三成，與 91% 不是同一個指標。"
+  },
+  "ed_review": {
+    "status": "原交審窗未驗證／待 Ed 補起訖",
+    "note": "repo 沒有 Ed 交審事件表的起迄日。下列只保留審查報告轉述的宣稱占比，start／end 維持 null。審計腳本不會用自訂日曆窗填這些列，也不把自訂窗占比寫成原表結果。Ed 補上起迄後，把 start、end 寫成 YYYYMMDD（閉區間）再跑審計腳本。",
+    "rows": [
+      {
+        "id": "ed-2008-09-2009-03",
+        "label": "2008-09～2009-03 下跌",
+        "claimed_state": -1,
+        "claimed_share": 0.94,
+        "start": null,
+        "end": null,
+        "status": "原交審窗未驗證／待 Ed 補起訖",
+        "computed": null
+      },
+      {
+        "id": "ed-2011-h2",
+        "label": "2011 下半年下跌",
+        "claimed_state": -1,
+        "claimed_share": 0.34,
+        "start": null,
+        "end": null,
+        "status": "原交審窗未驗證／待 Ed 補起訖",
+        "computed": null
+      },
+      {
+        "id": "ed-2015-08",
+        "label": "2015-08 下跌",
+        "claimed_state": -1,
+        "claimed_share": 0.48,
+        "start": null,
+        "end": null,
+        "status": "原交審窗未驗證／待 Ed 補起訖",
+        "computed": null
+      },
+      {
+        "id": "ed-2018-10",
+        "label": "2018-10 下跌",
+        "claimed_state": -1,
+        "claimed_share": 0.59,
+        "start": null,
+        "end": null,
+        "status": "原交審窗未驗證／待 Ed 補起訖",
+        "computed": null
+      },
+      {
+        "id": "ed-2020-02-04",
+        "label": "2020-02～04 下跌",
+        "claimed_state": -1,
+        "claimed_share": 0.45,
+        "start": null,
+        "end": null,
+        "status": "原交審窗未驗證／待 Ed 補起訖",
+        "computed": null
+      },
+      {
+        "id": "ed-2021-shipping",
+        "label": "2021 航運",
+        "claimed_state": null,
+        "claimed_share": 0.91,
+        "start": null,
+        "end": null,
+        "note": "航運族群狀態。不是資金集中。不可用集中分數或 state=2 代替。",
+        "status": "原交審窗未驗證／待 Ed 補起訖",
+        "computed": null
+      },
+      {
+        "id": "ed-2022-down",
+        "label": "2022 下跌",
+        "claimed_state": -1,
+        "claimed_share": 0.05,
+        "start": null,
+        "end": null,
+        "status": "原交審窗未驗證／待 Ed 補起訖",
+        "computed": null
+      },
+      {
+        "id": "ed-2022-conc",
+        "label": "2022 資金集中",
+        "claimed_state": 2,
+        "claimed_share": 0.09,
+        "start": null,
+        "end": null,
+        "status": "原交審窗未驗證／待 Ed 補起訖",
+        "computed": null
+      },
+      {
+        "id": "ed-2024-08",
+        "label": "2024-08 下跌",
+        "claimed_state": -1,
+        "claimed_share": 0.71,
+        "start": null,
+        "end": null,
+        "status": "原交審窗未驗證／待 Ed 補起訖",
+        "computed": null
+      },
+      {
+        "id": "ed-2025-04",
+        "label": "2025-04 下跌",
+        "claimed_state": -1,
+        "claimed_share": 1.0,
+        "start": null,
+        "end": null,
+        "status": "原交審窗未驗證／待 Ed 補起訖",
+        "computed": null
+      },
+      {
+        "id": "ed-2026-05-06-up",
+        "label": "2026-05～06 上漲",
+        "claimed_state": 1,
+        "claimed_share": 0.95,
+        "start": null,
+        "end": null,
+        "status": "原交審窗未驗證／待 Ed 補起訖",
+        "computed": null
+      },
+      {
+        "id": "ed-2026-07-down",
+        "label": "2026-07 下跌",
+        "claimed_state": -1,
+        "claimed_share": 0.41,
+        "start": null,
+        "end": null,
+        "status": "原交審窗未驗證／待 Ed 補起訖",
+        "computed": null
+      }
+    ]
+  },
+  "eve_custom_windows": {
+    "status": "Eve 自訂日曆窗抽查，不是原交審表",
+    "note": "2026-10-30 審查用自訂日曆窗重算占比，與上表宣稱有落差，因此事件表判為未驗證。這裡逐窗重算只是把該抽查變成可重跑的對照，不能當成 Ed 原表已核對。2015-08、2026-07、2026-05～06 的抽查與宣稱接近，只支持這些自訂窗本身。",
+    "rows": [
+      {
+        "id": "eve-2008-09-2009-03",
+        "label": "自訂窗 2008-09-01～2009-03-31",
+        "focus_state": -1,
+        "start": "20080901",
+        "end": "20090331",
+        "status": "Eve 自訂日曆窗抽查，不是原交審表",
+        "computed": {
+          "start": "20080901",
+          "end": "20090331",
+          "start_inclusive": true,
+          "end_inclusive": true,
+          "trading_days": 143,
+          "valid_scored_days": 143,
+          "unscored_trading_days": 0,
+          "first_trading_day": "20080901",
+          "last_trading_day": "20090331",
+          "days": {
+            "normal": 66,
+            "down": 72,
+            "up": 5,
+            "conc": 0
+          },
+          "abnormal_days": 77,
+          "share_of_valid": {
+            "normal": 0.46153846153846156,
+            "down": 0.5034965034965035,
+            "up": 0.03496503496503497,
+            "conc": 0.0
+          },
+          "abnormal_share": 0.5384615384615384
+        },
+        "focus_share": 0.5034965034965035
+      },
+      {
+        "id": "eve-2011-h2",
+        "label": "自訂窗 2011-07-01～2011-12-31",
+        "focus_state": -1,
+        "start": "20110701",
+        "end": "20111231",
+        "status": "Eve 自訂日曆窗抽查，不是原交審表",
+        "computed": {
+          "start": "20110701",
+          "end": "20111231",
+          "start_inclusive": true,
+          "end_inclusive": true,
+          "trading_days": 129,
+          "valid_scored_days": 129,
+          "unscored_trading_days": 0,
+          "first_trading_day": "20110701",
+          "last_trading_day": "20111230",
+          "days": {
+            "normal": 102,
+            "down": 27,
+            "up": 0,
+            "conc": 0
+          },
+          "abnormal_days": 27,
+          "share_of_valid": {
+            "normal": 0.7906976744186046,
+            "down": 0.20930232558139536,
+            "up": 0.0,
+            "conc": 0.0
+          },
+          "abnormal_share": 0.20930232558139536
+        },
+        "focus_share": 0.20930232558139536
+      },
+      {
+        "id": "eve-2015-08",
+        "label": "自訂窗 2015-08-01～2015-08-31",
+        "focus_state": -1,
+        "start": "20150801",
+        "end": "20150831",
+        "status": "Eve 自訂日曆窗抽查，不是原交審表",
+        "computed": {
+          "start": "20150801",
+          "end": "20150831",
+          "start_inclusive": true,
+          "end_inclusive": true,
+          "trading_days": 21,
+          "valid_scored_days": 21,
+          "unscored_trading_days": 0,
+          "first_trading_day": "20150803",
+          "last_trading_day": "20150831",
+          "days": {
+            "normal": 11,
+            "down": 10,
+            "up": 0,
+            "conc": 0
+          },
+          "abnormal_days": 10,
+          "share_of_valid": {
+            "normal": 0.5238095238095238,
+            "down": 0.47619047619047616,
+            "up": 0.0,
+            "conc": 0.0
+          },
+          "abnormal_share": 0.47619047619047616
+        },
+        "focus_share": 0.47619047619047616
+      },
+      {
+        "id": "eve-2018-10",
+        "label": "自訂窗 2018-10-01～2018-10-31",
+        "focus_state": -1,
+        "start": "20181001",
+        "end": "20181031",
+        "status": "Eve 自訂日曆窗抽查，不是原交審表",
+        "computed": {
+          "start": "20181001",
+          "end": "20181031",
+          "start_inclusive": true,
+          "end_inclusive": true,
+          "trading_days": 22,
+          "valid_scored_days": 22,
+          "unscored_trading_days": 0,
+          "first_trading_day": "20181001",
+          "last_trading_day": "20181031",
+          "days": {
+            "normal": 12,
+            "down": 10,
+            "up": 0,
+            "conc": 0
+          },
+          "abnormal_days": 10,
+          "share_of_valid": {
+            "normal": 0.5454545454545454,
+            "down": 0.45454545454545453,
+            "up": 0.0,
+            "conc": 0.0
+          },
+          "abnormal_share": 0.45454545454545453
+        },
+        "focus_share": 0.45454545454545453
+      },
+      {
+        "id": "eve-2020-02-04",
+        "label": "自訂窗 2020-02-01～2020-04-30",
+        "focus_state": -1,
+        "start": "20200201",
+        "end": "20200430",
+        "status": "Eve 自訂日曆窗抽查，不是原交審表",
+        "computed": {
+          "start": "20200201",
+          "end": "20200430",
+          "start_inclusive": true,
+          "end_inclusive": true,
+          "trading_days": 61,
+          "valid_scored_days": 61,
+          "unscored_trading_days": 0,
+          "first_trading_day": "20200203",
+          "last_trading_day": "20200430",
+          "days": {
+            "normal": 51,
+            "down": 10,
+            "up": 0,
+            "conc": 0
+          },
+          "abnormal_days": 10,
+          "share_of_valid": {
+            "normal": 0.8360655737704918,
+            "down": 0.16393442622950818,
+            "up": 0.0,
+            "conc": 0.0
+          },
+          "abnormal_share": 0.16393442622950818
+        },
+        "focus_share": 0.16393442622950818
+      },
+      {
+        "id": "eve-2021-conc-not-shipping",
+        "label": "自訂窗 2021 全年資金集中（不是航運）",
+        "focus_state": 2,
+        "start": "20210101",
+        "end": "20211231",
+        "status": "Eve 自訂日曆窗抽查，不是原交審表",
+        "computed": {
+          "start": "20210101",
+          "end": "20211231",
+          "start_inclusive": true,
+          "end_inclusive": true,
+          "trading_days": 244,
+          "valid_scored_days": 244,
+          "unscored_trading_days": 0,
+          "first_trading_day": "20210104",
+          "last_trading_day": "20211230",
+          "days": {
+            "normal": 147,
+            "down": 4,
+            "up": 21,
+            "conc": 72
+          },
+          "abnormal_days": 97,
+          "share_of_valid": {
+            "normal": 0.6024590163934426,
+            "down": 0.01639344262295082,
+            "up": 0.0860655737704918,
+            "conc": 0.29508196721311475
+          },
+          "abnormal_share": 0.3975409836065574
+        },
+        "focus_share": 0.29508196721311475
+      },
+      {
+        "id": "eve-2022-full",
+        "label": "自訂窗 2022 全年",
+        "focus_state": -1,
+        "start": "20220101",
+        "end": "20221231",
+        "status": "Eve 自訂日曆窗抽查，不是原交審表",
+        "computed": {
+          "start": "20220101",
+          "end": "20221231",
+          "start_inclusive": true,
+          "end_inclusive": true,
+          "trading_days": 246,
+          "valid_scored_days": 246,
+          "unscored_trading_days": 0,
+          "first_trading_day": "20220103",
+          "last_trading_day": "20221230",
+          "days": {
+            "normal": 218,
+            "down": 10,
+            "up": 0,
+            "conc": 18
+          },
+          "abnormal_days": 28,
+          "share_of_valid": {
+            "normal": 0.8861788617886179,
+            "down": 0.04065040650406504,
+            "up": 0.0,
+            "conc": 0.07317073170731707
+          },
+          "abnormal_share": 0.11382113821138211
+        },
+        "focus_share": 0.04065040650406504
+      },
+      {
+        "id": "eve-2024-08",
+        "label": "自訂窗 2024-08-01～2024-08-31",
+        "focus_state": -1,
+        "start": "20240801",
+        "end": "20240831",
+        "status": "Eve 自訂日曆窗抽查，不是原交審表",
+        "computed": {
+          "start": "20240801",
+          "end": "20240831",
+          "start_inclusive": true,
+          "end_inclusive": true,
+          "trading_days": 22,
+          "valid_scored_days": 22,
+          "unscored_trading_days": 0,
+          "first_trading_day": "20240801",
+          "last_trading_day": "20240830",
+          "days": {
+            "normal": 17,
+            "down": 5,
+            "up": 0,
+            "conc": 0
+          },
+          "abnormal_days": 5,
+          "share_of_valid": {
+            "normal": 0.7727272727272727,
+            "down": 0.22727272727272727,
+            "up": 0.0,
+            "conc": 0.0
+          },
+          "abnormal_share": 0.22727272727272727
+        },
+        "focus_share": 0.22727272727272727
+      },
+      {
+        "id": "eve-2025-04",
+        "label": "自訂窗 2025-04-01～2025-04-30",
+        "focus_state": -1,
+        "start": "20250401",
+        "end": "20250430",
+        "status": "Eve 自訂日曆窗抽查，不是原交審表",
+        "computed": {
+          "start": "20250401",
+          "end": "20250430",
+          "start_inclusive": true,
+          "end_inclusive": true,
+          "trading_days": 20,
+          "valid_scored_days": 20,
+          "unscored_trading_days": 0,
+          "first_trading_day": "20250401",
+          "last_trading_day": "20250430",
+          "days": {
+            "normal": 8,
+            "down": 12,
+            "up": 0,
+            "conc": 0
+          },
+          "abnormal_days": 12,
+          "share_of_valid": {
+            "normal": 0.4,
+            "down": 0.6,
+            "up": 0.0,
+            "conc": 0.0
+          },
+          "abnormal_share": 0.6
+        },
+        "focus_share": 0.6
+      },
+      {
+        "id": "eve-2026-05-06",
+        "label": "自訂窗 2026-05-01～2026-06-30",
+        "focus_state": 1,
+        "start": "20260501",
+        "end": "20260630",
+        "status": "Eve 自訂日曆窗抽查，不是原交審表",
+        "computed": {
+          "start": "20260501",
+          "end": "20260630",
+          "start_inclusive": true,
+          "end_inclusive": true,
+          "trading_days": 41,
+          "valid_scored_days": 41,
+          "unscored_trading_days": 0,
+          "first_trading_day": "20260504",
+          "last_trading_day": "20260630",
+          "days": {
+            "normal": 2,
+            "down": 0,
+            "up": 39,
+            "conc": 0
+          },
+          "abnormal_days": 39,
+          "share_of_valid": {
+            "normal": 0.04878048780487805,
+            "down": 0.0,
+            "up": 0.9512195121951219,
+            "conc": 0.0
+          },
+          "abnormal_share": 0.9512195121951219
+        },
+        "focus_share": 0.9512195121951219
+      },
+      {
+        "id": "eve-2026-07",
+        "label": "自訂窗 2026-07-01～2026-07-31",
+        "focus_state": -1,
+        "start": "20260701",
+        "end": "20260731",
+        "status": "Eve 自訂日曆窗抽查，不是原交審表",
+        "computed": {
+          "start": "20260701",
+          "end": "20260731",
+          "start_inclusive": true,
+          "end_inclusive": true,
+          "trading_days": 22,
+          "valid_scored_days": 22,
+          "unscored_trading_days": 0,
+          "first_trading_day": "20260701",
+          "last_trading_day": "20260731",
+          "days": {
+            "normal": 9,
+            "down": 9,
+            "up": 4,
+            "conc": 0
+          },
+          "abnormal_days": 13,
+          "share_of_valid": {
+            "normal": 0.4090909090909091,
+            "down": 0.4090909090909091,
+            "up": 0.18181818181818182,
+            "conc": 0.0
+          },
+          "abnormal_share": 0.5909090909090909
+        },
+        "focus_share": 0.4090909090909091
+      }
+    ]
+  }
+}

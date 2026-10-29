@@ -1,0 +1,489 @@
+{
+  "generated_at": "2026-10-30T00:54:14+08:00",
+  "stock_date": "20261029",
+  "rule": "2026-10-29",
+  "switch_definition": "切換＝相鄰兩個交易日（wh.json dates 順序）state 不同，計入新狀態那天的西元年。暖機期間 state 維持 0，不產生切換。這與推播用的 state[-2]≠state[-1] 同一口徑。",
+  "calendar_limit": "中間年份是否缺某個交易所交易日，未與交易所行事曆逐日勾稽。缺資料只用於檔內完全沒有該年日期的年份。",
+  "total_switches": 122,
+  "years_in_file": 23,
+  "years_with_scores": 21,
+  "years_with_at_least_one_switch": 15,
+  "zero_switch_years_with_scores": [
+    "2013",
+    "2014",
+    "2016",
+    "2017",
+    "2019",
+    "2023"
+  ],
+  "mean_per_scored_year_including_zeros": 5.809523809523809,
+  "mean_per_year_that_had_a_switch": 8.133333333333333,
+  "about_8_1": "約 8.1 次／年對應「有至少一次切換的年份」當分母（零次年排除）。全部有分數年份當分母會更低。零次年不是缺資料。",
+  "snapshot": {
+    "stock_date": "20261029",
+    "trading_days": 5591,
+    "first_date": "20040211",
+    "last_date": "20261029",
+    "first_scored_date": "20060210",
+    "scored_days": 5093,
+    "abnormal_days": 695,
+    "abnormal_share": 0.13646181032790103,
+    "state_days_on_scored": {
+      "normal": 4398,
+      "down": 302,
+      "up": 277,
+      "conc": 116
+    },
+    "rule": "2026-10-29",
+    "definition": "有分數日＝down 不是 null。stock_date=20261029 時為 5093 日，其中 state≠0 為 695 日（13.65%）。"
+  },
+  "years": [
+    {
+      "year": "2004",
+      "trading_days": 228,
+      "scored_days": 0,
+      "abnormal_days": 0,
+      "switches": 0,
+      "states": {
+        "normal": 0,
+        "down": 0,
+        "up": 0,
+        "conc": 0
+      },
+      "first_date": "20040211",
+      "last_date": "20041231",
+      "flags": [
+        "無分數",
+        "切換零次",
+        "不完整年（序列起點）"
+      ],
+      "note": "無分數；切換零次；不完整年（序列起點）"
+    },
+    {
+      "year": "2005",
+      "trading_days": 247,
+      "scored_days": 0,
+      "abnormal_days": 0,
+      "switches": 0,
+      "states": {
+        "normal": 0,
+        "down": 0,
+        "up": 0,
+        "conc": 0
+      },
+      "first_date": "20050103",
+      "last_date": "20051230",
+      "flags": [
+        "無分數",
+        "切換零次"
+      ],
+      "note": "無分數；切換零次"
+    },
+    {
+      "year": "2006",
+      "trading_days": 248,
+      "scored_days": 225,
+      "abnormal_days": 48,
+      "switches": 12,
+      "states": {
+        "normal": 177,
+        "down": 18,
+        "up": 28,
+        "conc": 2
+      },
+      "first_date": "20060102",
+      "last_date": "20061229",
+      "flags": [
+        "分數不完整"
+      ],
+      "note": "分數不完整"
+    },
+    {
+      "year": "2007",
+      "trading_days": 247,
+      "scored_days": 247,
+      "abnormal_days": 67,
+      "switches": 10,
+      "states": {
+        "normal": 180,
+        "down": 37,
+        "up": 30,
+        "conc": 0
+      },
+      "first_date": "20070102",
+      "last_date": "20071231",
+      "flags": [
+        "檔內交易日皆有分數"
+      ],
+      "note": "檔內交易日皆有分數"
+    },
+    {
+      "year": "2008",
+      "trading_days": 249,
+      "scored_days": 249,
+      "abnormal_days": 127,
+      "switches": 18,
+      "states": {
+        "normal": 122,
+        "down": 127,
+        "up": 0,
+        "conc": 0
+      },
+      "first_date": "20080102",
+      "last_date": "20081231",
+      "flags": [
+        "檔內交易日皆有分數"
+      ],
+      "note": "檔內交易日皆有分數"
+    },
+    {
+      "year": "2009",
+      "trading_days": 251,
+      "scored_days": 251,
+      "abnormal_days": 72,
+      "switches": 8,
+      "states": {
+        "normal": 179,
+        "down": 10,
+        "up": 62,
+        "conc": 0
+      },
+      "first_date": "20090105",
+      "last_date": "20091231",
+      "flags": [
+        "檔內交易日皆有分數"
+      ],
+      "note": "檔內交易日皆有分數"
+    },
+    {
+      "year": "2010",
+      "trading_days": 251,
+      "scored_days": 251,
+      "abnormal_days": 3,
+      "switches": 2,
+      "states": {
+        "normal": 248,
+        "down": 3,
+        "up": 0,
+        "conc": 0
+      },
+      "first_date": "20100104",
+      "last_date": "20101231",
+      "flags": [
+        "檔內交易日皆有分數"
+      ],
+      "note": "檔內交易日皆有分數"
+    },
+    {
+      "year": "2011",
+      "trading_days": 247,
+      "scored_days": 247,
+      "abnormal_days": 27,
+      "switches": 10,
+      "states": {
+        "normal": 220,
+        "down": 27,
+        "up": 0,
+        "conc": 0
+      },
+      "first_date": "20110103",
+      "last_date": "20111230",
+      "flags": [
+        "檔內交易日皆有分數"
+      ],
+      "note": "檔內交易日皆有分數"
+    },
+    {
+      "year": "2012",
+      "trading_days": 250,
+      "scored_days": 250,
+      "abnormal_days": 32,
+      "switches": 8,
+      "states": {
+        "normal": 218,
+        "down": 0,
+        "up": 14,
+        "conc": 18
+      },
+      "first_date": "20120102",
+      "last_date": "20121228",
+      "flags": [
+        "檔內交易日皆有分數"
+      ],
+      "note": "檔內交易日皆有分數"
+    },
+    {
+      "year": "2013",
+      "trading_days": 246,
+      "scored_days": 246,
+      "abnormal_days": 0,
+      "switches": 0,
+      "states": {
+        "normal": 246,
+        "down": 0,
+        "up": 0,
+        "conc": 0
+      },
+      "first_date": "20130102",
+      "last_date": "20131231",
+      "flags": [
+        "檔內交易日皆有分數",
+        "切換零次"
+      ],
+      "note": "檔內交易日皆有分數；切換零次"
+    },
+    {
+      "year": "2014",
+      "trading_days": 248,
+      "scored_days": 248,
+      "abnormal_days": 0,
+      "switches": 0,
+      "states": {
+        "normal": 248,
+        "down": 0,
+        "up": 0,
+        "conc": 0
+      },
+      "first_date": "20140102",
+      "last_date": "20141231",
+      "flags": [
+        "檔內交易日皆有分數",
+        "切換零次"
+      ],
+      "note": "檔內交易日皆有分數；切換零次"
+    },
+    {
+      "year": "2015",
+      "trading_days": 244,
+      "scored_days": 244,
+      "abnormal_days": 15,
+      "switches": 4,
+      "states": {
+        "normal": 229,
+        "down": 15,
+        "up": 0,
+        "conc": 0
+      },
+      "first_date": "20150105",
+      "last_date": "20151231",
+      "flags": [
+        "檔內交易日皆有分數"
+      ],
+      "note": "檔內交易日皆有分數"
+    },
+    {
+      "year": "2016",
+      "trading_days": 244,
+      "scored_days": 244,
+      "abnormal_days": 0,
+      "switches": 0,
+      "states": {
+        "normal": 244,
+        "down": 0,
+        "up": 0,
+        "conc": 0
+      },
+      "first_date": "20160104",
+      "last_date": "20161230",
+      "flags": [
+        "檔內交易日皆有分數",
+        "切換零次"
+      ],
+      "note": "檔內交易日皆有分數；切換零次"
+    },
+    {
+      "year": "2017",
+      "trading_days": 246,
+      "scored_days": 246,
+      "abnormal_days": 0,
+      "switches": 0,
+      "states": {
+        "normal": 246,
+        "down": 0,
+        "up": 0,
+        "conc": 0
+      },
+      "first_date": "20170103",
+      "last_date": "20171229",
+      "flags": [
+        "檔內交易日皆有分數",
+        "切換零次"
+      ],
+      "note": "檔內交易日皆有分數；切換零次"
+    },
+    {
+      "year": "2018",
+      "trading_days": 247,
+      "scored_days": 247,
+      "abnormal_days": 16,
+      "switches": 8,
+      "states": {
+        "normal": 231,
+        "down": 10,
+        "up": 0,
+        "conc": 6
+      },
+      "first_date": "20180102",
+      "last_date": "20181228",
+      "flags": [
+        "檔內交易日皆有分數"
+      ],
+      "note": "檔內交易日皆有分數"
+    },
+    {
+      "year": "2019",
+      "trading_days": 242,
+      "scored_days": 242,
+      "abnormal_days": 0,
+      "switches": 0,
+      "states": {
+        "normal": 242,
+        "down": 0,
+        "up": 0,
+        "conc": 0
+      },
+      "first_date": "20190102",
+      "last_date": "20191231",
+      "flags": [
+        "檔內交易日皆有分數",
+        "切換零次"
+      ],
+      "note": "檔內交易日皆有分數；切換零次"
+    },
+    {
+      "year": "2020",
+      "trading_days": 245,
+      "scored_days": 245,
+      "abnormal_days": 29,
+      "switches": 4,
+      "states": {
+        "normal": 216,
+        "down": 10,
+        "up": 19,
+        "conc": 0
+      },
+      "first_date": "20200102",
+      "last_date": "20201231",
+      "flags": [
+        "檔內交易日皆有分數"
+      ],
+      "note": "檔內交易日皆有分數"
+    },
+    {
+      "year": "2021",
+      "trading_days": 244,
+      "scored_days": 244,
+      "abnormal_days": 97,
+      "switches": 10,
+      "states": {
+        "normal": 147,
+        "down": 4,
+        "up": 21,
+        "conc": 72
+      },
+      "first_date": "20210104",
+      "last_date": "20211230",
+      "flags": [
+        "檔內交易日皆有分數"
+      ],
+      "note": "檔內交易日皆有分數"
+    },
+    {
+      "year": "2022",
+      "trading_days": 246,
+      "scored_days": 246,
+      "abnormal_days": 28,
+      "switches": 6,
+      "states": {
+        "normal": 218,
+        "down": 10,
+        "up": 0,
+        "conc": 18
+      },
+      "first_date": "20220103",
+      "last_date": "20221230",
+      "flags": [
+        "檔內交易日皆有分數"
+      ],
+      "note": "檔內交易日皆有分數"
+    },
+    {
+      "year": "2023",
+      "trading_days": 239,
+      "scored_days": 239,
+      "abnormal_days": 0,
+      "switches": 0,
+      "states": {
+        "normal": 239,
+        "down": 0,
+        "up": 0,
+        "conc": 0
+      },
+      "first_date": "20230103",
+      "last_date": "20231229",
+      "flags": [
+        "檔內交易日皆有分數",
+        "切換零次"
+      ],
+      "note": "檔內交易日皆有分數；切換零次"
+    },
+    {
+      "year": "2024",
+      "trading_days": 242,
+      "scored_days": 242,
+      "abnormal_days": 14,
+      "switches": 4,
+      "states": {
+        "normal": 228,
+        "down": 5,
+        "up": 9,
+        "conc": 0
+      },
+      "first_date": "20240102",
+      "last_date": "20241231",
+      "flags": [
+        "檔內交易日皆有分數"
+      ],
+      "note": "檔內交易日皆有分數"
+    },
+    {
+      "year": "2025",
+      "trading_days": 243,
+      "scored_days": 243,
+      "abnormal_days": 13,
+      "switches": 4,
+      "states": {
+        "normal": 230,
+        "down": 13,
+        "up": 0,
+        "conc": 0
+      },
+      "first_date": "20250102",
+      "last_date": "20251231",
+      "flags": [
+        "檔內交易日皆有分數"
+      ],
+      "note": "檔內交易日皆有分數"
+    },
+    {
+      "year": "2026",
+      "trading_days": 197,
+      "scored_days": 197,
+      "abnormal_days": 107,
+      "switches": 14,
+      "states": {
+        "normal": 90,
+        "down": 13,
+        "up": 94,
+        "conc": 0
+      },
+      "first_date": "20260102",
+      "last_date": "20261029",
+      "flags": [
+        "檔內交易日皆有分數",
+        "不完整年（序列終點，資料未到年底）"
+      ],
+      "note": "檔內交易日皆有分數；不完整年（序列終點，資料未到年底）"
+    }
+  ]
+}

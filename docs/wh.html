@@ -58,6 +58,10 @@ h2 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
 .tabs button{border-radius:999px;padding:4px 12px;background:var(--chip);border:none;color:var(--muted)}
 .tabs button[aria-pressed="true"]{background:var(--accent);color:#fff}
 svg{width:100%;height:auto;display:block}
+.xtools{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:10px}
+.xtools input[type=range]{flex:1;min-width:140px}
+.xscroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-x;overscroll-behavior-x:contain;border:1px solid var(--line);border-radius:8px;margin-top:8px}
+#xchart{height:150px;width:auto;max-width:none;touch-action:pan-x}
 svg text{font:11px var(--num);fill:var(--muted)}
 .note{font-size:12px;color:var(--muted);line-height:1.6}
 .tblwrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px}
@@ -91,10 +95,17 @@ td.num{font-size:15px}
     <h2>市場狀態<small>非常態（瘋狂）判定，約 15% 交易日</small></h2>
     <div class="panel">
       <div id="xstate" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px"></div>
-      <svg id="xchart" viewBox="0 0 420 150" role="img" aria-label="非常態期間" style="margin-top:12px"></svg>
-      <div class="legend"><span><i style="background:var(--down)"></i>下跌瘋狂</span><span><i style="background:var(--up)"></i>上漲瘋狂</span><span><i style="background:#d99a1e"></i>資金集中炒作</span><span>黑線＝加權指數（對數）；期間用下方「離高點分布」的期間按鈕切換</span></div>
+      <div class="xtools">
+        <label class="sub" for="xrange">歷史位置</label>
+        <input id="xrange" type="range" min="0" max="1000" value="1000" aria-label="平移市場狀態歷史，左為2005年、右為所選交易日">
+        <label class="sub">跳到 <select id="xyear" aria-label="跳到年份"></select></label>
+      </div>
+      <div id="xscroll" class="xscroll" tabindex="0">
+        <svg id="xchart" viewBox="0 0 420 150" role="img" aria-label="自2005年起的非常態色帶與加權指數，可左右滑動"></svg>
+      </div>
+      <div class="legend"><span><i style="background:var(--down)"></i>下跌瘋狂</span><span><i style="background:var(--up)"></i>上漲瘋狂</span><span><i style="background:#d99a1e"></i>資金集中炒作</span><span>黑線＝加權指數（對數）。左右滑動或拖曳「歷史位置」可看 2005 年起；右端為上方所選交易日。</span></div>
       <details style="margin-top:10px"><summary class="sub" style="cursor:pointer">歷次非常態期間</summary><div class="tblwrap" style="margin-top:8px"><table id="xtbl"></table></div></details>
-      <div class="note" style="margin-top:8px">下跌分數＝5日與20日跌幅、5日跌停家數占比、20日波動度、離高點≥20%股票占比的歷史百分位平均；上漲分數＝20日漲幅、指數對季線乖離、成交值放大倍數、5日漲停家數占比的百分位平均；資金集中＝前5大成交值個股（排除台積電）占比。百分位只用當日以前（2005 年起）的資料。進入／退出門檻：下跌 0.85／0.72、上漲 0.87／0.80、資金集中 0.985／0.96。只供觀察，不是交易訊號。</div>
+      <div class="note" style="margin-top:8px">下跌分數＝5日與20日跌幅、5日跌停家數占比、20日波動度、離高點≥20%股票占比的歷史百分位平均；上漲分數＝20日漲幅、指數對季線乖離、成交值放大倍數、5日漲停家數占比的百分位平均；資金集中＝前5大成交值個股（排除台積電）占比。百分位只用 2005-01-01 起至當日（含當日）的資料。進入／退出門檻：下跌 0.85／0.72、上漲 0.87／0.80、資金集中 0.985／0.96。頁面分數是閱讀用的整數百分數，判定用未四捨五入的分數。只供觀察，不是交易訊號。規則全文見 <a href="wh-market-state-rules.md">市場狀態規則</a>。</div>
     </div>
   </section>
 
@@ -163,7 +174,21 @@ fetch('wh.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).then(w 
   for (let i = w.dates.length - 1; i >= Math.max(0, w.dates.length - 260); i--) sel.add(new Option(fd(w.dates[i]), i));
   sel.onchange = () => { idx = +sel.value; draw(); };
   tabs('#gtabs', G, () => ddG, v => { ddG = v; drawDD(); drawTrend(); });
-  tabs('#rtabs', {250:'1 年', 750:'3 年', 1500:'6 年', 2500:'10 年', 99999:'全部'}, () => String(ddR), v => { ddR = +v; drawDD(); drawTrend(); drawX(); });
+  tabs('#rtabs', {250:'1 年', 750:'3 年', 1500:'6 年', 2500:'10 年', 99999:'全部'}, () => String(ddR), v => { ddR = +v; drawDD(); drawTrend(); });
+  $('#xrange').oninput = () => {
+    const el = $('#xscroll');
+    const max = Math.max(0, el.scrollWidth - el.clientWidth);
+    el.scrollLeft = max * ($('#xrange').value / 1000);
+  };
+  $('#xscroll').addEventListener('scroll', syncXRange, {passive: true});
+  $('#xyear').onchange = () => {
+    const y = $('#xyear').value, s = xStart();
+    const i = W.dates.findIndex((d, k) => k >= s && d.slice(0, 4) === y);
+    if (i < 0) return;
+    const svg = $('#xchart');
+    const x = (i - s) / Math.max(1, idx - s) * svg.clientWidth;
+    $('#xscroll').scrollLeft = Math.max(0, x - 8);
+  };
   tabs('#stabs', {twse:G.twse, otc:G.otc, hp:G.hp}, () => stG, v => { stG = v; sortK = v === 'hp' ? 'px' : 'cap'; sortD = -1; drawTable(); });
   draw();
 }).catch(e => { $('#sub').textContent = '資料讀取失敗：' + e; });
@@ -195,6 +220,18 @@ function xEpisodes(){
     out.push({s: i, e: j, k: st[i]}); i = j + 1; }
   return out;
 }
+function xStart(){ const i = W.dates.findIndex(d => d >= '20050101'); return i < 0 ? 0 : i; }
+function syncXRange(){
+  const el = $('#xscroll'), r = $('#xrange'); if (!el || !r || !W) return;
+  const max = el.scrollWidth - el.clientWidth;
+  r.value = max <= 0 ? 1000 : Math.round(el.scrollLeft / max * 1000);
+  const svg = $('#xchart'); if (!svg || !svg.clientWidth) return;
+  const s = xStart(), e = idx;
+  const i = Math.round(s + ((el.scrollLeft + el.clientWidth / 2) / svg.clientWidth) * Math.max(1, e - s));
+  const y = W.dates[Math.max(s, Math.min(e, i))].slice(0, 4);
+  const sel = $('#xyear');
+  if (sel && [...sel.options].some(o => o.value === y) && sel.value !== y) sel.value = y;
+}
 function drawX(){
   const x_ = W.ext; if (!x_) return;
   const k = x_.state[idx], [lab, col] = XS[String(k)];
@@ -203,8 +240,14 @@ function drawX(){
   $('#xstate').innerHTML = `<span style="font-size:20px;font-weight:700;color:${col}">● ${lab}</span>` +
     (k ? `<span class="sub">已連續 ${run} 個交易日</span>` : '') +
     `<span class="sub">下跌分數 <b class="num">${sc(x_.down[idx])}</b>／進入 85</span><span class="sub">上漲分數 <b class="num">${sc(x_.up[idx])}</b>／進入 87</span><span class="sub">資金集中 <b class="num">${sc(x_.conc[idx])}</b>／進入 98.5</span>`;
-  const [s, e] = range(), Wd = 420, H = 150, x = i => (i - s) / Math.max(1, e - s) * Wd;
-  let g = xAxis(s, e, Wd, x);
+  const s = xStart(), e = idx, H = 150;
+  const Wd = Math.max(640, (e - s) * 3);
+  const svg = $('#xchart');
+  svg.setAttribute('viewBox', `0 0 ${Wd} ${H}`);
+  svg.style.width = Wd + 'px';
+  svg.style.height = H + 'px';
+  const x = i => (i - s) / Math.max(1, e - s) * Wd;
+  let g = xAxis(s, e, Wd, x, {eachYear: true});
   for (const ep of xEpisodes()) { if (ep.e < s || ep.s > e) continue;
     const a = x(Math.max(ep.s, s)), b = x(Math.min(ep.e, e) + 1);
     g += `<rect x="${a}" y="0" width="${Math.max(1, b - a)}" height="${H}" fill="${XS[String(ep.k)][1]}" opacity=".35"/>`; }
@@ -212,6 +255,12 @@ function drawX(){
   let p = ''; for (let i = s; i <= e; i++) if (W.taiex[i]) p += (p ? 'L' : 'M') + x(i).toFixed(1) + ' ' + (8 + (1 - (Math.log(W.taiex[i]) - lo) / (hi - lo || 1)) * (H - 16)).toFixed(1);
   g += `<path d="${p}" fill="none" stroke="var(--fg)" stroke-width="1.2"/><rect x="0" y="0" width="${Wd}" height="${H}" fill="transparent" id="xhit"/>`;
   $('#xchart').innerHTML = g;
+  const sel = $('#xyear'), y0 = W.dates[s].slice(0, 4), y1 = W.dates[e].slice(0, 4), keep = sel.value;
+  let opts = '';
+  for (let y = +y0; y <= +y1; y++) opts += `<option value="${y}">${y}</option>`;
+  sel.innerHTML = opts;
+  sel.value = (keep && +keep >= +y0 && +keep <= +y1) ? keep : y1;
+  requestAnimationFrame(() => { $('#xscroll').scrollLeft = $('#xscroll').scrollWidth; syncXRange(); });
   hover('#xhit', s, e, x, i => `${fd(W.dates[i])}<br>${XS[String(x_.state[i])][0]}<br>下跌 ${sc(x_.down[i])}／上漲 ${sc(x_.up[i])}／集中 ${sc(x_.conc[i])}`);
   const eps = xEpisodes().reverse();
   $('#xtbl').innerHTML = '<thead><tr><th>開始</th><th>結束</th><th>狀態</th><th>天數</th><th>期間加權%</th></tr></thead><tbody>' +
@@ -252,11 +301,12 @@ function drawCards(){
   $('#cards').innerHTML = h;
 }
 function range(){ const s = Math.max(0, idx - ddR + 1); return [s, idx]; }
-function xAxis(s, e, Wd, x){
+function xAxis(s, e, Wd, x, opt){
+  opt = opt || {};
   let g = '', last = '';
   for (let i = s; i <= e; i++) {
     const y = W.dates[i].slice(0,4), m = W.dates[i].slice(4,6);
-    const lab = (e - s > 2000) ? (m === '01' && +y % 3 === 0 ? y : '') : (e - s > 500) ? (m === '01' ? y : '') : ((m === '01' || m === '07') ? y.slice(2) + '/' + m : '');
+    const lab = opt.eachYear ? ((i === s || m === '01') ? y : '') : (e - s > 2000) ? (m === '01' && +y % 3 === 0 ? y : '') : (e - s > 500) ? (m === '01' ? y : '') : ((m === '01' || m === '07') ? y.slice(2) + '/' + m : '');
     if (lab && lab !== last && (i === s || W.dates[i-1].slice(4,6) !== m)) { g += `<line x1="${x(i)}" x2="${x(i)}" y1="0" y2="100%" stroke="var(--line)"/><text x="${x(i)+2}" y="11">${lab}</text>`; last = lab; }
   }
   // 資料覆蓋改變處：櫃買資料起點

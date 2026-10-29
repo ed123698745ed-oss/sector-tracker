@@ -24,7 +24,10 @@ def main():
 
 
 def push(msg):
-    """推一則 LINE 文字訊息；沒設定 secrets 就只印出。失敗不拋錯（警示不能害主流程中斷）。"""
+    """推一則 LINE 文字訊息；沒設定 secrets 就只印出。失敗不拋錯（警示不能害主流程中斷）。
+
+    成功回傳 HTTP 狀態碼（真值），失敗或未設定回傳 False。錯誤訊息若含 token 或 user id 會遮掉。
+    """
     tok, uid = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN'), os.environ.get('LINE_USER_ID')
     if not (tok and uid):
         print('未設定 LINE secrets，略過推播'); return False
@@ -33,9 +36,14 @@ def push(msg):
                                  headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {tok}'})
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
-            print('LINE', r.status); return True
+            print('LINE', r.status); return r.status
     except Exception as e:
-        print('LINE 推播失敗', e); return False
+        err = str(e)
+        if tok and tok in err:
+            err = err.replace(tok, '[redacted]')
+        if uid and uid in err:
+            err = err.replace(uid, '[redacted]')
+        print('LINE 推播失敗', err); return False
 
 
 if __name__ == '__main__':
