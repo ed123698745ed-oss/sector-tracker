@@ -1,11 +1,17 @@
 #!/bin/bash
-# 除權息計算結果表「詳細資料」測試（取配股率，含已下市公司）
+# 初次上市／上櫃日期資料來源測試
 : > test/pref_probe.txt
-for q in "STK_NO=2311&T1=20100727" "STK_NO=2888&T1=20130910" "STK_NO=6505&T1=20090707" "STK_NO=2330&T1=20090715"; do
-  for u in "https://www.twse.com.tw/rwd/zh/exRight/TWT49UDetail?$q&response=json" "https://www.twse.com.tw/exchangeReport/TWT49UDetail?$q&response=json"; do
-    curl -sS -m 60 -A "Mozilla/5.0" -o q.json -w "%{http_code}" "$u" > code.txt
-    echo "== $u http=$(cat code.txt) bytes=$(wc -c < q.json)" >> test/pref_probe.txt
-    head -c 1500 q.json >> test/pref_probe.txt; echo >> test/pref_probe.txt
-    sleep 6
-  done
+for u in "https://www.twse.com.tw/rwd/zh/company/newlisting?response=json" \
+ "https://www.twse.com.tw/rwd/zh/company/newlisting?date=2012&response=json" \
+ "https://www.twse.com.tw/rwd/zh/company/applylisting?response=json" \
+ "https://openapi.twse.com.tw/v1/opendata/t187ap03_L" \
+ "https://www.twse.com.tw/rwd/zh/company/suspendListing?response=json" \
+ "https://www.tpex.org.tw/www/zh-tw/company/newlisting?response=json" \
+ "https://www.tpex.org.tw/www/zh-tw/listed/newListing?response=json" \
+ "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_peratio_analysis" \
+ "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O" ; do
+  curl -sS -m 60 -A "Mozilla/5.0" -o q.json -w "%{http_code}" "$u" > code.txt
+  echo "== $u http=$(cat code.txt) bytes=$(wc -c < q.json)" >> test/pref_probe.txt
+  head -c 1200 q.json >> test/pref_probe.txt; echo >> test/pref_probe.txt
+  sleep 5
 done
