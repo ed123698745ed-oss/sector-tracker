@@ -6,6 +6,8 @@
   台北時間週一至週五 13:52、14:12、14:32、14:52、15:12、15:42、16:20、18:20。
   收盤檔 `data/quotes/當日.json` 已存在則整段計算跳過。
   同日若先前失敗且 ledger 有失敗紀錄，後續排程只跑 `--retry-only` 補送並提交 ledger。
+  正式步驟之後，ledger 先單獨 commit／push（5 次重試），再提交整包資料；單獨 push 失敗則上傳 artifact。
+  情境證據：`python3 scripts/wh_notify_evidence.py` → docs/wh-market-state-evidence/notify.md。
 
 資料就緒：wh.json 的 stock_date 須等於最後一個 dates、長度一致、當日行情檔存在、
   門檻與程式一致；若傳入 --expect-date 則必須等於該日。非常態但對應分數缺值則不送。

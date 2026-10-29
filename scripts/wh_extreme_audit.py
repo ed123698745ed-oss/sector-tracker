@@ -277,6 +277,9 @@ def run_events(w):
     lines = [
         '# 市場狀態事件表',
         '',
+        '> **未驗證：原交審事件表尚未驗證。** repo 沒有 Ed 交審表的起迄、母體與當時資料版本；下表 Ed 列只列宣稱占比，不重算。'
+        '補證期間頁面 `docs/wh.html` 市場狀態區塊同步顯示「補證期間：原交審事件表尚未驗證」。',
+        '',
         '原交審窗未驗證／待 Ed 補起訖。下面自訂窗是 Eve 抽查對照，不是原表。',
         '',
         cfg['not_equivalent']['text'],
@@ -340,6 +343,65 @@ def run_boundaries():
     if not table['pass']:
         raise SystemExit('狀態機邊界案例未通過')
     return table
+
+
+# 截斷重算之外、無法驗證時點的範圍。只寫 repo 內查得到的事實；期間以現存檔名範圍為準。
+UNVERIFIABLE_SCOPE = [
+    {
+        'field': 'groups.all.ld／lu（5 日跌停、漲停家數占比的分子）',
+        'period': '全期（20040211～資料日）',
+        'source': 'cache/wh_px.json.gz 的 lim（wh_prices.py 由 data/quotes、archive/raw/twse_events、twse_newlisting、tpex 判定）',
+        'reason': '沒有逐日前綴重跑 wh_prices。除權息／恢復買賣日的漲跌停價取自 twse_events，該目錄由 whext.yml 事後批次抓取，不是各日當下取得；判定規則也經多次複核修訂（git log）。',
+    },
+    {
+        'field': 'groups.all.n（當日有效家數，占比分母）',
+        'period': '全期',
+        'source': 'wh_build.py 以 cache/wh_px.json.gz 計數',
+        'reason': '同上，未逐日前綴重跑；母體是現存行情檔裡符合 is_common 的代號，不是當日凍結名單。',
+    },
+    {
+        'field': 'groups.all.dd（離近 250 日高點 ≥20% 占比）',
+        'period': '全期；個股上市未滿 250 日不計',
+        'source': 'wh_build.py 的還原價（以每日漲跌% 連乘）與盤中最高價',
+        'reason': '還原價以全期一次建置，未逐日前綴重跑。滾動窗依程式是往回看，但沒有實際截斷驗證；現存漲跌% 可能含事後補算的參考價。',
+    },
+    {
+        'field': 'taiex（加權指數點位）',
+        'period': '20040211～20081231',
+        'source': 'archive/raw/twse_fmtqik 月檔（現存 200402～201412）',
+        'reason': '月檔由 whext.yml 事後下載；公式只讀當日列，但無法證明月檔內容與當日公布值相同。',
+    },
+    {
+        'field': 'taiex（加權指數點位）',
+        'period': '20090101～資料日',
+        'source': 'archive/raw/twse/YYYYMMDD.json.gz（MI_INDEX）；缺檔或缺列時退回 FMTQIK',
+        'reason': '沒有標記哪些日子實際用了退回值；原始檔抓取時間未逐日記錄。',
+    },
+    {
+        'field': 'turnover、conc（成交值、前五大集中度）',
+        'period': '全期',
+        'source': 'data/quotes/YYYYMMDD.json',
+        'reason': '截斷重算有用到這兩條，證明 compute 不讀未來；但行情檔本身可能是 backfill 補抓或修正後版本，repo 未保存各日公布當下版本。',
+    },
+    {
+        'field': '母體口徑（上市 vs 上市櫃）',
+        'period': '20070702 以前',
+        'source': 'archive/raw/tpex 現存檔',
+        'reason': '頁面註記櫃買資料 2007/07 起，此前全市場欄位僅上市普通股。這是口徑變化，不是前視；未另做上市-only 的對照重算。',
+    },
+    {
+        'field': '盤中值',
+        'period': '全期',
+        'source': '無',
+        'reason': '收盤檔公布前的數值沒有另存，無從比較盤中與收盤後判定。',
+    },
+    {
+        'field': 'Ed 原交審事件表（起迄、母體、資料版本）',
+        'period': '交審表所列各窗',
+        'source': '不在 repo',
+        'reason': '原交審事件表尚未驗證；config/wh_extreme_events.json 的 ed_review 起迄為空，見 events.md。',
+    },
+]
 
 
 def _pit_one(i, dates, taiex, allg, turnover, conc):
@@ -414,6 +476,7 @@ def run_pit(w, quick=False):
             '同一交易日盤中、收盤檔公布前的數值沒有另存。狀態只在該日 quotes 檔存在後由整日資料計算。',
             'Ed 交審事件的原始起迄與當時資料版本不在 repo，見 events.md。',
         ],
+        'unverifiable_scope': UNVERIFIABLE_SCOPE,
     }
     _dump('pit.json', out)
     lines = [
@@ -430,6 +493,19 @@ def run_pit(w, quick=False):
     ]
     for item in out['unverifiable']:
         lines.append(f'- {item}')
+    lines += [
+        '',
+        '## 無法驗證範圍',
+        '',
+        '上面的截斷重算只對 `wh_extreme.compute` 這一層做。'
+        '**沒有**對 `wh_prices.py`／`wh_build.py` 逐日前綴重跑（`wh_prices` 一次讀入全部 `data/quotes` 寫成單一 `cache/wh_px.json.gz`，'
+        '`wh_build` 再以全期還原價與現行名單、事件表建置），所以下列欄位、期間、資料源的時點性質未經驗證：',
+        '',
+        '| 欄位 | 期間 | 資料源 | 為何無法驗證 |',
+        '| --- | --- | --- | --- |',
+    ]
+    for r in out['unverifiable_scope']:
+        lines.append(f"| {r['field']} | {r['period']} | {r['source']} | {r['reason']} |")
     lines.append('')
     if diffs:
         lines.append('## 差異')
@@ -478,8 +554,13 @@ def write_readme():
 | --- | --- |
 | pit.md / pit.json | 逐日截斷重算 vs 完整序列。零差異或差異清單。並說明無法驗證的範圍。 |
 | state-machine.md / state-machine.json | 進入／退出恰等於門檻、同時達標、維持與競合、退出切換、暖機與缺值。含輸入、前態、預期、實際。 |
-| events.md / events.json | 事件表欄位定義。Ed 原交審窗未驗證／待補起訖。Eve 自訂窗另行對照，不當成原表。 |
+| events.md / events.json | 事件表欄位定義。**原交審事件表尚未驗證**（Ed 原交審窗待補起訖）。Eve 自訂窗另行對照，不當成原表。 |
 | yearly.md / yearly.json | 檔內每一年的切換次數，含零次、無分數、不完整年。5093／695 口徑在 snapshot。 |
+| notify.md / notify.json | 推播 dry-run 證據（mock push、不連網）：狀態變化、不變、同日重跑去重、失敗重試、未就緒、ledger 與 git 提交失敗。由 `python3 scripts/wh_notify_evidence.py` 產生。 |
+
+> **未驗證：原交審事件表尚未驗證。** 本目錄所有占比都只對 Eve 自訂窗或檔內資料計算，不能當成已核對 Ed 原交審表。
+
+pit.md 的「無法驗證範圍」列出沒有對 `wh_prices`／`wh_build` 逐日前綴重跑的欄位、期間與資料源。
 
 事件窗若要改，編輯 `config/wh_extreme_events.json` 後重跑。不要把自訂窗結果寫進 `ed_review` 列。
 
@@ -488,6 +569,7 @@ def write_readme():
 ```
 python3 scripts/wh_notify.py --dry-run
 python3 scripts/wh_notify.py --preview-test
+python3 scripts/wh_notify_evidence.py
 ```
 
 `--preview-test` 的訊息帶「測試」，不會送出。

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-30T00:54:14+08:00",
+  "generated_at": "2026-10-30T01:22:47+08:00",
   "stock_date": "20261029",
   "rule": "2026-10-29",
   "switch_definition": "切換＝相鄰兩個交易日（wh.json dates 順序）state 不同，計入新狀態那天的西元年。暖機期間 state 維持 0，不產生切換。這與推播用的 state[-2]≠state[-1] 同一口徑。",

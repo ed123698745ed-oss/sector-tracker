@@ -72,6 +72,28 @@ jobs:
           D="${{ github.event.inputs.date }}"; [ -z "$D" ] && D=$(TZ=Asia/Taipei date +%Y%m%d) || D=$(echo "$D" | tr -d -)
           # 正式推播仍啟用。同日重跑若 ledger 已有同一狀態變化的送達紀錄會略過；失敗會寫 ledger。
           python3 scripts/wh_notify.py --expect-date "$D" || true
+      - name: 提交推播紀錄（單獨、先於資料提交）
+        id: ledger
+        if: always() && steps.fetch.outputs.skip != '1'
+        continue-on-error: true
+        run: |
+          # 先把 ledger 單獨推上去：之後整包資料提交失敗時，下次乾淨 checkout 仍看得到已送達／失敗紀錄。
+          git config user.name "sector-tracker-bot"
+          git config user.email "actions@users.noreply.github.com"
+          [ -f data/wh_notify_ledger.json ] || { echo "無推播紀錄"; exit 0; }
+          git add data/wh_notify_ledger.json
+          if git diff --cached --quiet; then echo "推播紀錄未變"; exit 0; fi
+          git commit -q -m "市場狀態推播紀錄 $(TZ=Asia/Taipei date +%Y-%m-%d) [skip ci]"
+          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && exit 0; sleep 10; done
+          echo "::error::推播紀錄 push 失敗，ledger 已上傳 artifact，需人工補提交（見 docs/wh-market-state-rules.md 第 6 節）"
+          exit 1
+      - name: 推播紀錄 push 失敗時保留 ledger
+        if: always() && steps.ledger.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: wh-notify-ledger-${{ github.run_id }}
+          path: data/wh_notify_ledger.json
+          retention-days: 30
       - name: 權值高價股市場狀態推播重試（僅補送已記錄的失敗）
         if: always() && steps.fetch.outputs.skip == '1'
         continue-on-error: true
@@ -82,6 +104,7 @@ jobs:
           D="${{ github.event.inputs.date }}"; [ -z "$D" ] && D=$(TZ=Asia/Taipei date +%Y%m%d) || D=$(echo "$D" | tr -d -)
           python3 scripts/wh_notify.py --retry-only --expect-date "$D" || true
       - name: 提交推播重試紀錄
+        id: retryledger
         if: always() && steps.fetch.outputs.skip == '1'
         run: |
           git config user.name "sector-tracker-bot"
@@ -89,7 +112,16 @@ jobs:
           if [ -f data/wh_notify_ledger.json ]; then git add data/wh_notify_ledger.json; fi
           if git diff --cached --quiet; then echo "推播紀錄未變"; exit 0; fi
           git commit -m "市場狀態推播重試紀錄 $(TZ=Asia/Taipei date +%Y-%m-%d)"
-          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done
+          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && exit 0; sleep 10; done
+          echo "::error::推播重試紀錄 push 失敗，ledger 已上傳 artifact，需人工補提交（見 docs/wh-market-state-rules.md 第 6 節）"
+          exit 1
+      - name: 推播重試紀錄 push 失敗時保留 ledger
+        if: always() && steps.retryledger.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: wh-notify-ledger-${{ github.run_id }}
+          path: data/wh_notify_ledger.json
+          retention-days: 30
       - name: 提交更新
         if: steps.fetch.outputs.skip != '1'
         run: |

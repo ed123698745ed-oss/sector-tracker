@@ -73,6 +73,7 @@ td.num{font-size:15px}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin:0 1px}
 .on{background:var(--up)} .off{background:var(--line)}
 .tag{display:inline-block;font-size:11px;padding:0 6px;border-radius:999px;background:var(--chip);color:var(--muted);margin-left:3px}
+.unverified{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:999px;border:1px solid #d99a1e;color:#b07a10;background:rgba(217,154,30,.12)}
 #tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px;display:none;z-index:9;box-shadow:0 4px 14px rgba(0,0,0,.12)}
 </style>
 </head>
@@ -94,6 +95,7 @@ td.num{font-size:15px}
   <section>
     <h2>市場狀態<small>非常態（瘋狂）判定，約 15% 交易日</small></h2>
     <div class="panel">
+      <div style="margin-bottom:8px"><span class="unverified" title="Ed 原交審事件表的起迄、母體與資料版本不在 repo，事件占比未與原表核對；本功能尚待 Eve 複審">補證期間：原交審事件表尚未驗證</span> <a class="note" href="wh-market-state-evidence/events.md">說明</a></div>
       <div id="xstate" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px"></div>
       <div class="xtools">
         <label class="sub" for="xrange">歷史位置</label>
