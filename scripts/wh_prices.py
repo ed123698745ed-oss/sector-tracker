@@ -147,6 +147,7 @@ def main():
                 nolim |= {(mkt_, c, days[j]) for j in range(k, min(k + 5, n))}; ipo_idx[(mkt_, c)] = k
     first_seen = {}   # 代號第一次出現的交易日索引（任一市場）；上市日前已在任一市場交易者不是初次上市（改列、轉市場）
     seen_tpex = set()
+    lastc, lastmk, lastday = {}, {}, {}   # 各代號最近一次收盤、其市場與交易日索引（判斷轉市場首日參考價：須為前一交易日）
     nxt = {}   # 上櫃：前一交易日公布的次日漲跌停價
     first_tp = next(i for i, x in enumerate(days) if os.path.exists(os.path.join(RAW, 'tpex', x + '.json.gz')) and parse('tpex', os.path.join(RAW, 'tpex', x + '.json.gz')))
     for i, d in enumerate(days):
@@ -171,11 +172,16 @@ def main():
                         up, dn = nxt.get(c, (None, None))
                         # 前一日無公布次日漲跌停價：曾在上櫃交易過（停止買賣後恢復等）才以當日漲跌反推；
                         # 首次出現（初次上櫃、轉市場）不判定。資料首日（2007/07/02）例外
-                        if not (up and dn) and ri[2] is not None and close - ri[2] > 0 and (c in seen_tpex or i == first_tp):
+                        if not (up and dn) and lastmk.get(c) == 't' and lastday.get(c) == i - 1:
+                            # 上市轉上櫃首日（前一交易日仍在上市交易）：櫃買業務規則第 55、56 條，以終止上市前最後交易日收盤為參考基準（不適用首五日豁免）
+                            up, dn = limits(lastc[c], d)
+                        elif not (up and dn) and ri[2] is not None and close - ri[2] > 0 and (c in seen_tpex or i == first_tp):
                             up, dn = limits(close - ri[2], d)   # 前一日無公布次日漲跌停價（如前一日無交易）：以當日漲跌反推參考價
                     else:
                         sg, df = ri
                         if (d, c) in evl: up, dn = evl[(d, c)]
+                        elif lastmk.get(c) == 'o' and lastday.get(c) == i - 1 and sg not in ('+', '-', ''):
+                            up, dn = limits(lastc[c], d)   # 上櫃轉上市首日（前一交易日仍在上櫃交易、當日不比價）：以上櫃最後收盤為參考基準
                         elif sg in ('+', '-', '') and df is not None:
                             ref = close - df if sg == '+' else close + df if sg == '-' else close
                             if ref > 0: up, dn = limits(ref, d)
@@ -186,6 +192,7 @@ def main():
                 if close and up and dn:
                     lim[c][i] = 1 if abs(close - up) < 1e-6 else -1 if abs(close - dn) < 1e-6 else 0
                 if m == 'tpex': seen_tpex.add(c)
+                if close: lastc[c] = close; lastmk[c] = 't' if m == 'twse' else 'o'; lastday[c] = i
                 if m == 'tpex' and ri[0] and ri[1]: new_nxt[c] = ri[:2]
         nxt = new_nxt
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
