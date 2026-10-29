@@ -88,6 +88,17 @@ td.num{font-size:15px}
   </section>
 
   <section>
+    <h2>市場狀態<small>非常態（瘋狂）判定，約 15% 交易日</small></h2>
+    <div class="panel">
+      <div id="xstate" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px"></div>
+      <svg id="xchart" viewBox="0 0 420 150" role="img" aria-label="非常態期間" style="margin-top:12px"></svg>
+      <div class="legend"><span><i style="background:var(--down)"></i>下跌瘋狂</span><span><i style="background:var(--up)"></i>上漲瘋狂</span><span><i style="background:#d99a1e"></i>資金集中炒作</span><span>黑線＝加權指數（對數）；期間用下方「離高點分布」的期間按鈕切換</span></div>
+      <details style="margin-top:10px"><summary class="sub" style="cursor:pointer">歷次非常態期間</summary><div class="tblwrap" style="margin-top:8px"><table id="xtbl"></table></div></details>
+      <div class="note" style="margin-top:8px">下跌分數＝5日與20日跌幅、5日跌停家數占比、20日波動度、離高點≥20%股票占比的歷史百分位平均；上漲分數＝20日漲幅、指數對季線乖離、成交值放大倍數、5日漲停家數占比的百分位平均；資金集中＝前5大成交值個股（排除台積電）占比。百分位只用當日以前（2005 年起）的資料。進入／退出門檻：下跌 0.85／0.72、上漲 0.87／0.80、資金集中 0.985／0.96。只供觀察，不是交易訊號。</div>
+    </div>
+  </section>
+
+  <section>
     <h2>全市場漲跌分布<small id="distsub">上市櫃普通股</small></h2>
     <div class="panel">
       <div class="bar" id="udbar" aria-hidden="true"></div>
@@ -152,7 +163,7 @@ fetch('wh.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).then(w 
   for (let i = w.dates.length - 1; i >= Math.max(0, w.dates.length - 260); i--) sel.add(new Option(fd(w.dates[i]), i));
   sel.onchange = () => { idx = +sel.value; draw(); };
   tabs('#gtabs', G, () => ddG, v => { ddG = v; drawDD(); drawTrend(); });
-  tabs('#rtabs', {250:'1 年', 750:'3 年', 1500:'6 年', 2500:'10 年', 99999:'全部'}, () => String(ddR), v => { ddR = +v; drawDD(); drawTrend(); });
+  tabs('#rtabs', {250:'1 年', 750:'3 年', 1500:'6 年', 2500:'10 年', 99999:'全部'}, () => String(ddR), v => { ddR = +v; drawDD(); drawTrend(); drawX(); });
   tabs('#stabs', {twse:G.twse, otc:G.otc, hp:G.hp}, () => stG, v => { stG = v; sortK = v === 'hp' ? 'px' : 'cap'; sortD = -1; drawTable(); });
   draw();
 }).catch(e => { $('#sub').textContent = '資料讀取失敗：' + e; });
@@ -169,13 +180,43 @@ function tabs(sel, opts, get, set){
 function draw(){
   const ds = W.dates[idx];
   $('#sub').textContent = `資料日 ${fd(ds)}・盤後`;
-  drawIdx(); drawDist(); drawCards(); drawDD(); drawTrend(); drawTable();
+  drawIdx(); drawX(); drawDist(); drawCards(); drawDD(); drawTrend(); drawTable();
 }
 function drawIdx(){
   const t = W.taiex[idx], p = W.taiex[idx-1];
   const ch = t && p ? t - p : null, cp = ch != null ? ch / p * 100 : null;
   $('#idx').innerHTML = `<div><div class="sub">加權指數</div><div class="big num">${t ? t.toLocaleString('zh-TW',{maximumFractionDigits:2}) : '—'}</div></div>
     <div class="chg num ${cls(ch)}">${ch == null ? '' : (ch>0?'+':'') + ch.toFixed(2) + '（' + (cp>0?'+':'') + cp.toFixed(2) + '%）'}</div>`;
+}
+const XS = {'-1': ['下跌瘋狂', 'var(--down)'], '1': ['上漲瘋狂', 'var(--up)'], '2': ['資金集中炒作', '#d99a1e'], '0': ['常態', 'var(--flat)']};
+function xEpisodes(){
+  const st = W.ext.state, out = []; let i = 0;
+  while (i < st.length) { if (!st[i]) { i++; continue; } let j = i; while (j + 1 < st.length && st[j + 1] === st[i]) j++;
+    out.push({s: i, e: j, k: st[i]}); i = j + 1; }
+  return out;
+}
+function drawX(){
+  const x_ = W.ext; if (!x_) return;
+  const k = x_.state[idx], [lab, col] = XS[String(k)];
+  let run = 0; for (let i = idx; i >= 0 && x_.state[i] === k; i--) run++;
+  const sc = (v) => v == null ? '—' : (v * 100).toFixed(0);
+  $('#xstate').innerHTML = `<span style="font-size:20px;font-weight:700;color:${col}">● ${lab}</span>` +
+    (k ? `<span class="sub">已連續 ${run} 個交易日</span>` : '') +
+    `<span class="sub">下跌分數 <b class="num">${sc(x_.down[idx])}</b>／進入 85</span><span class="sub">上漲分數 <b class="num">${sc(x_.up[idx])}</b>／進入 87</span><span class="sub">資金集中 <b class="num">${sc(x_.conc[idx])}</b>／進入 98.5</span>`;
+  const [s, e] = range(), Wd = 420, H = 150, x = i => (i - s) / Math.max(1, e - s) * Wd;
+  let g = xAxis(s, e, Wd, x);
+  for (const ep of xEpisodes()) { if (ep.e < s || ep.s > e) continue;
+    const a = x(Math.max(ep.s, s)), b = x(Math.min(ep.e, e) + 1);
+    g += `<rect x="${a}" y="0" width="${Math.max(1, b - a)}" height="${H}" fill="${XS[String(ep.k)][1]}" opacity=".35"/>`; }
+  const tv = W.taiex.slice(s, e + 1).filter(v => v).map(Math.log), lo = Math.min(...tv), hi = Math.max(...tv);
+  let p = ''; for (let i = s; i <= e; i++) if (W.taiex[i]) p += (p ? 'L' : 'M') + x(i).toFixed(1) + ' ' + (8 + (1 - (Math.log(W.taiex[i]) - lo) / (hi - lo || 1)) * (H - 16)).toFixed(1);
+  g += `<path d="${p}" fill="none" stroke="var(--fg)" stroke-width="1.2"/><rect x="0" y="0" width="${Wd}" height="${H}" fill="transparent" id="xhit"/>`;
+  $('#xchart').innerHTML = g;
+  hover('#xhit', s, e, x, i => `${fd(W.dates[i])}<br>${XS[String(x_.state[i])][0]}<br>下跌 ${sc(x_.down[i])}／上漲 ${sc(x_.up[i])}／集中 ${sc(x_.conc[i])}`);
+  const eps = xEpisodes().reverse();
+  $('#xtbl').innerHTML = '<thead><tr><th>開始</th><th>結束</th><th>狀態</th><th>天數</th><th>期間加權%</th></tr></thead><tbody>' +
+    eps.map(ep => { const a = W.taiex[ep.s - 1] || W.taiex[ep.s], b = W.taiex[ep.e]; const r = a && b ? (b / a - 1) * 100 : null;
+      return `<tr><td>${fd(W.dates[ep.s])}</td><td>${fd(W.dates[ep.e])}</td><td style="color:${XS[String(ep.k)][1]}">${XS[String(ep.k)][0]}</td><td class="num">${ep.e - ep.s + 1}</td><td class="num ${cls(r)}">${fmt(r)}</td></tr>`; }).join('') + '</tbody>';
 }
 function drawDist(){
   const o = W.groups.all, n = o.n[idx];

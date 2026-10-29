@@ -15,6 +15,8 @@
 import gzip, json, math, os, re
 
 import numpy as np
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 COMMON = re.compile(r'^[1-9]\d{3}$')
@@ -57,12 +59,18 @@ def main():
     ci = {c: k for k, c in enumerate(codes)}
     T, N = len(dates), len(codes)
     pct = np.full((T, N), np.nan)
+    turnover, conc = [], []   # 普通股成交值（億）、前 5 大成交值（排除台積電）占比：供非常態判定
     for t, ds in enumerate(dates):
         q = json.load(open(os.path.join(ROOT, 'data', 'quotes', ds + '.json')))['q']
+        vals = []
         for c, v in q.items():
             k = ci.get(c)
             if k is not None:
                 pct[t, k] = v[0]
+                if len(v) > 1 and v[1] is not None: vals.append((v[1], c))
+        tot = sum(x for x, _ in vals); turnover.append(tot or None)
+        ex = sorted((x for x, c in vals if c != '2330'), reverse=True)
+        conc.append(sum(ex[:5]) / sum(ex) if ex and sum(ex) else None)
     close = np.array([[px[c][t] if px[c][t] else np.nan for c in codes] for t in range(T)])
     # 上市減資、變更面額（分割）恢復買賣首日：每日行情檔無漲跌%（不比價），改以證交所公告的恢復買賣參考價計算，
     # 否則還原價會漏掉當日漲跌（例：國巨 2025/8/25 面額分割恢復買賣）
@@ -215,7 +223,9 @@ def main():
             'lo': [bool(age[t, k] > n and adjL[t, k] < lo[n][t, k]) for n in (20, 60, 250)],
         })
     lists_out = {ym: {g: [c for c, _ in lists[ym][g]] for g in ['twse', 'otc', 'hp']} | {'asof': lists[ym]['asof']} for ym in yms}
-    res = {'dates': dates, 'taiex': taiex, 'groups': out, 'stocks': rows, 'stock_date': ds, 'lists': lists_out, 'names': {c: name.get(c, '') for c in set(c for v in lists_out.values() for g in ('twse', 'otc', 'hp') for c in v[g])}}
+    import wh_extreme
+    ext = wh_extreme.compute(dates, taiex, out['all'], turnover, conc)
+    res = {'ext': ext, 'dates': dates, 'taiex': taiex, 'groups': out, 'stocks': rows, 'stock_date': ds, 'lists': lists_out, 'names': {c: name.get(c, '') for c in set(c for v in lists_out.values() for g in ('twse', 'otc', 'hp') for c in v[g])}}
     json.dump(res, open(os.path.join(ROOT, 'docs', 'wh.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
     print('days', T, 'codes', N, 'stocks', len(rows), 'size', os.path.getsize(os.path.join(ROOT, 'docs', 'wh.json')))
 
