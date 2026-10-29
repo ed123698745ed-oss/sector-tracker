@@ -67,6 +67,15 @@ def main():
         並以「(前收盤−現金股利)÷(1+s)≈參考價」驗證（誤差<1%）；查無資料或驗證不過回傳 None"""
         # 優先：除權息基準日公告（交易日相符者）→ 手動補登 → 股利分派情形；皆須通過參考價驗證
         cands = [n for n in notices.get(c, []) if n['exdate'] == ds]
+        # 證交所除權息詳細資料（TWT49UDetail）：每股現金股利、每千股無償配股；配股以股數表示，不需面額
+        xp = os.path.join(ROOT, 'archive', 'raw', 'twse_exdetail', f'{c}_{ds}.json')
+        if os.path.exists(xp):
+            r = (json.load(open(xp)).get('data') or [[]])[0]
+            try:
+                xc = float(_re.sub(r'[^\d.]', '', r[2]) or 0); xs = float(_re.sub(r'[^\d.]', '', r[4]) or 0) / 1000
+                if abs((prev - xc) / (1 + xs) / ref - 1) < 0.01: return xs
+            except (IndexError, ValueError):
+                pass
         ov = div_override.get(c, {}).get(ds)
         if ov: cands.append(ov)
         for n in cands:
