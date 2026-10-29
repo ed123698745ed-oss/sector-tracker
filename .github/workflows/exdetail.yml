@@ -1,0 +1,27 @@
+name: 抓除權息詳細資料（配股率補件）
+
+on:
+  push:
+    paths: ['test/EXDETAIL_TRIGGER']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: timeout 110m python3 scripts/fetch_exdetail.py config/exdetail_targets.json || true
+      - if: always()
+        run: |
+          git config user.name "sector-tracker-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add archive/raw/twse_exdetail
+          git commit -m "除權息詳細資料原始檔 [skip ci]" || exit 0
+          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done
