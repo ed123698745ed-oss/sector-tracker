@@ -88,7 +88,7 @@ td.num{font-size:15px}
   </section>
 
   <section>
-    <h2>全市場漲跌分布<small>上市櫃普通股</small></h2>
+    <h2>全市場漲跌分布<small id="distsub">上市櫃普通股</small></h2>
     <div class="panel">
       <div class="bar" id="udbar" aria-hidden="true"></div>
       <div class="legend" id="udleg" style="margin:6px 0 10px"></div>
@@ -131,7 +131,7 @@ td.num{font-size:15px}
 
   <div class="note">
     只供觀察，不是交易訊號。名單每月最後交易日收盤排名、次月使用：上市市值前 50、上櫃市值前 30（市值＝收盤×證交所／櫃買發行股數）、上市櫃普通股收盤價前 30（高價股）。
-    資料期間：上市 2004/02 起、上櫃 2007/07 起（之前上櫃組與全市場只含上市）。歷史名單以當時資料重建；上市股數取自證交所每日發行股數，近期分割、配股、減資尚未反映時以事件倍率補正，現金增資待新股上市後反映；2011 年以前證交所無減資公告表，2007 年部分上櫃除權息日查無參考價，當日漲跌不計。歷史月份排名第 50 名附近可能有個別誤差。資料來源：證交所、櫃買中心。
+    資料期間：上市 2004/02 起、上櫃 2007/07 起（之前上櫃組與全市場只含上市）。歷史名單以當時資料重建；上市股數取自證交所每日發行股數，近期分割、配股、減資尚未反映時以事件倍率補正，現金增資待新股上市後反映；2011 年以前證交所無減資公告表，部分月份上市股數可能延遲反映減資；2004～2014 約 0.2% 股票日（多為前一交易日無成交、部分 2007 年上櫃除權息日）查無參考價，當日漲跌不計。漲跌停依當時升降單位與漲跌幅制度判定（含 2005/03 升降單位新制、2008/10/13～24 跌幅 3.5%）。歷史月份排名第 50 名附近可能有個別誤差。資料來源：證交所、櫃買中心。
   </div>
 </div>
 <div id="tip"></div>
@@ -179,6 +179,7 @@ function drawIdx(){
 }
 function drawDist(){
   const o = W.groups.all, n = o.n[idx];
+  $('#distsub').textContent = W.dates[idx] < '20070702' ? '僅上市普通股（櫃買資料 2007/07 起）' : '上市櫃普通股';
   if (n == null) return;
   const u = o.up[idx], f = o.flat[idx], d = o.down[idx];
   $('#udbar').innerHTML = `<span style="width:${u/n*100}%;background:var(--up)"></span><span style="width:${f/n*100}%;background:var(--flat)"></span><span style="width:${d/n*100}%;background:var(--down)"></span>`;
@@ -203,8 +204,8 @@ function drawCards(){
       ${g === 'all' ? '' : `<div class="k">上漲／下跌 <b><span class="up">${o.up[idx]}</span>／<span class="down">${o.down[idx]}</span></b></div>
       <div class="k">上漲比例 <b>${fmt(o.up[idx]/n*100)}%</b></div>`}
       <div class="k">站上 月／季／半年／年線 <b>${[0,1,2,3].map(k => fmt(pctS(ma[k],mad[k]),0)).join('／')}%</b></div>
-      <div class="k">新高 20／60／250 <b class="up">${hi.join('／')}</b></div>
-      <div class="k">新低 20／60／250 <b class="down">${lo.join('／')}</b></div>
+      <div class="k">新高 20／60／250 <b class="up">${hi.map((v, k) => hd[k] ? v : '—').join('／')}</b></div>
+      <div class="k">新低 20／60／250 <b class="down">${lo.map((v, k) => hd[k] ? v : '—').join('／')}</b></div>
       <div class="k">今年報酬中位數 <b class="${cls(o.ytd[idx])}">${fmt(o.ytd[idx])}%</b></div></div>`;
   }
   $('#cards').innerHTML = h;
@@ -216,6 +217,11 @@ function xAxis(s, e, Wd, x){
     const y = W.dates[i].slice(0,4), m = W.dates[i].slice(4,6);
     const lab = (e - s > 2000) ? (m === '01' && +y % 3 === 0 ? y : '') : (e - s > 500) ? (m === '01' ? y : '') : ((m === '01' || m === '07') ? y.slice(2) + '/' + m : '');
     if (lab && lab !== last && (i === s || W.dates[i-1].slice(4,6) !== m)) { g += `<line x1="${x(i)}" x2="${x(i)}" y1="0" y2="100%" stroke="var(--line)"/><text x="${x(i)+2}" y="11">${lab}</text>`; last = lab; }
+  }
+  // 資料覆蓋改變處：櫃買資料起點、250 日指標起點
+  for (const [ds, lab, ty] of [['20050202', '250日指標起', 24], ['20070702', '含上櫃起', 37]]) {
+    const i = W.dates.findIndex(v => v >= ds);
+    if (i > s && i <= e) g += `<line x1="${x(i)}" x2="${x(i)}" y1="0" y2="100%" stroke="var(--muted)" stroke-dasharray="3 3"/><text x="${x(i)+2}" y="${ty}">${lab}</text>`;
   }
   return g;
 }
@@ -246,7 +252,7 @@ function drawDD(){
   $('#ddchart').innerHTML = g;
   const d = o.dd[idx], n = d ? d.reduce((a,b)=>a+b,0) : 0;
   $('#ddleg').innerHTML = DDL.map((l, k) => `<span><i style="background:var(${cols[k]})"></i>${l} <b class="num">${d ? fmt(d[k]/n*100,1) : '—'}%</b></span>`).join('');
-  $('#ddnote').textContent = d ? `${G[ddG]}：${fd(W.dates[idx])} 回檔未滿 5% 占 ${fmt(d[0]/n*100)}%，回檔 20% 以上占 ${fmt((d[3]+d[4]+d[5])/n*100)}%。由下往上＝離高點越近→越遠。` : '';
+  $('#ddnote').textContent = d ? `${G[ddG]}：${fd(W.dates[idx])} 有 250 日歷史者 ${n} 檔，回檔未滿 5% 占 ${fmt(d[0]/n*100)}%，回檔 20% 以上占 ${fmt((d[3]+d[4]+d[5])/n*100)}%。由下往上＝離高點越近→越遠；上市未滿 250 個交易日者不列入。` : '暖機中：需 250 個交易日歷史（2005/02/02 起才有數字）。';
   hover('#ddhit', s, e, x, i => { const v = o.dd[i]; if (!v) return ''; const m = v.reduce((a,b)=>a+b,0);
     return `${fd(W.dates[i])}<br>加權 ${W.taiex[i] ? W.taiex[i].toFixed(0) : '—'}<br>` + DDL.map((l,k) => `${l} ${fmt(v[k]/m*100)}%`).join('<br>'); });
 }

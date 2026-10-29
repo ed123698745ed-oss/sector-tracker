@@ -22,19 +22,6 @@ BUCKETS = [-9, -5, -3, -1, 0]          # 下界由小到大；0 單列平盤
 DD = [5, 10, 20, 30, 50]
 
 
-def tick(p):
-    return 0.01 if p < 10 else 0.05 if p < 50 else 0.1 if p < 100 else 0.5 if p < 500 else 1 if p < 1000 else 5
-
-
-def limit_down(lim):
-    """跌停價：參考價×(1−漲跌幅限制) 向上取至升降單位；參考價由漲跌%（兩位小數）反推，容許 0.1 個升降單位誤差"""
-    t = tick(lim)
-    v = math.ceil(lim / t - 0.1) * t
-    if tick(v) != t:
-        t = tick(v); v = math.ceil(lim / t - 0.1) * t
-    return round(v, 2)
-
-
 _FM = {}
 
 
@@ -69,13 +56,13 @@ def main():
     codes = sorted(c for c in px if COMMON.match(c) and not c.startswith('91'))
     ci = {c: k for k, c in enumerate(codes)}
     T, N = len(dates), len(codes)
-    pct = np.full((T, N), np.nan); lu = np.zeros((T, N), bool)
+    pct = np.full((T, N), np.nan)
     for t, ds in enumerate(dates):
         q = json.load(open(os.path.join(ROOT, 'data', 'quotes', ds + '.json')))['q']
         for c, v in q.items():
             k = ci.get(c)
             if k is not None:
-                pct[t, k] = v[0]; lu[t, k] = bool(v[2]) if len(v) > 2 else False
+                pct[t, k] = v[0]
     close = np.array([[px[c][t] if px[c][t] else np.nan for c in codes] for t in range(T)])
     # 上市減資、變更面額（分割）恢復買賣首日：每日行情檔無漲跌%（不比價），改以證交所公告的恢復買賣參考價計算，
     # 否則還原價會漏掉當日漲跌（例：國巨 2025/8/25 面額分割恢復買賣）
@@ -105,12 +92,10 @@ def main():
                 pct[t, k] = (close[t, k] / close[t - 1, k] - 1) * 100; fixed += 1
     print('無漲跌%的交易日補算：', fixed)
     traded = ~np.isnan(close) & ~np.isnan(pct)
-    ld = np.zeros((T, N), bool)
-    for t, ds in enumerate(dates):
-        lim_pct = 0.93 if ds < '20150601' else 0.90
-        for k in np.where(traded[t] & (pct[t] <= -6.5))[0]:
-            c = close[t, k]; ref = c / (1 + pct[t, k] / 100)
-            ld[t, k] = abs(c - limit_down(ref * lim_pct)) < 1e-6  # 收盤低於跌停價者（首五日無漲跌幅等）不算
+    # 漲跌停：wh_prices.py 依當時制度由原始行情判定（上市：參考價＋升降單位新舊制、7%／10%、2008/10 跌幅 3.5%，
+    # 除權息與恢復買賣日用證交所公告漲跌停價；上櫃：前一交易日公布之次日漲跌停價）。收盤＝漲（跌）停價才算
+    limarr = np.array([[(d['lim'][c][t] if d['lim'][c][t] is not None else 0) for c in codes] for t in range(T)])
+    lu = (limarr == 1) & traded; ld = (limarr == -1) & traded
     # 還原價：首日以收盤為起點，之後以漲跌% 連乘；無成交沿用
     adj = np.full((T, N), np.nan)
     last = np.full(N, np.nan)
@@ -194,8 +179,9 @@ def main():
                 hd.append(int(ok.sum()))
                 h.append(int((adjH[t, idx][ok] > hi[n][t, idx][ok]).sum())); l.append(int((adjL[t, idx][ok] < lo[n][t, idx][ok]).sum()))
             o['hi'].append(h); o['lo'].append(l); o['hld'].append(hd)
-            dd = (1 - a / hi250in[t, idx]) * 100
-            o['dd'].append([int((dd < 5).sum())] + [int(((dd >= DD[i]) & (dd < DD[i + 1])).sum()) for i in range(4)] + [int((dd >= 50).sum())])
+            okd = age[t, idx] >= 250   # 離 250 日高點：需有 250 個交易日歷史，不足者不列入（2005/02 前全部暖機中）
+            dd = (1 - a[okd] / hi250in[t, idx][okd]) * 100
+            o['dd'].append([int((dd < 5).sum())] + [int(((dd >= DD[i]) & (dd < DD[i + 1])).sum()) for i in range(4)] + [int((dd >= 50).sum())] if okd.any() else None)
             if yb is not None:
                 base = adj[yb, idx]; ok = ~np.isnan(base) & (age[yb, idx] > 0)
                 o['ytd'].append(round(float(np.median(a[ok] / base[ok] - 1) * 100), 2) if ok.any() else None)
@@ -223,7 +209,7 @@ def main():
                 (osh[c][t] if c in osh else None) or qsh.get(c)),  # 上櫃轉上市者上櫃股數停在轉市前，改取上市
             'pct': None if np.isnan(pct[t, k]) else round(float(pct[t, k]), 2),
             'ytd': round(float(a / adj[yb, k] - 1) * 100, 2) if yb is not None and not np.isnan(adj[yb, k]) else None,
-            'r20': r(20), 'dd': None if np.isnan(a) else round(float((1 - a / hi250in[t, k]) * 100), 1),
+            'r20': r(20), 'dd': None if np.isnan(a) or age[t, k] < 250 else round(float((1 - a / hi250in[t, k]) * 100), 1),
             'ma': [None if age[t, k] < n else bool(a > ma[n][t, k]) for n in (20, 60, 120, 240)],
             'hi': [bool(age[t, k] > n and adjH[t, k] > hi[n][t, k]) for n in (20, 60, 250)],
             'lo': [bool(age[t, k] > n and adjL[t, k] < lo[n][t, k]) for n in (20, 60, 250)],

@@ -107,7 +107,7 @@ def main():
         kind = os.path.basename(fp)[:6]
         jf = json.load(open(fp)); flds = [x.strip() for x in jf.get('fields') or []]
         i_why = flds.index('減資原因') if '減資原因' in flds else None
-        # 權值、息值分列（2010 年以前格式）：配股率可直接由 (前收盤−息值)÷參考價−1 求得，不需觀測站股利資料。
+        # 權值、息值分列（2008 年以前格式）：配股率可直接由 (前收盤−息值)÷參考價−1 求得，不需觀測站股利資料。
         # 限 2015 年以前，2015 起沿用凍結名單（R06）的算法
         old49 = kind == 'TWT49U' and '息值' in flds and '權值' in flds and os.path.basename(fp)[7:11] < '2015'
         for r in jf.get('data') or []:
@@ -117,8 +117,12 @@ def main():
             if old49:
                 wv, xv = f(r[flds.index('權值')]) or 0, f(r[flds.index('息值')]) or 0
                 if wv <= 0: continue  # 純除息
-                s = (prev - xv) / ref - 1  # 參考價＝(前收盤−息值)÷(1＋配股率)
-                if s > 1e-6: events.setdefault(c, []).append((ds, 1 + s, 'ex'))
+                # 權值含現金增資除權時，除權息參考價≠減除股利參考價（Eve 2026-10-29：例 2475 華映 2004/04/15）。
+                # 配股率只用減除股利參考價計算；現增部分依 Ed 規則不調整
+                dref = (f(r[flds.index('減除股利參考價')]) if '減除股利參考價' in flds else None) or ref
+                if abs(dref - ref) > 0.005: unsplit.append((ds, c, 'cash_capital_increase'))
+                s = (prev - xv) / dref - 1  # 減除股利參考價＝(前收盤−息值)÷(1＋配股率)
+                if s > 1e-4: events.setdefault(c, []).append((ds, 1 + s, 'ex'))
                 continue
             if kind == 'TWTAUU' and i_why is None:
                 unsplit.append((ds, c, 'reduction_reason_unknown'))  # 2011 年格式無減資原因欄

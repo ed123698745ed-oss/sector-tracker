@@ -68,13 +68,40 @@ def main():
 
     # 5. 有收盤但無漲跌%（當日不計入漲跌與還原價）的股票日
     rows = []
+    import collections
+    why_n = collections.Counter()
+    ev = {}
+    for fp in glob.glob(os.path.join(ROOT, 'archive', 'raw', 'twse_events', '*.json')):
+        for r in json.load(open(fp)).get('data') or []:
+            ev[(roc(r[0]), r[1].strip())] = os.path.basename(fp)[:6]
     for i, ds in enumerate(dates):
         if ds[:6] > END: break
         q = json.load(open(os.path.join(ROOT, 'data', 'quotes', ds + '.json')))['q']
-        for c, a in px['px'].items():
-            if a[i] and c not in q:
-                rows.append([ds, c, name.get(c, ''), px['mkt'].get(c, ''), a[i - 1] if i else '', a[i]])
-    w('EXT_days_without_return.csv', ['日期', '代號', '名稱', '市場(最近)', '前一日收盤', '當日收盤'], rows)
+        miss = [c for c, a in px['px'].items() if a[i] and c not in q]
+        if not miss: continue
+        raw = {}
+        for m in ('twse', 'tpex'):
+            p = os.path.join(ROOT, 'archive', 'raw', m, ds + '.json.gz')
+            if not os.path.exists(p): continue
+            for t in json.load(gzip.open(p)).get('tables') or []:
+                f = [x.strip() for x in t.get('fields') or []]
+                k = '漲跌(+/-)' if m == 'twse' else '漲跌'
+                if k in f and ('證券代號' in f or '代號' in f):
+                    for r in t.get('data') or []:
+                        raw[r[0].strip()] = re.sub('<[^>]+>', '', r[f.index(k)]).strip()
+        for c in miss:
+            a = px['px'][c]; mk = {'t': '上市', 'o': '上櫃'}.get(px['mk'][c][i], '')
+            prev = a[i - 1] if i else None; sg = raw.get(c, '')
+            if not prev: why = '前一交易日無收盤（前日無成交、新上市首日、停止買賣後恢復、轉市場）'
+            elif (ds, c) in ev: why = '證交所事件日（%s）查無參考價' % ev[(ds, c)]
+            elif mk == '上市' and sg == 'X': why = '上市不比價（X）且查無參考價'
+            elif mk == '上櫃' and '除' in sg: why = '上櫃除權息日查無參考價'
+            else: why = '其他（原始漲跌欄：%s）' % sg
+            why_n[why.split('（')[0]] += 1
+            rows.append([ds, c, name.get(c, ''), mk, prev or '', a[i], sg, why])
+    w('EXT_days_without_return.csv', ['日期', '代號', '名稱', '當日市場', '前一日收盤', '當日收盤', '原始漲跌欄', '原因'], rows)
+    tot = sum(1 for i, ds in enumerate(dates) if ds[:6] <= END for c, a in px['px'].items() if a[i])
+    print('無漲跌%股票日', len(rows), '／有收盤股票日', tot, '=%.3f%%' % (len(rows) / tot * 100), dict(why_n))
 
     # 6. 每日全市場統計（供抽查）
     W = json.load(open(os.path.join(ROOT, 'docs', 'wh.json')))
