@@ -1,0 +1,57 @@
+{
+ "n_codes": 1960,
+ "tse": 1092,
+ "mis_batch_50": {
+  "sec": 5.57,
+  "status": 200,
+  "returned": 50,
+  "url_len": 599
+ },
+ "mis_batch_100": {
+  "sec": 5.02,
+  "status": 200,
+  "returned": 100,
+  "url_len": 1199
+ },
+ "mis_batch_200": {
+  "sec": 0.67,
+  "status": 200,
+  "returned": 0,
+  "url_len": 2399
+ },
+ "mis_batch_400": {
+  "sec": 1.67,
+  "status": "HTTP Error 414: Request-URI Too Large",
+  "returned": null,
+  "url_len": 4799
+ },
+ "full_sweep_200": {
+  "sec": 31.2,
+  "requests": 10,
+  "returned": 160
+ },
+ "yahoo_class": {
+  "sec": 0.25,
+  "status": 200,
+  "bytes": 34842,
+  "head": "{\"list\":[{\"ask\":{\"raw\":\"24.85\",\"fmt\":\"24.85\",\"sort\":24.85},\"bid\":{\"raw\":\"24.45\",\"fmt\":\"24.45\",\"sort\":24.45},\"change\":{\"raw\":\"0.3\",\"fmt\":\"0.30\",\"sort\":0.3},\"changePercent\":\"1.21%\",\"changeStatus\":\"up\",\"exchange\":\"TAI\",\"holdingType\":\"EQUITY\",\"limitDown\":false,\"limitDownPrice\":{\"raw\":\"22.35\",\"fmt\":\"22.3"
+ },
+ "yahoo_rank": {
+  "sec": 0.25,
+  "status": 200,
+  "bytes": 69139,
+  "head": "{\"list\":[{\"change\":\"4.30\",\"changePercent\":\"+9.94%\",\"dayHigh\":\"47.55\",\"dayHighLimitDown\":false,\"dayHighLimitUp\":true,\"dayHighLowDiff\":\"0.00\",\"dayLow\":\"47.55\",\"dayLowLimitDown\":false,\"dayLowLimitUp\":true,\"limitDown\":false,\"limitUp\":true,\"name\":\"科妍\",\"previousClose\":\"43.25\",\"price\":\"47.55\",\"rank\":\"1"
+ },
+ "wantgoo": {
+  "sec": 0.09,
+  "status": "HTTP Error 403: Forbidden",
+  "bytes": 0,
+  "head": ""
+ },
+ "twse_home_stat": {
+  "sec": 0.82,
+  "status": 200,
+  "bytes": 1722,
+  "head": "{\"tables\":[{},{},{},{},{},{},{\"title\":\"115年10月29日 大盤統計資訊\",\"fields\":[\"成交統計\",\"成交金額(元)\",\"成交股數(股)\",\"成交筆數\"],\"data\":[[\"1.一般股票\",\"756,627,381,984\",\"3,904,394,399\",\"3,472,055\"],[\"2.台灣存託憑證\",\"119,519,165\",\"14,841,549\",\"3,589\"],[\"3.受益"
+ }
+}
