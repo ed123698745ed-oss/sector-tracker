@@ -1,0 +1,1203 @@
+{
+  "generated_by": "scripts/wh_notify_evidence.py",
+  "rule": "2026-10-29",
+  "push": "mock（不連網、不打 LINE）",
+  "recipient_masking": "configured／unset；不含 token、user id",
+  "pass": true,
+  "scenarios": [
+    {
+      "id": "change-sends",
+      "title": "狀態變化 → 推播",
+      "flow": "new",
+      "runs": [
+        {
+          "run": 1,
+          "label": "第一次排程",
+          "mode": "send",
+          "action": "sent",
+          "push_calls": 1,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "抓取收盤行情",
+              "git": null
+            },
+            {
+              "step": "wh_notify",
+              "action": "sent",
+              "reason": null
+            },
+            {
+              "step": "提交推播紀錄（單獨、先於資料）",
+              "git": "pushed"
+            },
+            {
+              "step": "提交更新（含 data/ 與 ledger）",
+              "git": "pushed"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": -1,
+              "result": "sent",
+              "attempts": 1,
+              "recipient": "configured",
+              "at": "2026-10-29T14:01:00+08:00"
+            }
+          ],
+          "committed_quote": true
+        }
+      ],
+      "push_calls_total": 1,
+      "expect": {
+        "actions": [
+          "sent"
+        ],
+        "push_calls_total": 1
+      },
+      "problems": []
+    },
+    {
+      "id": "unchanged-noop",
+      "title": "狀態不變 → 不推",
+      "runs": [
+        {
+          "run": 1,
+          "mode": "send",
+          "action": "noop",
+          "reasons": [],
+          "reason": "state_unchanged",
+          "push_calls": 0,
+          "recipient": null
+        }
+      ],
+      "push_calls_total": 0,
+      "ledger_after": null,
+      "expect": {
+        "actions": [
+          "noop"
+        ],
+        "push_calls_total": 0
+      },
+      "problems": []
+    },
+    {
+      "id": "same-day-rerun-dedup",
+      "title": "同日重跑（資料提交前又跑一次正式步驟）→ 去重不重推",
+      "flow": "new",
+      "runs": [
+        {
+          "run": 1,
+          "label": "第一次：送達，ledger 提交成功，資料提交失敗",
+          "mode": "send",
+          "action": "sent",
+          "push_calls": 1,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "抓取收盤行情",
+              "git": null
+            },
+            {
+              "step": "wh_notify",
+              "action": "sent",
+              "reason": null
+            },
+            {
+              "step": "提交推播紀錄（單獨、先於資料）",
+              "git": "pushed"
+            },
+            {
+              "step": "提交更新（含 data/ 與 ledger）",
+              "git": "push_failed"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 1,
+              "result": "sent",
+              "attempts": 1,
+              "recipient": "configured",
+              "at": "2026-10-29T14:01:00+08:00"
+            }
+          ],
+          "committed_quote": false
+        },
+        {
+          "run": 2,
+          "label": "第二次：行情檔未在遠端，重跑正式步驟",
+          "mode": "send",
+          "action": "dedup",
+          "push_calls": 0,
+          "recipient": null,
+          "steps": [
+            {
+              "step": "抓取收盤行情",
+              "git": null
+            },
+            {
+              "step": "wh_notify",
+              "action": "dedup",
+              "reason": "already_sent"
+            },
+            {
+              "step": "提交推播紀錄（單獨、先於資料）",
+              "git": "nothing_to_commit"
+            },
+            {
+              "step": "提交更新（含 data/ 與 ledger）",
+              "git": "pushed"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 1,
+              "result": "sent",
+              "attempts": 1,
+              "recipient": "configured",
+              "at": "2026-10-29T14:01:00+08:00"
+            }
+          ],
+          "committed_quote": true
+        },
+        {
+          "run": 3,
+          "label": "第三次：行情檔已在遠端，只跑 retry-only",
+          "mode": "retry-only",
+          "action": "dedup",
+          "push_calls": 0,
+          "recipient": null,
+          "steps": [
+            {
+              "step": "wh_notify --retry-only",
+              "action": "dedup",
+              "reason": "already_sent"
+            },
+            {
+              "step": "提交推播重試紀錄",
+              "git": "nothing_to_commit"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 1,
+              "result": "sent",
+              "attempts": 1,
+              "recipient": "configured",
+              "at": "2026-10-29T14:01:00+08:00"
+            }
+          ],
+          "committed_quote": true
+        }
+      ],
+      "push_calls_total": 1,
+      "expect": {
+        "actions": [
+          "sent",
+          "dedup",
+          "dedup"
+        ],
+        "push_calls_total": 1
+      },
+      "problems": []
+    },
+    {
+      "id": "fail-then-retry",
+      "title": "推播失敗 → 下次排程重試",
+      "flow": "new",
+      "runs": [
+        {
+          "run": 1,
+          "label": "第一次：3 次都失敗，寫 failed",
+          "mode": "send",
+          "action": "failed",
+          "push_calls": 3,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "抓取收盤行情",
+              "git": null
+            },
+            {
+              "step": "wh_notify",
+              "action": "failed",
+              "reason": "HTTP 500"
+            },
+            {
+              "step": "提交推播紀錄（單獨、先於資料）",
+              "git": "pushed"
+            },
+            {
+              "step": "提交更新（含 data/ 與 ledger）",
+              "git": "pushed"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 2,
+              "result": "failed",
+              "attempts": 3,
+              "recipient": "configured",
+              "at": "2026-10-29T14:01:00+08:00"
+            }
+          ],
+          "committed_quote": true
+        },
+        {
+          "run": 2,
+          "label": "第二次：retry-only 補送成功",
+          "mode": "retry-only",
+          "action": "sent",
+          "push_calls": 1,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "wh_notify --retry-only",
+              "action": "sent",
+              "reason": null
+            },
+            {
+              "step": "提交推播重試紀錄",
+              "git": "pushed"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 2,
+              "result": "failed",
+              "attempts": 3,
+              "recipient": "configured",
+              "at": "2026-10-29T14:01:00+08:00"
+            },
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 2,
+              "result": "sent",
+              "attempts": 1,
+              "recipient": "configured",
+              "at": "2026-10-29T14:02:00+08:00"
+            }
+          ],
+          "committed_quote": true
+        },
+        {
+          "run": 3,
+          "label": "第三次：retry-only 已送達，去重",
+          "mode": "retry-only",
+          "action": "dedup",
+          "push_calls": 0,
+          "recipient": null,
+          "steps": [
+            {
+              "step": "wh_notify --retry-only",
+              "action": "dedup",
+              "reason": "already_sent"
+            },
+            {
+              "step": "提交推播重試紀錄",
+              "git": "nothing_to_commit"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 2,
+              "result": "failed",
+              "attempts": 3,
+              "recipient": "configured",
+              "at": "2026-10-29T14:01:00+08:00"
+            },
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 2,
+              "result": "sent",
+              "attempts": 1,
+              "recipient": "configured",
+              "at": "2026-10-29T14:02:00+08:00"
+            }
+          ],
+          "committed_quote": true
+        }
+      ],
+      "push_calls_total": 4,
+      "expect": {
+        "actions": [
+          "failed",
+          "sent",
+          "dedup"
+        ],
+        "push_calls_total": 4
+      },
+      "problems": []
+    },
+    {
+      "id": "retry-only-no-record",
+      "title": "retry-only 但 ledger 沒有失敗紀錄 → 不送",
+      "runs": [
+        {
+          "run": 1,
+          "mode": "retry-only",
+          "action": "skip",
+          "reasons": [],
+          "reason": "retry_only_without_failed_record",
+          "push_calls": 0,
+          "recipient": null
+        }
+      ],
+      "push_calls_total": 0,
+      "ledger_after": null,
+      "expect": {
+        "actions": [
+          "skip"
+        ],
+        "push_calls_total": 0
+      },
+      "problems": []
+    },
+    {
+      "id": "no-secrets",
+      "title": "未設定 LINE secrets → 不送、不寫 ledger",
+      "runs": [
+        {
+          "run": 1,
+          "mode": "send",
+          "action": "skipped_no_secrets",
+          "reasons": [],
+          "reason": null,
+          "push_calls": 0,
+          "recipient": "unset"
+        }
+      ],
+      "push_calls_total": 0,
+      "ledger_after": null,
+      "expect": {
+        "actions": [
+          "skipped_no_secrets"
+        ],
+        "push_calls_total": 0,
+        "ledger_after": null
+      },
+      "problems": []
+    },
+    {
+      "id": "not-ready-quote-missing",
+      "title": "資料不足／未就緒：當日行情檔不存在 → 不推",
+      "runs": [
+        {
+          "run": 1,
+          "mode": "send",
+          "action": "not_ready",
+          "reasons": [
+            "quote_file_missing"
+          ],
+          "reason": null,
+          "push_calls": 0,
+          "recipient": null
+        }
+      ],
+      "push_calls_total": 0,
+      "ledger_after": null,
+      "expect": {
+        "actions": [
+          "not_ready"
+        ],
+        "push_calls_total": 0,
+        "reason_code": "quote_file_missing"
+      },
+      "problems": []
+    },
+    {
+      "id": "not-ready-expect-date",
+      "title": "資料不足／未就緒：排程預期日與 stock_date 不同 → 不推",
+      "runs": [
+        {
+          "run": 1,
+          "mode": "send",
+          "action": "not_ready",
+          "reasons": [
+            "expect_date_mismatch"
+          ],
+          "reason": null,
+          "push_calls": 0,
+          "recipient": null
+        }
+      ],
+      "push_calls_total": 0,
+      "ledger_after": null,
+      "expect": {
+        "actions": [
+          "not_ready"
+        ],
+        "push_calls_total": 0,
+        "reason_code": "expect_date_mismatch"
+      },
+      "problems": []
+    },
+    {
+      "id": "not-ready-short-history",
+      "title": "資料不足／未就緒：只有一個交易日 → 不推",
+      "runs": [
+        {
+          "run": 1,
+          "mode": "send",
+          "action": "not_ready",
+          "reasons": [
+            "short_history"
+          ],
+          "reason": null,
+          "push_calls": 0,
+          "recipient": null
+        }
+      ],
+      "push_calls_total": 0,
+      "ledger_after": null,
+      "expect": {
+        "actions": [
+          "not_ready"
+        ],
+        "push_calls_total": 0,
+        "reason_code": "short_history"
+      },
+      "problems": []
+    },
+    {
+      "id": "not-ready-length",
+      "title": "資料不足／未就緒：state 與 dates 長度不一 → 不推",
+      "runs": [
+        {
+          "run": 1,
+          "mode": "send",
+          "action": "not_ready",
+          "reasons": [
+            "length_mismatch"
+          ],
+          "reason": null,
+          "push_calls": 0,
+          "recipient": null
+        }
+      ],
+      "push_calls_total": 0,
+      "ledger_after": null,
+      "expect": {
+        "actions": [
+          "not_ready"
+        ],
+        "push_calls_total": 0,
+        "reason_code": "length_mismatch"
+      },
+      "problems": []
+    },
+    {
+      "id": "not-ready-score-missing",
+      "title": "資料不足／未就緒：非常態但該側分數缺值 → 不推",
+      "runs": [
+        {
+          "run": 1,
+          "mode": "send",
+          "action": "not_ready",
+          "reasons": [
+            "abnormal_score_missing"
+          ],
+          "reason": null,
+          "push_calls": 0,
+          "recipient": null
+        }
+      ],
+      "push_calls_total": 0,
+      "ledger_after": null,
+      "expect": {
+        "actions": [
+          "not_ready"
+        ],
+        "push_calls_total": 0,
+        "reason_code": "abnormal_score_missing"
+      },
+      "problems": []
+    },
+    {
+      "id": "not-ready-threshold",
+      "title": "資料不足／未就緒：檔內門檻與程式不一致 → 不推",
+      "runs": [
+        {
+          "run": 1,
+          "mode": "send",
+          "action": "not_ready",
+          "reasons": [
+            "threshold_mismatch"
+          ],
+          "reason": null,
+          "push_calls": 0,
+          "recipient": null
+        }
+      ],
+      "push_calls_total": 0,
+      "ledger_after": null,
+      "expect": {
+        "actions": [
+          "not_ready"
+        ],
+        "push_calls_total": 0,
+        "reason_code": "threshold_mismatch"
+      },
+      "problems": []
+    },
+    {
+      "id": "ledger-old-flow-sent-commit-fail",
+      "title": "舊流程：送達但當日資料提交失敗 → 乾淨 checkout 丟 ledger，下次重送",
+      "flow": "old",
+      "runs": [
+        {
+          "run": 1,
+          "label": "第一次：送達，資料提交（含 ledger）失敗",
+          "mode": "send",
+          "action": "sent",
+          "push_calls": 1,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "抓取收盤行情",
+              "git": null
+            },
+            {
+              "step": "wh_notify",
+              "action": "sent",
+              "reason": null
+            },
+            {
+              "step": "提交更新（含 data/ 與 ledger）",
+              "git": "push_failed"
+            }
+          ],
+          "committed_ledger": null,
+          "committed_quote": false
+        },
+        {
+          "run": 2,
+          "label": "第二次：乾淨 checkout 沒有 ledger 與行情檔，重跑正式步驟",
+          "mode": "send",
+          "action": "sent",
+          "push_calls": 1,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "抓取收盤行情",
+              "git": null
+            },
+            {
+              "step": "wh_notify",
+              "action": "sent",
+              "reason": null
+            },
+            {
+              "step": "提交更新（含 data/ 與 ledger）",
+              "git": "pushed"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": -1,
+              "result": "sent",
+              "attempts": 1,
+              "recipient": "configured",
+              "at": "2026-10-29T14:02:00+08:00"
+            }
+          ],
+          "committed_quote": true
+        }
+      ],
+      "push_calls_total": 2,
+      "expect": {
+        "actions": [
+          "sent",
+          "sent"
+        ],
+        "push_calls_total": 2
+      },
+      "note": "修正前的行為：重複推播一次。",
+      "problems": []
+    },
+    {
+      "id": "ledger-new-flow-sent-data-fail",
+      "title": "新流程：送達、ledger 先單獨提交成功、資料提交失敗 → 下次去重",
+      "flow": "new",
+      "runs": [
+        {
+          "run": 1,
+          "label": "第一次：送達，ledger 單獨提交成功，資料提交失敗",
+          "mode": "send",
+          "action": "sent",
+          "push_calls": 1,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "抓取收盤行情",
+              "git": null
+            },
+            {
+              "step": "wh_notify",
+              "action": "sent",
+              "reason": null
+            },
+            {
+              "step": "提交推播紀錄（單獨、先於資料）",
+              "git": "pushed"
+            },
+            {
+              "step": "提交更新（含 data/ 與 ledger）",
+              "git": "push_failed"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": -1,
+              "result": "sent",
+              "attempts": 1,
+              "recipient": "configured",
+              "at": "2026-10-29T14:01:00+08:00"
+            }
+          ],
+          "committed_quote": false
+        },
+        {
+          "run": 2,
+          "label": "第二次：ledger 已在遠端，重跑正式步驟 → dedup",
+          "mode": "send",
+          "action": "dedup",
+          "push_calls": 0,
+          "recipient": null,
+          "steps": [
+            {
+              "step": "抓取收盤行情",
+              "git": null
+            },
+            {
+              "step": "wh_notify",
+              "action": "dedup",
+              "reason": "already_sent"
+            },
+            {
+              "step": "提交推播紀錄（單獨、先於資料）",
+              "git": "nothing_to_commit"
+            },
+            {
+              "step": "提交更新（含 data/ 與 ledger）",
+              "git": "pushed"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": -1,
+              "result": "sent",
+              "attempts": 1,
+              "recipient": "configured",
+              "at": "2026-10-29T14:01:00+08:00"
+            }
+          ],
+          "committed_quote": true
+        }
+      ],
+      "push_calls_total": 1,
+      "expect": {
+        "actions": [
+          "sent",
+          "dedup"
+        ],
+        "push_calls_total": 1
+      },
+      "problems": []
+    },
+    {
+      "id": "ledger-new-flow-failed-data-fail",
+      "title": "新流程：推播失敗＋資料提交失敗（ledger 已單獨提交）→ 下次重試",
+      "flow": "new",
+      "runs": [
+        {
+          "run": 1,
+          "label": "第一次：推播失敗，ledger(failed) 單獨提交成功，資料提交失敗",
+          "mode": "send",
+          "action": "failed",
+          "push_calls": 3,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "抓取收盤行情",
+              "git": null
+            },
+            {
+              "step": "wh_notify",
+              "action": "failed",
+              "reason": "push_failed"
+            },
+            {
+              "step": "提交推播紀錄（單獨、先於資料）",
+              "git": "pushed"
+            },
+            {
+              "step": "提交更新（含 data/ 與 ledger）",
+              "git": "push_failed"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 1,
+              "result": "failed",
+              "attempts": 3,
+              "recipient": "configured",
+              "at": "2026-10-29T14:01:00+08:00"
+            }
+          ],
+          "committed_quote": false
+        },
+        {
+          "run": 2,
+          "label": "第二次：行情檔未在遠端，重跑正式步驟；ledger 有 failed → 補送",
+          "mode": "send",
+          "action": "sent",
+          "push_calls": 1,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "抓取收盤行情",
+              "git": null
+            },
+            {
+              "step": "wh_notify",
+              "action": "sent",
+              "reason": null
+            },
+            {
+              "step": "提交推播紀錄（單獨、先於資料）",
+              "git": "pushed"
+            },
+            {
+              "step": "提交更新（含 data/ 與 ledger）",
+              "git": "pushed"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 1,
+              "result": "failed",
+              "attempts": 3,
+              "recipient": "configured",
+              "at": "2026-10-29T14:01:00+08:00"
+            },
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 1,
+              "result": "sent",
+              "attempts": 1,
+              "recipient": "configured",
+              "at": "2026-10-29T14:02:00+08:00"
+            }
+          ],
+          "committed_quote": true
+        },
+        {
+          "run": 3,
+          "label": "第三次：行情檔已在遠端，retry-only → dedup",
+          "mode": "retry-only",
+          "action": "dedup",
+          "push_calls": 0,
+          "recipient": null,
+          "steps": [
+            {
+              "step": "wh_notify --retry-only",
+              "action": "dedup",
+              "reason": "already_sent"
+            },
+            {
+              "step": "提交推播重試紀錄",
+              "git": "nothing_to_commit"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 1,
+              "result": "failed",
+              "attempts": 3,
+              "recipient": "configured",
+              "at": "2026-10-29T14:01:00+08:00"
+            },
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 1,
+              "result": "sent",
+              "attempts": 1,
+              "recipient": "configured",
+              "at": "2026-10-29T14:02:00+08:00"
+            }
+          ],
+          "committed_quote": true
+        }
+      ],
+      "push_calls_total": 4,
+      "expect": {
+        "actions": [
+          "failed",
+          "sent",
+          "dedup"
+        ],
+        "push_calls_total": 4
+      },
+      "problems": []
+    },
+    {
+      "id": "ledger-both-commits-fail-failed",
+      "title": "已知風險（可自癒）：推播失敗＋兩段提交都失敗 → ledger 丟失，下次重跑正式步驟仍會再送",
+      "flow": "new",
+      "runs": [
+        {
+          "run": 1,
+          "label": "第一次：推播失敗，ledger 與資料提交都失敗",
+          "mode": "send",
+          "action": "failed",
+          "push_calls": 3,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "抓取收盤行情",
+              "git": null
+            },
+            {
+              "step": "wh_notify",
+              "action": "failed",
+              "reason": "push_failed"
+            },
+            {
+              "step": "提交推播紀錄（單獨、先於資料）",
+              "git": "push_failed"
+            },
+            {
+              "step": "提交更新（含 data/ 與 ledger）",
+              "git": "push_failed"
+            }
+          ],
+          "committed_ledger": null,
+          "committed_quote": false
+        },
+        {
+          "run": 2,
+          "label": "第二次：乾淨 checkout 無 ledger、無行情檔 → 正式步驟重送",
+          "mode": "send",
+          "action": "sent",
+          "push_calls": 1,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "抓取收盤行情",
+              "git": null
+            },
+            {
+              "step": "wh_notify",
+              "action": "sent",
+              "reason": null
+            },
+            {
+              "step": "提交推播紀錄（單獨、先於資料）",
+              "git": "pushed"
+            },
+            {
+              "step": "提交更新（含 data/ 與 ledger）",
+              "git": "pushed"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 2,
+              "result": "sent",
+              "attempts": 1,
+              "recipient": "configured",
+              "at": "2026-10-29T14:02:00+08:00"
+            }
+          ],
+          "committed_quote": true
+        }
+      ],
+      "push_calls_total": 4,
+      "expect": {
+        "actions": [
+          "failed",
+          "sent"
+        ],
+        "push_calls_total": 4
+      },
+      "note": "ledger 丟失，但因行情檔也沒提交，下次排程走正式步驟而不是 retry-only，所以仍會補送。若這是當日最後一次排程（18:20），當日就沒有下一次，需人工補救。",
+      "problems": []
+    },
+    {
+      "id": "ledger-both-commits-fail-sent",
+      "title": "已知風險（會重複）：送達＋兩段提交都失敗 → 下次重送一次",
+      "flow": "new",
+      "runs": [
+        {
+          "run": 1,
+          "label": "第一次：送達，ledger 與資料提交都失敗",
+          "mode": "send",
+          "action": "sent",
+          "push_calls": 1,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "抓取收盤行情",
+              "git": null
+            },
+            {
+              "step": "wh_notify",
+              "action": "sent",
+              "reason": null
+            },
+            {
+              "step": "提交推播紀錄（單獨、先於資料）",
+              "git": "push_failed"
+            },
+            {
+              "step": "提交更新（含 data/ 與 ledger）",
+              "git": "push_failed"
+            }
+          ],
+          "committed_ledger": null,
+          "committed_quote": false
+        },
+        {
+          "run": 2,
+          "label": "第二次：乾淨 checkout 無 ledger → 再送一次（重複）",
+          "mode": "send",
+          "action": "sent",
+          "push_calls": 1,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "抓取收盤行情",
+              "git": null
+            },
+            {
+              "step": "wh_notify",
+              "action": "sent",
+              "reason": null
+            },
+            {
+              "step": "提交推播紀錄（單獨、先於資料）",
+              "git": "pushed"
+            },
+            {
+              "step": "提交更新（含 data/ 與 ledger）",
+              "git": "pushed"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": -1,
+              "result": "sent",
+              "attempts": 1,
+              "recipient": "configured",
+              "at": "2026-10-29T14:02:00+08:00"
+            }
+          ],
+          "committed_quote": true
+        }
+      ],
+      "push_calls_total": 2,
+      "expect": {
+        "actions": [
+          "sent",
+          "sent"
+        ],
+        "push_calls_total": 2
+      },
+      "note": "無法在 repo 內完全修好：送達事實只寫在 runner 的工作目錄。workflow 會上傳 ledger artifact 供人工補提交。",
+      "problems": []
+    },
+    {
+      "id": "ledger-retry-commit-fail",
+      "title": "已知風險（會重複）：retry-only 補送成功但提交失敗 → 下次 retry-only 再送",
+      "flow": "new",
+      "runs": [
+        {
+          "run": 1,
+          "label": "第一次：推播失敗，提交成功",
+          "mode": "send",
+          "action": "failed",
+          "push_calls": 3,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "抓取收盤行情",
+              "git": null
+            },
+            {
+              "step": "wh_notify",
+              "action": "failed",
+              "reason": "push_failed"
+            },
+            {
+              "step": "提交推播紀錄（單獨、先於資料）",
+              "git": "pushed"
+            },
+            {
+              "step": "提交更新（含 data/ 與 ledger）",
+              "git": "pushed"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 1,
+              "result": "failed",
+              "attempts": 3,
+              "recipient": "configured",
+              "at": "2026-10-29T14:01:00+08:00"
+            }
+          ],
+          "committed_quote": true
+        },
+        {
+          "run": 2,
+          "label": "第二次：retry-only 補送成功，提交失敗",
+          "mode": "retry-only",
+          "action": "sent",
+          "push_calls": 1,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "wh_notify --retry-only",
+              "action": "sent",
+              "reason": null
+            },
+            {
+              "step": "提交推播重試紀錄",
+              "git": "push_failed"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 1,
+              "result": "failed",
+              "attempts": 3,
+              "recipient": "configured",
+              "at": "2026-10-29T14:01:00+08:00"
+            }
+          ],
+          "committed_quote": true
+        },
+        {
+          "run": 3,
+          "label": "第三次：遠端 ledger 仍是 failed → 再送",
+          "mode": "retry-only",
+          "action": "sent",
+          "push_calls": 1,
+          "recipient": "configured",
+          "steps": [
+            {
+              "step": "wh_notify --retry-only",
+              "action": "sent",
+              "reason": null
+            },
+            {
+              "step": "提交推播重試紀錄",
+              "git": "pushed"
+            }
+          ],
+          "committed_ledger": [
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 1,
+              "result": "failed",
+              "attempts": 3,
+              "recipient": "configured",
+              "at": "2026-10-29T14:01:00+08:00"
+            },
+            {
+              "stock_date": "20261029",
+              "from": 0,
+              "to": 1,
+              "result": "sent",
+              "attempts": 1,
+              "recipient": "configured",
+              "at": "2026-10-29T14:03:00+08:00"
+            }
+          ],
+          "committed_quote": true
+        }
+      ],
+      "push_calls_total": 5,
+      "expect": {
+        "actions": [
+          "failed",
+          "sent",
+          "sent"
+        ],
+        "push_calls_total": 5
+      },
+      "problems": []
+    },
+    {
+      "id": "actual-repo-dry-run",
+      "title": "實際資料 dry-run（repo 現有 docs/wh.json，stock_date=20261029）",
+      "runs": [
+        {
+          "run": 1,
+          "mode": "dry-run",
+          "action": "noop",
+          "ready": true,
+          "reasons": [],
+          "reason": "state_unchanged",
+          "stock_date": "20261029",
+          "from": 0,
+          "to": 0,
+          "from_name": "常態",
+          "to_name": "常態",
+          "down": 0.694,
+          "up": 0.394,
+          "conc": 0.595,
+          "delivery": "not_sent",
+          "push_calls": 0
+        }
+      ],
+      "push_calls_total": 0,
+      "ledger_after": "未寫入（dry-run）",
+      "expect": {
+        "mode": "dry-run",
+        "delivery": "not_sent"
+      },
+      "problems": []
+    }
+  ]
+}

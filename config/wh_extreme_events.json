@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "endpoint": {
+    "start_inclusive": true,
+    "end_inclusive": true,
+    "calendar": "起迄為 YYYYMMDD 字串閉區間。兩端都納入。起迄若不是交易日，不另往內或往外平移，只計算 docs/wh.json dates 裡落在閉區間的交易日。",
+    "valid_day": "有效交易日＝閉區間內下跌分數 down 不是 null 的交易日。此口徑與 stock_date=20261029 的 5093 日相同（下跌與上漲分數都已可計算）。只有資金集中分數、下跌分數仍為 null 的暖機日不進分母。",
+    "state_days": "各狀態天數＝有效交易日之中 state 等於該狀態的天數。0 常態、-1 下跌瘋狂、1 上漲瘋狂、2 資金集中炒作。",
+    "share": "占比＝該狀態天數 / 有效交易日數。非常態占比＝（下跌+上漲+集中）/ 有效交易日數。有效交易日為 0 時占比為 null。",
+    "data_version": "狀態與分數來自 docs/wh.json（stock_date）。規則版本為 wh_extreme.RULE_ID。重算指令：python3 scripts/wh_extreme_audit.py events"
+  },
+  "ed_review": {
+    "status": "原交審窗未驗證／待 Ed 補起訖",
+    "note": "repo 沒有 Ed 交審事件表的起迄日。下列只保留審查報告轉述的宣稱占比，start／end 維持 null。審計腳本不會用自訂日曆窗填這些列，也不把自訂窗占比寫成原表結果。Ed 補上起迄後，把 start、end 寫成 YYYYMMDD（閉區間）再跑審計腳本。",
+    "rows": [
+      {"id": "ed-2008-09-2009-03", "label": "2008-09～2009-03 下跌", "claimed_state": -1, "claimed_share": 0.94, "start": null, "end": null},
+      {"id": "ed-2011-h2", "label": "2011 下半年下跌", "claimed_state": -1, "claimed_share": 0.34, "start": null, "end": null},
+      {"id": "ed-2015-08", "label": "2015-08 下跌", "claimed_state": -1, "claimed_share": 0.48, "start": null, "end": null},
+      {"id": "ed-2018-10", "label": "2018-10 下跌", "claimed_state": -1, "claimed_share": 0.59, "start": null, "end": null},
+      {"id": "ed-2020-02-04", "label": "2020-02～04 下跌", "claimed_state": -1, "claimed_share": 0.45, "start": null, "end": null},
+      {"id": "ed-2021-shipping", "label": "2021 航運", "claimed_state": null, "claimed_share": 0.91, "start": null, "end": null, "note": "航運族群狀態。不是資金集中。不可用集中分數或 state=2 代替。"},
+      {"id": "ed-2022-down", "label": "2022 下跌", "claimed_state": -1, "claimed_share": 0.05, "start": null, "end": null},
+      {"id": "ed-2022-conc", "label": "2022 資金集中", "claimed_state": 2, "claimed_share": 0.09, "start": null, "end": null},
+      {"id": "ed-2024-08", "label": "2024-08 下跌", "claimed_state": -1, "claimed_share": 0.71, "start": null, "end": null},
+      {"id": "ed-2025-04", "label": "2025-04 下跌", "claimed_state": -1, "claimed_share": 1.0, "start": null, "end": null},
+      {"id": "ed-2026-05-06-up", "label": "2026-05～06 上漲", "claimed_state": 1, "claimed_share": 0.95, "start": null, "end": null},
+      {"id": "ed-2026-07-down", "label": "2026-07 下跌", "claimed_state": -1, "claimed_share": 0.41, "start": null, "end": null}
+    ]
+  },
+  "eve_custom_windows": {
+    "status": "Eve 自訂日曆窗抽查，不是原交審表",
+    "note": "2026-10-30 審查用自訂日曆窗重算占比，與上表宣稱有落差，因此事件表判為未驗證。這裡逐窗重算只是把該抽查變成可重跑的對照，不能當成 Ed 原表已核對。2015-08、2026-07、2026-05～06 的抽查與宣稱接近，只支持這些自訂窗本身。",
+    "rows": [
+      {"id": "eve-2008-09-2009-03", "label": "自訂窗 2008-09-01～2009-03-31", "focus_state": -1, "start": "20080901", "end": "20090331"},
+      {"id": "eve-2011-h2", "label": "自訂窗 2011-07-01～2011-12-31", "focus_state": -1, "start": "20110701", "end": "20111231"},
+      {"id": "eve-2015-08", "label": "自訂窗 2015-08-01～2015-08-31", "focus_state": -1, "start": "20150801", "end": "20150831"},
+      {"id": "eve-2018-10", "label": "自訂窗 2018-10-01～2018-10-31", "focus_state": -1, "start": "20181001", "end": "20181031"},
+      {"id": "eve-2020-02-04", "label": "自訂窗 2020-02-01～2020-04-30", "focus_state": -1, "start": "20200201", "end": "20200430"},
+      {"id": "eve-2021-conc-not-shipping", "label": "自訂窗 2021 全年資金集中（不是航運）", "focus_state": 2, "start": "20210101", "end": "20211231"},
+      {"id": "eve-2022-full", "label": "自訂窗 2022 全年", "focus_state": -1, "start": "20220101", "end": "20221231"},
+      {"id": "eve-2024-08", "label": "自訂窗 2024-08-01～2024-08-31", "focus_state": -1, "start": "20240801", "end": "20240831"},
+      {"id": "eve-2025-04", "label": "自訂窗 2025-04-01～2025-04-30", "focus_state": -1, "start": "20250401", "end": "20250430"},
+      {"id": "eve-2026-05-06", "label": "自訂窗 2026-05-01～2026-06-30", "focus_state": 1, "start": "20260501", "end": "20260630"},
+      {"id": "eve-2026-07", "label": "自訂窗 2026-07-01～2026-07-31", "focus_state": -1, "start": "20260701", "end": "20260731"}
+    ]
+  },
+  "not_equivalent": {
+    "id": "2021-shipping-vs-concentration",
+    "title": "「2021 航運」與「資金集中」不可等同",
+    "text": "資金集中衡量的是：排除台積電（2330）之後，當日成交值前五大個股占其餘普通股成交值的比重，再取 5 日平均，最後做成 2005-01-01 起至當日（含）的 expanding 百分位。它描述成交值是否集中在少數股票，不是航運族群的漲跌、成分或產業狀態。2021 年 Ed 交審寫的航運約 91% 沒有附母體與起迄，不能用本年 state=2 的天數占比來核對或取代。即便在自訂的 2021 日曆年，資金集中也只占有效交易日的約三成，與 91% 不是同一個指標。"
+  }
+}
