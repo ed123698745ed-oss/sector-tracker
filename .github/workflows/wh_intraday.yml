@@ -1,0 +1,41 @@
+name: 權值高價股盤中暫定
+
+# 一個工作從開盤跑到 13:36，盤中約每 5 分鐘抓一次並強制推到 live 分支（不進 main、不觸發 Pages 重建）。
+# 多個排程只是備援：同組 concurrency 不取消進行中的工作，後到的排隊；開盤迴圈結束後才輪到的會因非盤中直接結束。
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '50 0 * * 1-5'   # 台北 08:50
+    - cron: '20 1 * * 1-5'   # 台北 09:20 備援
+    - cron: '20 3 * * 1-5'   # 台北 11:20 備援
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wh-intraday
+  cancel-in-progress: false
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: 只在盤中執行
+        id: tw
+        run: |
+          H=$(TZ=Asia/Taipei date +%H%M); W=$(TZ=Asia/Taipei date +%u)
+          if [ "$W" -le 5 ] && [ "$H" -ge 0845 ] && [ "$H" -le 1336 ]; then echo "go=1" >> "$GITHUB_OUTPUT"; else echo "非盤中時間，略過"; fi
+      - uses: actions/checkout@v4
+        if: steps.tw.outputs.go == '1'
+      - uses: actions/setup-python@v5
+        if: steps.tw.outputs.go == '1'
+        with:
+          python-version: '3.12'
+      - name: 盤中迴圈
+        if: steps.tw.outputs.go == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        run: python3 scripts/wh_intraday.py --loop --push

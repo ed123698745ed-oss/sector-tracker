@@ -76,6 +76,8 @@ td.num{font-size:15px}
 .on{background:var(--up)} .off{background:var(--line)}
 .tag{display:inline-block;font-size:11px;padding:0 6px;border-radius:999px;background:var(--chip);color:var(--muted);margin-left:3px}
 .unverified{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:999px;border:1px solid #d99a1e;color:#b07a10;background:rgba(217,154,30,.12)}
+.livetag{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:999px;background:var(--accent);color:#fff;margin-left:6px;vertical-align:middle}
+.liverow{margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}
 #tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px;display:none;z-index:9;box-shadow:0 4px 14px rgba(0,0,0,.12)}
 </style>
 </head>
@@ -168,7 +170,7 @@ td.num{font-size:15px}
 const G = {all:'全市場', twse:'上市市值前50', otc:'上櫃市值前30', hp:'高價股前30'};
 const DIST = ['≤-9','-9~-5','-5~-3','-3~-1','-1~0','0','0~1','1~3','3~5','5~9','≥9'];
 const DDL = ['<5%','5–10%','10–20%','20–30%','30–50%','≥50%'];
-let W, idx, ddG = 'all', ddR = 750, stG = 'twse', sortK = 'cap', sortD = -1;
+let LIVE = null, W, idx, ddG = 'all', ddR = 750, stG = 'twse', sortK = 'cap', sortD = -1;
 const $ = s => document.querySelector(s);
 const fmt = (v, d=1) => v == null ? '—' : v.toFixed(d);
 const pctS = (a, b) => b ? (a / b * 100) : null;
@@ -185,7 +187,22 @@ fetch('wh.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).then(w 
   xInit();
   tabs('#stabs', {twse:G.twse, otc:G.otc, hp:G.hp}, () => stG, v => { stG = v; sortK = v === 'hp' ? 'px' : 'cap'; sortD = -1; drawTable(); });
   draw();
+  loadLive(); setInterval(loadLive, 120000);
 }).catch(e => { $('#sub').textContent = '資料讀取失敗：' + e; });
+
+// 盤中暫定：live 分支的 wh_intraday.json（約每 5 分鐘更新）。只在比最新收盤日新、且以最新收盤為基準時採用
+const LIVE_URL = 'https://raw.githubusercontent.com/ed123698745ed-oss/sector-tracker/live/wh_intraday.json';
+function loadLive(){
+  fetch(LIVE_URL + '?t=' + Date.now(), {cache: 'no-store'}).then(r => r.ok ? r.json() : null).then(x => {
+    const last = W.dates[W.dates.length - 1];
+    const ok = x && x.date > last && x.base_date === last;
+    const changed = JSON.stringify(ok ? x : null) !== JSON.stringify(LIVE);
+    LIVE = ok ? x : null;
+    if (changed && idx === W.dates.length - 1) draw();
+  }).catch(() => {});
+}
+const liveOn = () => LIVE && idx === W.dates.length - 1;
+const liveTag = () => `<span class="livetag">${+LIVE.date.slice(4,6)}/${+LIVE.date.slice(6)} 盤中暫定 ${LIVE.time}</span>`;
 
 function tabs(sel, opts, get, set){
   const el = $(sel); el.innerHTML = '';
@@ -198,13 +215,14 @@ function tabs(sel, opts, get, set){
 }
 function draw(){
   const ds = W.dates[idx];
-  $('#sub').textContent = `資料日 ${fd(ds)}・盤後`;
+  $('#sub').textContent = `資料日 ${fd(ds)}・盤後` + (liveOn() ? `；盤中暫定 ${LIVE.time} 只更新加權指數、市場狀態、三組卡片與個股表，其餘為收盤資料` : '');
   drawIdx(); drawX(); drawDist(); drawCards(); drawDD(); drawTrend(); drawTable();
 }
 function drawIdx(){
-  const t = W.taiex[idx], p = W.taiex[idx-1];
+  let t = W.taiex[idx], p = W.taiex[idx-1], lab = '加權指數';
+  if (liveOn()) { t = LIVE.taiex; p = LIVE.taiex_y; lab = '加權指數' + liveTag(); }
   const ch = t && p ? t - p : null, cp = ch != null ? ch / p * 100 : null;
-  $('#idx').innerHTML = `<div><div class="sub">加權指數</div><div class="big num">${t ? t.toLocaleString('zh-TW',{maximumFractionDigits:2}) : '—'}</div></div>
+  $('#idx').innerHTML = `<div><div class="sub">${lab}</div><div class="big num">${t ? t.toLocaleString('zh-TW',{maximumFractionDigits:2}) : '—'}</div>${liveOn() ? `<div class="sub">報價至 ${LIVE.quote_time || '—'}，收盤後以正式資料為準</div>` : ''}</div>
     <div class="chg num ${cls(ch)}">${ch == null ? '' : (ch>0?'+':'') + ch.toFixed(2) + '（' + (cp>0?'+':'') + cp.toFixed(2) + '%）'}</div>`;
 }
 const XS = {'-1': ['下跌瘋狂', 'var(--down)'], '1': ['上漲瘋狂', 'var(--up)'], '2': ['資金集中炒作', '#d99a1e'], '0': ['常態', 'var(--flat)']};
@@ -219,6 +237,22 @@ function xLeg(ep){   // 波段起點（進入時窗口內最高／最低收盤�
   let b = ep.s; for (let i = Math.max(0, ep.s - wn); i <= ep.s; i++) if (T[i] && (dn ? T[i] > T[b] : T[i] < T[b])) b = i;
   let x = ep.s; for (let i = ep.s; i <= ep.e; i++) if (T[i] && (dn ? T[i] < T[x] : T[i] > T[x])) x = i;
   return {b, x, base: T[b], ext: T[x]};
+}
+function xLiveLine(){   // 以盤中指數暫算今日狀態（同一規則；收盤後以正式資料為準）
+  const x_ = W.ext, th = x_.th, wn = x_.win, T = W.taiex, L = W.dates.length - 1, v = LIVE.taiex;
+  const win = n => { const a = []; for (let i = L - n + 1; i <= L; i++) if (T[i]) a.push(T[i]); a.push(v); return a; };
+  const hi = Math.max(...win(wn.down)), lo = Math.min(...win(wn.up)), dd = v / hi - 1, ru = v / lo - 1;
+  const prev = x_.state[L]; let st = 0, note = '';
+  if (prev) { const ep = xEpisodes().find(e => e.s <= L && e.e >= L), Lg = xLeg({s: ep.s, e: L, k: prev});
+    const ext = prev < 0 ? Math.min(Lg.ext, v) : Math.max(Lg.ext, v);
+    const out = prev < 0 ? v >= ext * (1 + th.down[1]) : v <= ext * (1 - th.up[1]);
+    st = out ? 0 : prev; note = out ? '若收盤維持，將解除' : '若收盤維持，持續';
+  } else if (v <= hi * (1 - th.down[0])) { st = -1; note = '若收盤維持，將進入'; }
+  else if (v >= lo * (1 + th.up[0])) { st = 1; note = '若收盤維持，將進入'; }
+  else note = '若收盤維持，仍為';
+  const pc = z => (z > 0 ? '+' : '') + (z * 100).toFixed(1) + '%';
+  const k = prev && !st ? prev : st;
+  return `<div style="flex-basis:100%" class="liverow">${liveTag()} <span class="sub">距 ${wn.down} 日高 <b class="num">${pc(dd)}</b>／距 ${wn.up} 日低 <b class="num">${pc(ru)}</b>：${note}<b style="color:${XS[String(k)][1]}">${XS[String(k)][0]}</b></span></div>`;
 }
 function xStart(){ const i = W.dates.findIndex(d => d >= '20050101'); return i < 0 ? 0 : i; }
 const XV = {span: 750, end: null};
@@ -281,6 +315,7 @@ function drawX(){
   } else h += `<span class="sub">距 ${wn.down} 日高 <b class="num">${pc(x_.dd ? x_.dd[idx] : null)}</b>／進入 −${th.down[0] * 100}%</span>` +
       `<span class="sub">距 ${wn.up} 日低 <b class="num">${pc(x_.ru ? x_.ru[idx] : null)}</b>／進入 +${th.up[0] * 100}%</span>`;
   h += `<span class="sub">資金集中 <b class="num">${x_.conc[idx] == null ? '—' : (x_.conc[idx] * 100).toFixed(0)}</b>（僅參考）</span>`;
+  if (liveOn()) h += xLiveLine();
   $('#xstate').innerHTML = h;
   const sel = $('#xyear'), y0 = W.dates[xStart()].slice(0, 4), y1 = W.dates[idx].slice(0, 4);
   let opts = ''; for (let y = +y1; y >= +y0; y--) opts += `<option value="${y}">${y}</option>`;
@@ -312,7 +347,8 @@ function renderX(){
   g += `<rect x="0" y="0" width="${Wd}" height="${H}" fill="transparent" id="xhit"/>`;
   svg.innerHTML = g;
   const sc = v => v == null ? '—' : (v * 100).toFixed(0);
-  hover('#xhit', s, e, x, i => `${fd(W.dates[i])}<br>${XS[String(x_.state[i])][0]}<br>加權 ${W.taiex[i] ? Math.round(W.taiex[i]).toLocaleString('zh-TW') : '—'}<br>下跌 ${sc(x_.down[i])}／上漲 ${sc(x_.up[i])}／集中 ${sc(x_.conc[i])}`);
+  const pz = z => z == null ? '—' : (z > 0 ? '+' : '') + (z * 100).toFixed(1) + '%';
+  hover('#xhit', s, e, x, i => `${fd(W.dates[i])}<br>${XS[String(x_.state[i])][0]}<br>加權 ${W.taiex[i] ? Math.round(W.taiex[i]).toLocaleString('zh-TW') : '—'}<br>距 15 日高 ${pz(x_.dd ? x_.dd[i] : null)}／距 40 日低 ${pz(x_.ru ? x_.ru[i] : null)}`);
   const lo0 = xStart() + XV.span; $('#xrange').value = idx <= lo0 ? 1000 : Math.round((XV.end - lo0) / (idx - lo0) * 1000);
   $('#xwin').textContent = `${fd(W.dates[s])}～${fd(W.dates[e])}（${e - s + 1} 個交易日）`;
   const y = W.dates[Math.round((s + e) / 2)].slice(0, 4); if ($('#xyear').value !== y) $('#xyear').value = y;
@@ -334,6 +370,16 @@ function drawDist(){
   });
   $('#dist').innerHTML = g;
 }
+function cardLive(g){
+  if (!liveOn() || g === 'all') return '';
+  const v = W.stocks.filter(r => r.g.includes(g)).map(r => LIVE.stocks[r.c]).filter(Boolean);
+  if (!v.length) return '';
+  const u = v.filter(z => z[1] > 0).length, d = v.filter(z => z[1] < 0).length;
+  const lu = v.filter(z => z[2] === 1).length, ld = v.filter(z => z[2] === -1).length;
+  return `<div class="liverow"><div class="k">${liveTag()}</div>
+    <div class="k">上漲／下跌 <b><span class="up">${u}</span>／<span class="down">${d}</span></b>（有成交 ${v.length} 檔）</div>
+    <div class="k">上漲比例 <b>${fmt(u / v.length * 100)}%</b>　漲停／跌停 <b><span class="up">${lu}</span>／<span class="down">${ld}</span></b></div></div>`;
+}
 function drawCards(){
   let h = '';
   const ym = W.dates[idx].slice(0,6), lk = Object.keys(W.lists).filter(k => k < ym).pop();
@@ -347,7 +393,7 @@ function drawCards(){
       <div class="k">站上 月／季／半年／年線 <b>${[0,1,2,3].map(k => fmt(pctS(ma[k],mad[k]),0)).join('／')}%</b></div>
       <div class="k">新高 20／60／250 <b class="up">${hi.map((v, k) => hd[k] ? v : '—').join('／')}</b></div>
       <div class="k">新低 20／60／250 <b class="down">${lo.map((v, k) => hd[k] ? v : '—').join('／')}</b></div>
-      <div class="k">今年報酬中位數 <b class="${cls(o.ytd[idx])}">${fmt(o.ytd[idx])}%</b></div></div>`;
+      <div class="k">今年報酬中位數 <b class="${cls(o.ytd[idx])}">${fmt(o.ytd[idx])}%</b></div>${cardLive(g)}</div>`;
   }
   $('#cards').innerHTML = h;
 }
@@ -436,9 +482,11 @@ function hover(sel, s, e, x, fn){
 }
 function drawTable(){
   const latest = idx === W.dates.length - 1;
-  $('#stockdate').textContent = latest ? `資料日 ${fd(W.stock_date)}` : `個股表只提供最新交易日（${fd(W.stock_date)}）`;
+  const lv = latest && liveOn();
+  $('#stockdate').innerHTML = lv ? `${liveTag()} 收盤、市值、漲跌% 為盤中暫定；其他欄位為 ${fd(W.stock_date)} 收盤` : latest ? `資料日 ${fd(W.stock_date)}` : `個股表只提供最新交易日（${fd(W.stock_date)}）`;
   const cols = [['c','代號'],['n','名稱'],['px','收盤'],['cap','市值(億)'],['pct','漲跌%'],['ytd','今年%'],['r20','近20日%'],['dd','距高點%'],['ma','均線'],['hi','創高']];
-  const rows = W.stocks.filter(r => r.g.includes(stG)).sort((a, b) => {
+  const rows = W.stocks.filter(r => r.g.includes(stG)).map(r => { const z = lv && LIVE.stocks[r.c];
+    return z ? {...r, px: z[0], pct: z[1], cap: r.cap != null && r.px ? Math.round(r.cap * z[0] / r.px) : r.cap} : r; }).sort((a, b) => {
     const va = a[sortK], vb = b[sortK]; if (va == null) return 1; if (vb == null) return -1;
     return (typeof va === 'string' ? va.localeCompare(vb) : va - vb) * sortD; });
   let h = '<thead><tr>' + cols.map(([k, l]) => `<th data-k="${k}">${l}${sortK === k ? (sortD > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('') + '</tr></thead><tbody>';
