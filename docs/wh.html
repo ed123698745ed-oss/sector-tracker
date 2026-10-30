@@ -215,7 +215,7 @@ function tabs(sel, opts, get, set){
 }
 function draw(){
   const ds = W.dates[idx];
-  $('#sub').textContent = `資料日 ${fd(ds)}・盤後` + (liveOn() ? `；盤中暫定 ${LIVE.time} 只更新加權指數、市場狀態、三組卡片與個股表，其餘為收盤資料` : '');
+  $('#sub').textContent = `資料日 ${fd(ds)}・盤後` + (liveOn() ? `；盤中暫定 ${LIVE.time}（來源：${LIVE.source || '證交所基本市況報導'}）更新加權指數、市場狀態、全市場漲跌分布、四組卡片的漲跌與漲跌停、個股表價格；均線、新高低、離高點分布等仍為收盤資料` : '');
   drawIdx(); drawX(); drawDist(); drawCards(); drawDD(); drawTrend(); drawTable();
 }
 function drawIdx(){
@@ -355,13 +355,16 @@ function renderX(){
   [...$('#xspan').children].forEach((b, k) => b.setAttribute('aria-pressed', String(Object.keys(XSPANS)[k] === String(XV.span) || (Object.keys(XSPANS)[k] === '99999' && XV.span >= idx - xStart()))));
 }
 function drawDist(){
-  const o = W.groups.all, n = o.n[idx];
-  $('#distsub').textContent = W.dates[idx] < '20070702' ? '僅上市普通股（櫃買資料 2007/07 起）' : '上市櫃普通股';
+  const A = liveOn() && LIVE.all ? LIVE.all : null, g0 = W.groups.all;
+  const o = A ? {n: [A.n], up: [A.up], flat: [A.flat], down: [A.down], lu: [A.lu], ld: [A.ld], dist: [A.dist]} : g0, k0 = A ? 0 : idx;
+  $('#distsub').innerHTML = A ? `上市櫃普通股 ${liveTag()} <span class="sub">來源：${LIVE.source || '證交所基本市況報導'}；收盤後改用證交所、櫃買中心收盤行情</span>`
+    : W.dates[idx] < '20070702' ? '僅上市普通股（櫃買資料 2007/07 起）' : '上市櫃普通股';
+  const n = o.n[k0];
   if (n == null) return;
-  const u = o.up[idx], f = o.flat[idx], d = o.down[idx];
+  const u = o.up[k0], f = o.flat[k0], d = o.down[k0];
   $('#udbar').innerHTML = `<span style="width:${u/n*100}%;background:var(--up)"></span><span style="width:${f/n*100}%;background:var(--flat)"></span><span style="width:${d/n*100}%;background:var(--down)"></span>`;
-  $('#udleg').innerHTML = `<span class="up">上漲 <b class="num">${u}</b>（${fmt(u/n*100)}%）</span><span class="flat">平盤 <b class="num">${f}</b></span><span class="down">下跌 <b class="num">${d}</b>（${fmt(d/n*100)}%）</span><span class="up">漲停 <b class="num">${o.lu[idx]}</b></span><span class="down">跌停 <b class="num">${o.ld ? o.ld[idx] : '—'}</b></span><span>有效 ${n} 家</span>`;
-  const v = o.dist[idx], mx = Math.max(...v), Wd = 420, H = 170, bw = Wd / v.length;
+  $('#udleg').innerHTML = `<span class="up">上漲 <b class="num">${u}</b>（${fmt(u/n*100)}%）</span><span class="flat">平盤 <b class="num">${f}</b></span><span class="down">下跌 <b class="num">${d}</b>（${fmt(d/n*100)}%）</span><span class="up">漲停 <b class="num">${o.lu[k0]}</b></span><span class="down">跌停 <b class="num">${o.ld ? o.ld[k0] : '—'}</b></span><span>有效 ${n} 家${A ? `（盤中有成交／應查 ${A.universe}）` : ''}</span>`;
+  const v = o.dist[k0], mx = Math.max(...v), Wd = 420, H = 170, bw = Wd / v.length;
   let g = '';
   v.forEach((x, i) => {
     const h = mx ? x / mx * (H - 40) : 0, col = i < 5 ? 'var(--down)' : i === 5 ? 'var(--flat)' : 'var(--up)';
@@ -371,7 +374,11 @@ function drawDist(){
   $('#dist').innerHTML = g;
 }
 function cardLive(g){
-  if (!liveOn() || g === 'all') return '';
+  if (!liveOn()) return '';
+  if (g === 'all') { const A = LIVE.all; if (!A || !A.n) return '';
+    return `<div class="liverow"><div class="k">${liveTag()}</div>
+    <div class="k">上漲／下跌 <b><span class="up">${A.up}</span>／<span class="down">${A.down}</span></b>（有成交 ${A.n} 檔）</div>
+    <div class="k">上漲比例 <b>${fmt(A.up / A.n * 100)}%</b>　漲停／跌停 <b><span class="up">${A.lu}</span>／<span class="down">${A.ld}</span></b></div></div>`; }
   const v = W.stocks.filter(r => r.g.includes(g)).map(r => LIVE.stocks[r.c]).filter(Boolean);
   if (!v.length) return '';
   const u = v.filter(z => z[1] > 0).length, d = v.filter(z => z[1] < 0).length;

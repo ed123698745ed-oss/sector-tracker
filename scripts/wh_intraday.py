@@ -1,6 +1,7 @@
 """權值與高價股分頁：盤中暫定（約每 5 分鐘）。
 
-從證交所「基本市況報導」查加權指數與個股表（上市權值 50、上櫃權值 30、高價 30）各檔的最新成交，
+從證交所「基本市況報導」（mis.twse.com.tw，涵蓋上市與上櫃）查加權指數、全市場上市櫃普通股（約 1,950 檔，
+每次 100 檔一批、約 20 次查詢、2 分鐘內完成）的最新成交，算全市場漲跌家數、漲跌停與分布，並保留個股表各檔價格，
 寫成 wh_intraday.json，強制推到 repo 的 live 分支（單一 commit，不進 main、不觸發 Pages 重建）。
 網頁由 raw.githubusercontent.com 讀取；收盤正式資料（wh.json）日期追上後網頁自動改回收盤資料。
 
@@ -25,7 +26,31 @@ import time
 from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import glob  # noqa: E402
+import intraday  # noqa: E402
 from intraday import fetch, price, pct, at_limit_up, market_of, alert_once, TPE, ROOT  # noqa: E402
+from wh_prices import is_common  # noqa: E402
+
+intraday.BATCH = 100  # 2026-10-30 實測：100 檔一批正常回傳，200 檔回傳 0 筆、400 檔 URI 過長
+
+
+def universe():
+    """全市場上市櫃普通股：最近一份有資料的收盤行情檔裡的普通股代號（與 wh_build 全市場口徑相同）。"""
+    for f in sorted(glob.glob(os.path.join(ROOT, 'data', 'quotes', '*.json')), reverse=True):
+        q = json.load(open(f, encoding='utf-8')).get('q') or {}
+        cs = sorted(c for c in q if is_common(c))
+        if cs:
+            return cs, os.path.basename(f)[:8]
+    return [], None
+
+
+def dist(ps):
+    b = [0] * 11
+    for p in ps:
+        k = (0 if p <= -9 else 1 if p <= -5 else 2 if p <= -3 else 3 if p <= -1 else 4 if p < 0 else 5 if p == 0
+             else 6 if p < 1 else 7 if p < 3 else 8 if p < 5 else 9 if p < 9 else 10)
+        b[k] += 1
+    return b
 
 OUT_DIR = os.path.join(ROOT, 'live-out')
 OUT = os.path.join(OUT_DIR, 'wh_intraday.json')
@@ -50,10 +75,10 @@ def num(v):
         return None
 
 
-def snapshot(w, tse, now=None):
+def snapshot(w, tse, uni, now=None):
     """回傳 (out, lines)。out 為 None 表示這次不寫。"""
     now = now or datetime.datetime.now(TPE)
-    codes = sorted({r['c'] for r in w['stocks']})
+    codes = sorted(set(uni) | {r['c'] for r in w['stocks']})
     t0 = time.time()
     q, stat = fetch(codes, tse)
     ix, st2 = fetch(['t00'], {'t00'})
@@ -76,18 +101,26 @@ def snapshot(w, tse, now=None):
     if tx is None or ty is None:
         lines.append('skip: 加權指數無報價')
         return None, lines
-    stocks, priced = {}, 0
+    want, uset = {r['c'] for r in w['stocks']}, set(uni)
+    stocks, priced, ps, lu, ld = {}, 0, [], 0, 0
     for c, x in q.items():
         p = pct(x)
         if p is None:
             continue
         priced += 1
-        stocks[c] = [price(x), p, 1 if at_limit_up(x) else (-1 if at_limit_down(x) else 0)]
+        lim = 1 if at_limit_up(x) else (-1 if at_limit_down(x) else 0)
+        if c in want:
+            stocks[c] = [price(x), p, lim]
+        if c in uset:
+            ps.append(p); lu += lim == 1; ld += lim == -1
+    allg = {'n': len(ps), 'up': sum(p > 0 for p in ps), 'flat': sum(p == 0 for p in ps), 'down': sum(p < 0 for p in ps),
+            'lu': lu, 'ld': ld, 'dist': dist(ps), 'universe': len(uni)}
     times = sorted(x.get('t') for x in q.values() if x.get('t'))
     out = {'date': qdate, 'time': now.strftime('%H:%M'), 'quote_time': max(times[-1:] + [t.get('t') or '']) or None,
            'base_date': w['dates'][-1], 'taiex': tx, 'taiex_y': ty, 'n': len(codes), 'priced': priced,
-           'stocks': stocks}
-    lines.append(f"ok date {qdate} taiex {tx} ({(tx / ty - 1) * 100:+.2f}%) priced {priced}/{len(codes)} base {w['dates'][-1]}")
+           'source': '臺灣證券交易所 基本市況報導（mis.twse.com.tw）', 'all': allg, 'stocks': stocks}
+    lines.append(f"ok date {qdate} taiex {tx} ({(tx / ty - 1) * 100:+.2f}%) priced {priced}/{len(codes)} "
+                 f"all n {allg['n']} up {allg['up']} down {allg['down']} lu {lu} ld {ld} base {w['dates'][-1]}")
     return out, lines
 
 
@@ -122,6 +155,8 @@ def main(argv):
     loop, do_push = '--loop' in argv, '--push' in argv
     w = json.load(open(os.path.join(ROOT, 'docs', 'wh.json'), encoding='utf-8'))
     tse = market_of()
+    uni, uday = universe()
+    print(f'universe {len(uni)} from {uday}', flush=True)
     os.makedirs(OUT_DIR, exist_ok=True)
     fails = 0
     while True:
@@ -137,7 +172,7 @@ def main(argv):
             time.sleep(30)
             continue
         try:
-            out, lines = snapshot(w, tse, now)
+            out, lines = snapshot(w, tse, uni, now)
         except Exception as e:  # 單次失敗不中斷整個盤中迴圈
             out, lines = None, [f"error {now.strftime('%H:%M:%S')} {str(e)[:200]}"]
         if out:
