@@ -202,7 +202,7 @@ function loadLive(){
   }).catch(() => {});
 }
 const liveOn = () => LIVE && idx === W.dates.length - 1;
-const liveTag = () => `<span class="livetag">${+LIVE.date.slice(4,6)}/${+LIVE.date.slice(6)} 盤中暫定 ${LIVE.time}</span>`;
+const liveTag = t => `<span class="livetag">${+LIVE.date.slice(4,6)}/${+LIVE.date.slice(6)} 盤中暫定 ${t || LIVE.time}</span>`;
 
 function tabs(sel, opts, get, set){
   const el = $(sel); el.innerHTML = '';
@@ -215,7 +215,7 @@ function tabs(sel, opts, get, set){
 }
 function draw(){
   const ds = W.dates[idx];
-  $('#sub').textContent = `資料日 ${fd(ds)}・盤後` + (liveOn() ? `；盤中暫定 ${LIVE.time}（來源：${LIVE.source || '證交所基本市況報導'}）更新加權指數、市場狀態、全市場漲跌分布、四組卡片的漲跌與漲跌停、個股表價格；均線、新高低、離高點分布等仍為收盤資料` : '');
+  $('#sub').textContent = `資料日 ${fd(ds)}・盤後` + (liveOn() ? `；盤中暫定 ${LIVE.time}（來源：${LIVE.source || '證交所基本市況報導'}）每 5 分鐘更新加權指數、市場狀態、三組卡片與個股表，每 10 分鐘更新全市場漲跌分布與全市場卡片；均線、新高低、離高點分布等仍為收盤資料` : '');
   drawIdx(); drawX(); drawDist(); drawCards(); drawDD(); drawTrend(); drawTable();
 }
 function drawIdx(){
@@ -357,7 +357,7 @@ function renderX(){
 function drawDist(){
   const A = liveOn() && LIVE.all ? LIVE.all : null, g0 = W.groups.all;
   const o = A ? {n: [A.n], up: [A.up], flat: [A.flat], down: [A.down], lu: [A.lu], ld: [A.ld], dist: [A.dist]} : g0, k0 = A ? 0 : idx;
-  $('#distsub').innerHTML = A ? `上市櫃普通股 ${liveTag()} <span class="sub">來源：${LIVE.source || '證交所基本市況報導'}；收盤後改用證交所、櫃買中心收盤行情</span>`
+  $('#distsub').innerHTML = A ? `上市櫃普通股 ${liveTag(A.time)} <span class="sub">每 10 分鐘更新；來源：${LIVE.source || '證交所基本市況報導'}；收盤後改用證交所、櫃買中心收盤行情</span>`
     : W.dates[idx] < '20070702' ? '僅上市普通股（櫃買資料 2007/07 起）' : '上市櫃普通股';
   const n = o.n[k0];
   if (n == null) return;
@@ -376,7 +376,7 @@ function drawDist(){
 function cardLive(g){
   if (!liveOn()) return '';
   if (g === 'all') { const A = LIVE.all; if (!A || !A.n) return '';
-    return `<div class="liverow"><div class="k">${liveTag()}</div>
+    return `<div class="liverow"><div class="k">${liveTag(A.time)}</div>
     <div class="k">上漲／下跌 <b><span class="up">${A.up}</span>／<span class="down">${A.down}</span></b>（有成交 ${A.n} 檔）</div>
     <div class="k">上漲比例 <b>${fmt(A.up / A.n * 100)}%</b>　漲停／跌停 <b><span class="up">${A.lu}</span>／<span class="down">${A.ld}</span></b></div></div>`; }
   const v = W.stocks.filter(r => r.g.includes(g)).map(r => LIVE.stocks[r.c]).filter(Boolean);

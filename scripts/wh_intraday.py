@@ -1,7 +1,7 @@
 """權值與高價股分頁：盤中暫定（約每 5 分鐘）。
 
 從證交所「基本市況報導」（mis.twse.com.tw，涵蓋上市與上櫃）查加權指數、全市場上市櫃普通股（約 1,950 檔，
-每次 100 檔一批、約 20 次查詢、2 分鐘內完成）的最新成交，算全市場漲跌家數、漲跌停與分布，並保留個股表各檔價格，
+每次 100 檔一批、約 20 次查詢、2～3 分鐘；每 10 分鐘一次，其餘 5 分鐘只查指數與個股表）的最新成交，算全市場漲跌家數、漲跌停與分布，並保留個股表各檔價格，
 寫成 wh_intraday.json，強制推到 repo 的 live 分支（單一 commit，不進 main、不觸發 Pages 重建）。
 網頁由 raw.githubusercontent.com 讀取；收盤正式資料（wh.json）日期追上後網頁自動改回收盤資料。
 
@@ -75,10 +75,16 @@ def num(v):
         return None
 
 
-def snapshot(w, tse, uni, now=None):
-    """回傳 (out, lines)。out 為 None 表示這次不寫。"""
+def full_tick(now):
+    """全市場只在每 10 分鐘的 5 分（09:05、09:15…）查，錯開族群網站每 10 分鐘 :02～:04 的查詢；
+    其餘 5 分鐘只查加權指數與個股表 86 檔（約 2 次查詢）。"""
+    return now.minute % 10 == 5
+
+
+def snapshot(w, tse, uni, now=None, full=True, prev_all=None):
+    """回傳 (out, lines)。out 為 None 表示這次不寫。full=False 時沿用上一筆全市場結果（附其時間）。"""
     now = now or datetime.datetime.now(TPE)
-    codes = sorted(set(uni) | {r['c'] for r in w['stocks']})
+    codes = sorted(set(uni) | {r['c'] for r in w['stocks']}) if full else sorted({r['c'] for r in w['stocks']})
     t0 = time.time()
     q, stat = fetch(codes, tse)
     ix, st2 = fetch(['t00'], {'t00'})
@@ -114,13 +120,17 @@ def snapshot(w, tse, uni, now=None):
         if c in uset:
             ps.append(p); lu += lim == 1; ld += lim == -1
     allg = {'n': len(ps), 'up': sum(p > 0 for p in ps), 'flat': sum(p == 0 for p in ps), 'down': sum(p < 0 for p in ps),
-            'lu': lu, 'ld': ld, 'dist': dist(ps), 'universe': len(uni)}
+            'lu': lu, 'ld': ld, 'dist': dist(ps), 'universe': len(uni), 'time': now.strftime('%H:%M')} if full else (
+        prev_all if prev_all and prev_all.get('date') == qdate else None)
+    if allg is not None:
+        allg['date'] = qdate
     times = sorted(x.get('t') for x in q.values() if x.get('t'))
     out = {'date': qdate, 'time': now.strftime('%H:%M'), 'quote_time': max(times[-1:] + [t.get('t') or '']) or None,
            'base_date': w['dates'][-1], 'taiex': tx, 'taiex_y': ty, 'n': len(codes), 'priced': priced,
            'source': '臺灣證券交易所 基本市況報導（mis.twse.com.tw）', 'all': allg, 'stocks': stocks}
-    lines.append(f"ok date {qdate} taiex {tx} ({(tx / ty - 1) * 100:+.2f}%) priced {priced}/{len(codes)} "
-                 f"all n {allg['n']} up {allg['up']} down {allg['down']} lu {lu} ld {ld} base {w['dates'][-1]}")
+    a = allg or {}
+    lines.append(f"ok {'full' if full else 'light'} date {qdate} taiex {tx} ({(tx / ty - 1) * 100:+.2f}%) priced {priced}/{len(codes)} "
+                 f"all {a.get('time')} n {a.get('n')} up {a.get('up')} down {a.get('down')} lu {a.get('lu')} ld {a.get('ld')} base {w['dates'][-1]}")
     return out, lines
 
 
@@ -158,7 +168,7 @@ def main(argv):
     uni, uday = universe()
     print(f'universe {len(uni)} from {uday}', flush=True)
     os.makedirs(OUT_DIR, exist_ok=True)
-    fails = 0
+    fails, prev_all = 0, None
     while True:
         now = datetime.datetime.now(TPE)
         hm = now.strftime('%H%M')
@@ -172,11 +182,14 @@ def main(argv):
             time.sleep(30)
             continue
         try:
-            out, lines = snapshot(w, tse, uni, now)
+            # 迴圈第一次一律查全市場，之後依 full_tick
+            full = prev_all is None or full_tick(now)
+            out, lines = snapshot(w, tse, uni, now, full, prev_all)
         except Exception as e:  # 單次失敗不中斷整個盤中迴圈
             out, lines = None, [f"error {now.strftime('%H:%M:%S')} {str(e)[:200]}"]
         if out:
             fails = 0
+            prev_all = out.get('all') or prev_all
             with open(OUT, 'w', encoding='utf-8') as f:
                 json.dump(out, f, ensure_ascii=False, separators=(',', ':'))
             if do_push:
