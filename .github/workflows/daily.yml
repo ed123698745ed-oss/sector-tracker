@@ -62,8 +62,8 @@ jobs:
           python3 scripts/wh_monthly.py || echo "::warning::名單月更新失敗，沿用上月名單"
           python3 scripts/wh_prices.py
           python3 scripts/wh_build.py
-      - name: 權值高價股市場狀態改變推 LINE
-        if: steps.fetch.outputs.skip != '1'
+      - name: 權值高價股市場狀態改變推 LINE（Ed 2026-10-30 指示暫停）
+        if: false  # 暫停推播；恢復時改回 steps.fetch.outputs.skip != '1'
         continue-on-error: true
         env:
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
@@ -94,8 +94,8 @@ jobs:
           name: wh-notify-ledger-${{ github.run_id }}
           path: data/wh_notify_ledger.json
           retention-days: 30
-      - name: 權值高價股市場狀態推播重試（僅補送已記錄的失敗）
-        if: always() && steps.fetch.outputs.skip == '1'
+      - name: 權值高價股市場狀態推播重試（僅補送已記錄的失敗；暫停中）
+        if: false  # 暫停推播；恢復時改回 always() && steps.fetch.outputs.skip == '1'
         continue-on-error: true
         env:
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}

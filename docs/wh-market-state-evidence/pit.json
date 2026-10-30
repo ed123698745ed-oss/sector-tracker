@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-10-30T01:23:55+08:00",
+  "generated_at": "2026-10-30T10:08:25+08:00",
   "stock_date": "20261029",
-  "rule": "2026-10-29",
-  "baseline_commit": "2def1cf129c1e44a777d117d04e8c4f21fc876f8",
+  "rule": "2026-10-30",
+  "baseline_commit": null,
   "quick": false,
   "method": "對每個受檢交易日 i，只保留 dates、taiex、全市場 n/ld/lu/dd、turnover、conc 的前綴 [:i+1]（含 i），呼叫 wh_extreme.compute，比對一次完整序列在 i 的 state 與三位小數分數。",
   "checked_days": 5591,
@@ -12,8 +12,8 @@
   "published_wh_json_vs_full_recompute": "零差異",
   "diffs": [],
   "hashes": {
-    "published_state_scores": "8333703760a2a8d21cb05d7765ce7c0de8d6c4da5c30a62851aa694aba76947a",
-    "recomputed_state_scores": "8333703760a2a8d21cb05d7765ce7c0de8d6c4da5c30a62851aa694aba76947a",
+    "published_state_scores": "66c31ccc3812dd1e507647fb32834ee0a8806cffb6549286079d71597a058ddd",
+    "recomputed_state_scores": "66c31ccc3812dd1e507647fb32834ee0a8806cffb6549286079d71597a058ddd",
     "turnover": "c9d1f7a5defceea78d47d0e8f1b71bb6f77d83774a955e4c20f64a222062cde7",
     "conc": "1ea1b248913dbe21f84dea089e3b0306d2339795321b4486729f1aa0f7c81bee"
   },
@@ -29,15 +29,15 @@
     "last_date": "20261029",
     "first_scored_date": "20060210",
     "scored_days": 5093,
-    "abnormal_days": 695,
-    "abnormal_share": 0.13646181032790103,
+    "abnormal_days": 842,
+    "abnormal_share": 0.16532495582171608,
     "state_days_on_scored": {
-      "normal": 4398,
-      "down": 302,
-      "up": 277,
-      "conc": 116
+      "normal": 4251,
+      "down": 414,
+      "up": 428,
+      "conc": 0
     },
-    "rule": "2026-10-29",
+    "rule": "2026-10-30",
     "definition": "有分數日＝down 不是 null。stock_date=20261029 時為 5093 日，其中 state≠0 為 695 日（13.65%）。"
   },
   "unverifiable": [
@@ -101,7 +101,7 @@
       "field": "Ed 原交審事件表（起迄、母體、資料版本）",
       "period": "交審表所列各窗",
       "source": "不在 repo",
-      "reason": "原交審事件表尚未驗證；config/wh_extreme_events.json 的 ed_review 起迄為空，見 events.md。"
+      "reason": "舊版調參宣稱占比的起迄未保存；2026-10-30 起不再作為驗收依據，見 events.md。"
     }
   ]
 }

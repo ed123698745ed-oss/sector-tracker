@@ -1,6 +1,6 @@
 """權值與高價股分頁：市場狀態（非常態判定）改變時推 LINE。
 
-只推觀察訊息，不含買賣建議。正式推播維持啟用；本檔補的是核對能力，不是停用。
+只推觀察訊息，不含買賣建議。Ed 2026-10-30 指示暫停推播：daily.yml 兩個推播步驟已設 if: false，本檔保留供恢復時使用。
 
 排程（`.github/workflows/daily.yml`）：
   台北時間週一至週五 13:52、14:12、14:32、14:52、15:12、15:42、16:20、18:20。
@@ -99,7 +99,7 @@ def readiness(w, root=None, expect_date=None, check_quotes=True):
     if not isinstance(dates, list) or len(dates) < 2:
         reasons.append('short_history')
     n = len(dates) if isinstance(dates, list) else 0
-    for k in ('state', 'down', 'up', 'conc'):
+    for k in ('state', 'dd', 'ru', 'conc'):
         if not isinstance(e.get(k), list) or len(e[k]) != n:
             reasons.append('length_mismatch')
             break
@@ -121,25 +121,27 @@ def readiness(w, root=None, expect_date=None, check_quotes=True):
             break
     if n and 'length_mismatch' not in reasons:
         st = e['state'][-1]
-        score = {-1: e['down'][-1], 1: e['up'][-1], 2: e['conc'][-1]}.get(st)
+        score = {-1: e['dd'][-1], 1: e['ru'][-1]}.get(st)
         if st != 0 and score is None:
             reasons.append('abnormal_score_missing')
     return (not reasons), reasons
 
 
-def format_message(date, prev, curr, down, up, conc, taiex, test=False):
+def format_message(date, prev, curr, dd, ru, conc, taiex, test=False):
+    pc = lambda v: '—' if v is None else f'{v * 100:+.1f}%'
     sc = lambda v: '—' if v is None else f'{v * 100:.0f}'
+    th, wn = wh_extreme.TH, wh_extreme.WIN
     txl = f"加權指數 {taiex:,.0f}\n" if taiex else ''
     prefix = '【測試】' if test else ''
     return (f"{prefix}【權值高價股・市場狀態】{date[:4]}-{date[4:6]}-{date[6:]}\n"
             f"{NAME[prev]} → {NAME[curr]}\n"
-            f"下跌分數 {sc(down)}（進入85）／上漲分數 {sc(up)}（進入87）／資金集中 {sc(conc)}（進入98.5）\n"
+            f"距{wn['down']}日高 {pc(dd)}（進入−{th['down'][0] * 100:g}%）／距{wn['up']}日低 {pc(ru)}（進入+{th['up'][0] * 100:g}%）／資金集中 {sc(conc)}（參考）\n"
             + txl + "只供觀察，不是交易訊號。\nhttps://ed123698745ed-oss.github.io/sector-tracker/wh.html")
 
 
 def preview_test_message():
     """固定的測試示範，不讀秘密、不送出。"""
-    return format_message('20261029', 0, -1, 0.694, 0.394, 0.595, 46368, test=True) + '\n（測試示範，未送出）'
+    return format_message('20261029', 0, -1, -0.093, 0.019, 0.595, 46368, test=True) + '\n（測試示範，未送出）'
 
 
 def _public_record(stock_date, prev, curr, result, attempts, scores, message, recipient):
@@ -152,8 +154,8 @@ def _public_record(stock_date, prev, curr, result, attempts, scores, message, re
         'at': _now(),
         'recipient': recipient,  # configured / unset；沒有 user id
         'rule': wh_extreme.RULE_ID,
-        'down': scores[0],
-        'up': scores[1],
+        'dd': scores[0],
+        'ru': scores[1],
         'conc': scores[2],
         'message_sha256': hashlib.sha256(message.encode()).hexdigest() if message else None,
         'message': message,
@@ -218,9 +220,9 @@ def run(root=None, *, dry_run=False, retry_only=False, preview_test=False, expec
         evidence['action'] = 'not_ready'
         return evidence
     prev, curr = e['state'][-2], e['state'][-1]
-    scores = (e['down'][-1], e['up'][-1], e['conc'][-1])
+    scores = (e['dd'][-1], e['ru'][-1], e['conc'][-1])
     evidence.update({'from': prev, 'to': curr, 'from_name': NAME[prev], 'to_name': NAME[curr],
-                     'down': scores[0], 'up': scores[1], 'conc': scores[2]})
+                     'dd': scores[0], 'ru': scores[1], 'conc': scores[2]})
     if prev == curr:
         evidence.update({'action': 'noop', 'reason': 'state_unchanged'})
         return evidence

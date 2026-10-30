@@ -277,8 +277,8 @@ def run_events(w):
     lines = [
         '# 市場狀態事件表',
         '',
-        '> **未驗證：原交審事件表尚未驗證。** repo 沒有 Ed 交審表的起迄、母體與當時資料版本；下表 Ed 列只列宣稱占比，不重算。'
-        '補證期間頁面 `docs/wh.html` 市場狀態區塊同步顯示「補證期間：原交審事件表尚未驗證」。',
+        '> **2026-10-30 起改用價格規則。** Ed 2026-10-30 表示事件命中率不是主要標準，改以「抓到劇烈快速下跌／急漲波段、盡量抓到頂部，搭配期間累積漲跌」判斷；'
+        '下表 Ed 列為舊版百分位規則調參時的宣稱占比（起迄未保存），僅留作歷史紀錄，不再當成本規則的驗收依據。',
         '',
         '原交審窗未驗證／待 Ed 補起訖。下面自訂窗是 Eve 抽查對照，不是原表。',
         '',
@@ -327,16 +327,16 @@ def run_boundaries():
         '# 市場狀態狀態機邊界案例',
         '',
         f"規則 `{table['rule']}`。全部案例 {'通過' if table['pass'] else '有落差'}。",
-        '前態由上一日實際結果帶入；序列首日的前態是常態 0。分數是未四捨五入的判定輸入。',
-        '恰小於門檻的輸入是 `math.nextafter(門檻, 0)`，用來表示浮點數上的下一個較小值。',
+        '價格規則：窗口縮為 3 日以便手算；門檻與正式規則相同（下跌 −9%／反彈 6%，上漲 +20%／回落 5%）。',
+        '恰等於門檻的收盤以同一乘式產生；恰差一點用 `math.nextafter`。',
         '',
-        '| id | 組 | 日 | 前態 | 下跌 | 上漲 | 集中 | 預期 | 實際 | 相符 | 說明 |',
-        '| --- | --- | ---: | ---: | --- | --- | --- | ---: | ---: | --- | --- |',
+        '| id | 組 | 日 | 前態 | 收盤 | 距窗高 | 距窗低 | 預期 | 實際 | 相符 | 說明 |',
+        '| --- | --- | ---: | ---: | ---: | --- | --- | ---: | ---: | --- | --- |',
     ]
     for r in table['rows']:
         lines.append(
-            f"| {r['id']} | {r['group']} | {r['day']} | {r['prev']} | {_fmt_num(r['down'])} | {_fmt_num(r['up'])} | "
-            f"{_fmt_num(r['conc'])} | {r['expected']} | {r['actual']} | {str(r['match']).lower()} | {r['desc']} |"
+            f"| {r['id']} | {r['group']} | {r['day']} | {r['prev']} | {r['price']!r} | {_fmt_num(r['dd'])} | {_fmt_num(r['ru'])} | "
+            f"{r['expected']} | {r['actual']} | {str(r['match']).lower()} | {r['desc']} |"
         )
     lines.append('')
     _write('state-machine.md', '\n'.join(lines))
@@ -399,7 +399,7 @@ UNVERIFIABLE_SCOPE = [
         'field': 'Ed 原交審事件表（起迄、母體、資料版本）',
         'period': '交審表所列各窗',
         'source': '不在 repo',
-        'reason': '原交審事件表尚未驗證；config/wh_extreme_events.json 的 ed_review 起迄為空，見 events.md。',
+        'reason': '舊版調參宣稱占比的起迄未保存；2026-10-30 起不再作為驗收依據，見 events.md。',
     },
 ]
 
@@ -445,7 +445,7 @@ def run_pit(w, quick=False):
         'generated_at': _now(),
         'stock_date': w.get('stock_date'),
         'rule': wh_extreme.RULE_ID,
-        'baseline_commit': wh_extreme.TH_VERSIONS[-1]['introduced_commit'],
+        'baseline_commit': wh_extreme.TH_VERSIONS[-1].get('introduced_commit'),
         'quick': quick,
         'method': '對每個受檢交易日 i，只保留 dates、taiex、全市場 n/ld/lu/dd、turnover、conc 的前綴 [:i+1]（含 i），呼叫 wh_extreme.compute，比對一次完整序列在 i 的 state 與三位小數分數。',
         'checked_days': len(indexes),
@@ -533,8 +533,9 @@ def _pit_init(payload):
 
 def _compare_day(i, dates, taiex, allg, turnover, conc, full):
     got = _pit_one(i, dates, taiex, allg, turnover, conc)
-    full_row = (full['state'][i], full['down'][i], full['up'][i], full['conc'][i])
-    trunc_row = (got['state'][-1], got['down'][-1], got['up'][-1], got['conc'][-1])
+    keys = ('state', 'dd', 'ru', 'down', 'up', 'conc')
+    full_row = tuple(full[k][i] for k in keys)
+    trunc_row = tuple(got[k][-1] for k in keys)
     if trunc_row != full_row:
         return {'i': i, 'date': dates[i], 'full': list(full_row), 'truncated': list(trunc_row)}
     return None
@@ -548,17 +549,17 @@ def _pit_worker(k):
 def write_readme():
     text = """# 市場狀態補證產出
 
-由 `python3 scripts/wh_extreme_audit.py` 產生。正式門檻沒有改，正式推播沒有關。
+由 `python3 scripts/wh_extreme_audit.py` 產生。現行規則 2026-10-30（價格規則）；LINE 推播依 Ed 2026-10-30 指示暫停。
 
 | 檔案 | 內容 |
 | --- | --- |
 | pit.md / pit.json | 逐日截斷重算 vs 完整序列。零差異或差異清單。並說明無法驗證的範圍。 |
 | state-machine.md / state-machine.json | 進入／退出恰等於門檻、同時達標、維持與競合、退出切換、暖機與缺值。含輸入、前態、預期、實際。 |
-| events.md / events.json | 事件表欄位定義。**原交審事件表尚未驗證**（Ed 原交審窗待補起訖）。Eve 自訂窗另行對照，不當成原表。 |
+| events.md / events.json | 各自訂窗的狀態天數。舊版調參宣稱占比僅留作歷史紀錄，不是現行規則的驗收依據。 |
 | yearly.md / yearly.json | 檔內每一年的切換次數，含零次、無分數、不完整年。5093／695 口徑在 snapshot。 |
 | notify.md / notify.json | 推播 dry-run 證據（mock push、不連網）：狀態變化、不變、同日重跑去重、失敗重試、未就緒、ledger 與 git 提交失敗。由 `python3 scripts/wh_notify_evidence.py` 產生。 |
 
-> **未驗證：原交審事件表尚未驗證。** 本目錄所有占比都只對 Eve 自訂窗或檔內資料計算，不能當成已核對 Ed 原交審表。
+> 現行規則的檢視重點是各段非常態的波段起點、極值與累積漲跌（頁面「歷次非常態期間」表），不是事件占比。
 
 pit.md 的「無法驗證範圍」列出沒有對 `wh_prices`／`wh_build` 逐日前綴重跑的欄位、期間與資料源。
 

@@ -95,9 +95,9 @@ td.num{font-size:15px}
   </section>
 
   <section>
-    <h2>市場狀態<small>非常態（瘋狂）判定，約 15% 交易日</small></h2>
+    <h2>市場狀態<small>非常態（瘋狂）判定，約 16% 交易日</small></h2>
     <div class="panel">
-      <div style="margin-bottom:8px"><span class="unverified" title="Ed 原交審事件表的起迄、母體與資料版本不在 repo，事件占比未與原表核對；本功能尚待 Eve 複審">補證期間：原交審事件表尚未驗證</span> <a class="note" href="wh-market-state-evidence/events.md">說明</a></div>
+      <div style="margin-bottom:8px"><span class="unverified" title="2026-10-30 起改用價格規則，仍在試行觀察">試行規則 2026-10-30 版</span></div>
       <div id="xstate" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px"></div>
       <div class="xtools">
         <span class="sub">顯示</span><div class="tabs seg" id="xspan" style="margin:0"></div>
@@ -110,9 +110,9 @@ td.num{font-size:15px}
         <span class="sub num" id="xwin"></span>
       </div>
       <svg id="xchart" viewBox="0 0 420 220" role="img" aria-label="自2005年起的非常態色帶與加權指數，可縮放與拖曳"></svg>
-      <div class="legend"><span><i style="background:var(--down)"></i>下跌瘋狂</span><span><i style="background:var(--up)"></i>上漲瘋狂</span><span><i style="background:#d99a1e"></i>資金集中炒作</span><span>黑線＝加權指數（對數）。預設顯示近 3 年；按鈕或＋／－縮放，滑鼠滾輪、雙指捏合可縮放，拖曳圖表或「歷史位置」可平移，最早至 2005 年；右端最晚為上方所選交易日。</span></div>
+      <div class="legend"><span><i style="background:var(--down)"></i>下跌瘋狂</span><span><i style="background:var(--up)"></i>上漲瘋狂</span><span>黑線＝加權指數（對數）。預設顯示近 3 年；按鈕或＋／－縮放，滑鼠滾輪、雙指捏合可縮放，拖曳圖表或「歷史位置」可平移，最早至 2005 年；右端最晚為上方所選交易日。</span></div>
       <details style="margin-top:10px"><summary class="sub" style="cursor:pointer">歷次非常態期間</summary><div class="tblwrap" style="margin-top:8px"><table id="xtbl"></table></div></details>
-      <div class="note" style="margin-top:8px">下跌分數＝5日與20日跌幅、5日跌停家數占比、20日波動度、離高點≥20%股票占比的歷史百分位平均；上漲分數＝20日漲幅、指數對季線乖離、成交值放大倍數、5日漲停家數占比的百分位平均；資金集中＝前5大成交值個股（排除台積電）占比。百分位只用 2005-01-01 起至當日（含當日）的資料。進入／退出門檻：下跌 0.85／0.72、上漲 0.87／0.80、資金集中 0.985／0.96。頁面分數是閱讀用的整數百分數，判定用未四捨五入的分數。只供觀察，不是交易訊號。規則全文見 <a href="wh-market-state-rules.md">市場狀態規則</a>。</div>
+      <div class="note" style="margin-top:8px">下跌瘋狂：加權指數收盤比近 15 日最高收盤低 9% 以上時進入，從期間最低收盤反彈 6% 時解除。上漲瘋狂：收盤比近 40 日最低收盤高 20% 以上時進入，從期間最高收盤回落 5% 時解除。解除當日為常態。「波段起點」為進入時窗口內的最高（下跌）或最低（上漲）收盤日；「極值」為期間最低或最高收盤。窗口只用 2005-01-01 起至當日的收盤，不讀未來。資金集中分數（前 5 大成交值個股排除台積電的占比百分位）只供參考，不參與判定。只供觀察，不是交易訊號。規則全文見 <a href="wh-market-state-rules.md">市場狀態規則</a>。</div>
     </div>
   </section>
 
@@ -214,6 +214,12 @@ function xEpisodes(){
     out.push({s: i, e: j, k: st[i]}); i = j + 1; }
   return out;
 }
+function xLeg(ep){   // 波段起點（進入時窗口內最高／最低收盤）與期間極值
+  const wn = (W.ext.win || {down: 15, up: 40})[ep.k < 0 ? 'down' : 'up'], T = W.taiex, dn = ep.k < 0;
+  let b = ep.s; for (let i = Math.max(0, ep.s - wn); i <= ep.s; i++) if (T[i] && (dn ? T[i] > T[b] : T[i] < T[b])) b = i;
+  let x = ep.s; for (let i = ep.s; i <= ep.e; i++) if (T[i] && (dn ? T[i] < T[x] : T[i] > T[x])) x = i;
+  return {b, x, base: T[b], ext: T[x]};
+}
 function xStart(){ const i = W.dates.findIndex(d => d >= '20050101'); return i < 0 ? 0 : i; }
 const XV = {span: 750, end: null};
 const XSPANS = {250:'1 年', 500:'2 年', 750:'3 年', 1250:'5 年', 99999:'全部'};
@@ -263,19 +269,28 @@ function xInit(){
 function drawX(){
   const x_ = W.ext; if (!x_) return;
   const k = x_.state[idx], [lab, col] = XS[String(k)];
-  let run = 0; for (let i = idx; i >= 0 && x_.state[i] === k; i--) run++;
-  const sc = (v) => v == null ? '—' : (v * 100).toFixed(0);
-  $('#xstate').innerHTML = `<span style="font-size:20px;font-weight:700;color:${col}">● ${lab}</span>` +
-    (k ? `<span class="sub">已連續 ${run} 個交易日</span>` : '') +
-    `<span class="sub">下跌分數 <b class="num">${sc(x_.down[idx])}</b>／進入 85</span><span class="sub">上漲分數 <b class="num">${sc(x_.up[idx])}</b>／進入 87</span><span class="sub">資金集中 <b class="num">${sc(x_.conc[idx])}</b>／進入 98.5</span>`;
+  const pc = v => v == null ? '—' : (v > 0 ? '+' : '') + (v * 100).toFixed(1) + '%';
+  const th = x_.th || {down: [0.09, 0.06], up: [0.2, 0.05]}, wn = x_.win || {down: 15, up: 40};
+  let h = `<span style="font-size:20px;font-weight:700;color:${col}">● ${lab}</span>`;
+  const ep = xEpisodes().find(e => e.s <= idx && e.e >= idx);
+  if (ep && k) { const L = xLeg({s: ep.s, e: idx, k}), cur = W.taiex[idx];
+    h += `<span class="sub">已連續 <b class="num">${idx - ep.s + 1}</b> 個交易日</span>` +
+      `<span class="sub">波段起點 ${fd(W.dates[L.b])} 起累積 <b class="num ${cls(cur / L.base - 1)}">${pc(cur / L.base - 1)}</b></span>` +
+      `<span class="sub">期間${k < 0 ? '最低' : '最高'} ${fd(W.dates[L.x])}（起點起 <b class="num">${pc(L.ext / L.base - 1)}</b>）</span>` +
+      `<span class="sub">${k < 0 ? '反彈' : '回落'}至 ${Math.round(k < 0 ? L.ext * (1 + th.down[1]) : L.ext * (1 - th.up[1])).toLocaleString('zh-TW')} 解除</span>`;
+  } else h += `<span class="sub">距 ${wn.down} 日高 <b class="num">${pc(x_.dd ? x_.dd[idx] : null)}</b>／進入 −${th.down[0] * 100}%</span>` +
+      `<span class="sub">距 ${wn.up} 日低 <b class="num">${pc(x_.ru ? x_.ru[idx] : null)}</b>／進入 +${th.up[0] * 100}%</span>`;
+  h += `<span class="sub">資金集中 <b class="num">${x_.conc[idx] == null ? '—' : (x_.conc[idx] * 100).toFixed(0)}</b>（僅參考）</span>`;
+  $('#xstate').innerHTML = h;
   const sel = $('#xyear'), y0 = W.dates[xStart()].slice(0, 4), y1 = W.dates[idx].slice(0, 4);
   let opts = ''; for (let y = +y1; y >= +y0; y--) opts += `<option value="${y}">${y}</option>`;
   sel.innerHTML = opts;
   renderX();
-  const eps = xEpisodes().reverse();
-  $('#xtbl').innerHTML = '<thead><tr><th>開始</th><th>結束</th><th>狀態</th><th>天數</th><th>期間加權%</th></tr></thead><tbody>' +
-    eps.map(ep => { const a = W.taiex[ep.s - 1] || W.taiex[ep.s], b = W.taiex[ep.e]; const r = a && b ? (b / a - 1) * 100 : null;
-      return `<tr><td>${fd(W.dates[ep.s])}</td><td>${fd(W.dates[ep.e])}</td><td style="color:${XS[String(ep.k)][1]}">${XS[String(ep.k)][0]}</td><td class="num">${ep.e - ep.s + 1}</td><td class="num ${cls(r)}">${fmt(r)}</td></tr>`; }).join('') + '</tbody>';
+  const eps = xEpisodes().reverse(), last = W.dates.length - 1;
+  $('#xtbl').innerHTML = '<thead><tr><th>開始</th><th>結束</th><th>狀態</th><th>天數</th><th>波段起點</th><th>極值日</th><th>起點→極值</th><th>進場→結束</th></tr></thead><tbody>' +
+    eps.map(ep => { const L = xLeg(ep), a = W.taiex[ep.s], b = W.taiex[ep.e], live = ep.e === last && x_.state[last] === ep.k;
+      return `<tr><td>${fd(W.dates[ep.s])}</td><td>${live ? '進行中' : fd(W.dates[ep.e])}</td><td style="color:${XS[String(ep.k)][1]}">${XS[String(ep.k)][0]}</td><td class="num">${ep.e - ep.s + 1}</td>` +
+        `<td>${fd(W.dates[L.b])}</td><td>${fd(W.dates[L.x])}</td><td class="num ${cls(L.ext - L.base)}">${pc(L.ext / L.base - 1)}</td><td class="num ${cls(b - a)}">${a && b ? pc(b / a - 1) : '—'}</td></tr>`; }).join('') + '</tbody>';
 }
 function renderX(){
   const x_ = W.ext; if (!x_) return;

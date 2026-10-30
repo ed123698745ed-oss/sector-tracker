@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-30T01:22:47+08:00",
+  "generated_at": "2026-10-30T10:05:19+08:00",
   "stock_date": "20261029",
-  "rule": "2026-10-29",
+  "rule": "2026-10-30",
   "switch_definition": "切換＝相鄰兩個交易日（wh.json dates 順序）state 不同，計入新狀態那天的西元年。暖機期間 state 維持 0，不產生切換。這與推播用的 state[-2]≠state[-1] 同一口徑。",
   "calendar_limit": "中間年份是否缺某個交易所交易日，未與交易所行事曆逐日勾稽。缺資料只用於檔內完全沒有該年日期的年份。",
-  "total_switches": 122,
+  "total_switches": 78,
   "years_in_file": 23,
   "years_with_scores": 21,
   "years_with_at_least_one_switch": 15,
@@ -16,8 +16,8 @@
     "2019",
     "2023"
   ],
-  "mean_per_scored_year_including_zeros": 5.809523809523809,
-  "mean_per_year_that_had_a_switch": 8.133333333333333,
+  "mean_per_scored_year_including_zeros": 3.7142857142857144,
+  "mean_per_year_that_had_a_switch": 5.2,
   "about_8_1": "約 8.1 次／年對應「有至少一次切換的年份」當分母（零次年排除）。全部有分數年份當分母會更低。零次年不是缺資料。",
   "snapshot": {
     "stock_date": "20261029",
@@ -26,15 +26,15 @@
     "last_date": "20261029",
     "first_scored_date": "20060210",
     "scored_days": 5093,
-    "abnormal_days": 695,
-    "abnormal_share": 0.13646181032790103,
+    "abnormal_days": 842,
+    "abnormal_share": 0.16532495582171608,
     "state_days_on_scored": {
-      "normal": 4398,
-      "down": 302,
-      "up": 277,
-      "conc": 116
+      "normal": 4251,
+      "down": 414,
+      "up": 428,
+      "conc": 0
     },
-    "rule": "2026-10-29",
+    "rule": "2026-10-30",
     "definition": "有分數日＝down 不是 null。stock_date=20261029 時為 5093 日，其中 state≠0 為 695 日（13.65%）。"
   },
   "years": [
@@ -83,13 +83,13 @@
       "year": "2006",
       "trading_days": 248,
       "scored_days": 225,
-      "abnormal_days": 48,
-      "switches": 12,
+      "abnormal_days": 16,
+      "switches": 2,
       "states": {
-        "normal": 177,
-        "down": 18,
-        "up": 28,
-        "conc": 2
+        "normal": 209,
+        "down": 16,
+        "up": 0,
+        "conc": 0
       },
       "first_date": "20060102",
       "last_date": "20061229",
@@ -102,12 +102,12 @@
       "year": "2007",
       "trading_days": 247,
       "scored_days": 247,
-      "abnormal_days": 67,
-      "switches": 10,
+      "abnormal_days": 63,
+      "switches": 6,
       "states": {
-        "normal": 180,
-        "down": 37,
-        "up": 30,
+        "normal": 184,
+        "down": 45,
+        "up": 18,
         "conc": 0
       },
       "first_date": "20070102",
@@ -121,11 +121,11 @@
       "year": "2008",
       "trading_days": 249,
       "scored_days": 249,
-      "abnormal_days": 127,
-      "switches": 18,
+      "abnormal_days": 85,
+      "switches": 10,
       "states": {
-        "normal": 122,
-        "down": 127,
+        "normal": 164,
+        "down": 85,
         "up": 0,
         "conc": 0
       },
@@ -140,12 +140,12 @@
       "year": "2009",
       "trading_days": 251,
       "scored_days": 251,
-      "abnormal_days": 72,
+      "abnormal_days": 77,
       "switches": 8,
       "states": {
-        "normal": 179,
-        "down": 10,
-        "up": 62,
+        "normal": 174,
+        "down": 24,
+        "up": 53,
         "conc": 0
       },
       "first_date": "20090105",
@@ -159,11 +159,11 @@
       "year": "2010",
       "trading_days": 251,
       "scored_days": 251,
-      "abnormal_days": 3,
-      "switches": 2,
+      "abnormal_days": 40,
+      "switches": 4,
       "states": {
-        "normal": 248,
-        "down": 3,
+        "normal": 211,
+        "down": 40,
         "up": 0,
         "conc": 0
       },
@@ -178,11 +178,11 @@
       "year": "2011",
       "trading_days": 247,
       "scored_days": 247,
-      "abnormal_days": 27,
-      "switches": 10,
+      "abnormal_days": 52,
+      "switches": 6,
       "states": {
-        "normal": 220,
-        "down": 27,
+        "normal": 195,
+        "down": 52,
         "up": 0,
         "conc": 0
       },
@@ -197,13 +197,13 @@
       "year": "2012",
       "trading_days": 250,
       "scored_days": 250,
-      "abnormal_days": 32,
-      "switches": 8,
+      "abnormal_days": 34,
+      "switches": 2,
       "states": {
-        "normal": 218,
+        "normal": 216,
         "down": 0,
-        "up": 14,
-        "conc": 18
+        "up": 34,
+        "conc": 0
       },
       "first_date": "20120102",
       "last_date": "20121228",
@@ -256,11 +256,11 @@
       "year": "2015",
       "trading_days": 244,
       "scored_days": 244,
-      "abnormal_days": 15,
-      "switches": 4,
+      "abnormal_days": 5,
+      "switches": 2,
       "states": {
-        "normal": 229,
-        "down": 15,
+        "normal": 239,
+        "down": 5,
         "up": 0,
         "conc": 0
       },
@@ -315,13 +315,13 @@
       "year": "2018",
       "trading_days": 247,
       "scored_days": 247,
-      "abnormal_days": 16,
-      "switches": 8,
+      "abnormal_days": 37,
+      "switches": 2,
       "states": {
-        "normal": 231,
-        "down": 10,
+        "normal": 210,
+        "down": 37,
         "up": 0,
-        "conc": 6
+        "conc": 0
       },
       "first_date": "20180102",
       "last_date": "20181228",
@@ -354,12 +354,12 @@
       "year": "2020",
       "trading_days": 245,
       "scored_days": 245,
-      "abnormal_days": 29,
-      "switches": 4,
+      "abnormal_days": 132,
+      "switches": 8,
       "states": {
-        "normal": 216,
-        "down": 10,
-        "up": 19,
+        "normal": 113,
+        "down": 19,
+        "up": 113,
         "conc": 0
       },
       "first_date": "20200102",
@@ -373,13 +373,13 @@
       "year": "2021",
       "trading_days": 244,
       "scored_days": 244,
-      "abnormal_days": 97,
-      "switches": 10,
+      "abnormal_days": 7,
+      "switches": 2,
       "states": {
-        "normal": 147,
-        "down": 4,
-        "up": 21,
-        "conc": 72
+        "normal": 237,
+        "down": 7,
+        "up": 0,
+        "conc": 0
       },
       "first_date": "20210104",
       "last_date": "20211230",
@@ -392,13 +392,13 @@
       "year": "2022",
       "trading_days": 246,
       "scored_days": 246,
-      "abnormal_days": 28,
-      "switches": 6,
+      "abnormal_days": 44,
+      "switches": 4,
       "states": {
-        "normal": 218,
-        "down": 10,
+        "normal": 202,
+        "down": 44,
         "up": 0,
-        "conc": 18
+        "conc": 0
       },
       "first_date": "20220103",
       "last_date": "20221230",
@@ -435,8 +435,8 @@
       "switches": 4,
       "states": {
         "normal": 228,
-        "down": 5,
-        "up": 9,
+        "down": 14,
+        "up": 0,
         "conc": 0
       },
       "first_date": "20240102",
@@ -450,12 +450,12 @@
       "year": "2025",
       "trading_days": 243,
       "scored_days": 243,
-      "abnormal_days": 13,
-      "switches": 4,
+      "abnormal_days": 146,
+      "switches": 6,
       "states": {
-        "normal": 230,
-        "down": 13,
-        "up": 0,
+        "normal": 97,
+        "down": 14,
+        "up": 132,
         "conc": 0
       },
       "first_date": "20250102",
@@ -469,12 +469,12 @@
       "year": "2026",
       "trading_days": 197,
       "scored_days": 197,
-      "abnormal_days": 107,
-      "switches": 14,
+      "abnormal_days": 90,
+      "switches": 12,
       "states": {
-        "normal": 90,
-        "down": 13,
-        "up": 94,
+        "normal": 107,
+        "down": 12,
+        "up": 78,
         "conc": 0
       },
       "first_date": "20260102",

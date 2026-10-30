@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.join(ROOT, 'scripts'))
 import wh_notify  # noqa: E402
 
 
-TH = {'down': [0.85, 0.72], 'up': [0.87, 0.8], 'conc': [0.985, 0.96]}
+TH = {'down': [0.09, 0.06], 'up': [0.2, 0.05]}
 
 
 def fixture(states, date='20261029', down=None):
@@ -22,15 +22,15 @@ def fixture(states, date='20261029', down=None):
     while len(dates) < n:
         dates.insert(0, f'202610{20+len(dates):02d}')
     if down is None:
-        down = [0.5] * n
+        down = [-0.05] * n
     return {
         'stock_date': dates[-1],
         'dates': dates,
         'taiex': [20000 + i for i in range(n)],
         'ext': {
             'state': states,
-            'down': down,
-            'up': [0.4] * n,
+            'dd': down,
+            'ru': [0.04] * n,
             'conc': [0.3] * n,
             'th': TH,
         },
@@ -134,7 +134,7 @@ class NotifyTests(unittest.TestCase):
         self.assertEqual(calls, [])
 
     def test_no_secrets_not_marked_sent(self):
-        self.write(fixture([0, 2]))
+        self.write(fixture([0, 1]))
         ev = wh_notify.run(self.root, sleep_s=0, push_fn=lambda m: 200)
         self.assertEqual(ev['action'], 'skipped_no_secrets')
         self.assertEqual(ev['recipient'], 'unset')
@@ -151,12 +151,12 @@ class NotifyTests(unittest.TestCase):
         self.assertIn('expect_date_mismatch', ev2['reasons'])
 
     def test_abnormal_without_score_and_threshold_mismatch(self):
-        w = fixture([0, -1], down=[0.5, None])
+        w = fixture([0, -1], down=[-0.05, None])
         self.write(w)
         ev = wh_notify.run(self.root, sleep_s=0)
         self.assertIn('abnormal_score_missing', ev['reasons'])
         w = fixture([0, -1])
-        w['ext']['th'] = {'down': [0.9, 0.7], 'up': [0.87, 0.8], 'conc': [0.985, 0.96]}
+        w['ext']['th'] = {'down': [0.1, 0.06], 'up': [0.2, 0.05]}
         self.write(w)
         ev2 = wh_notify.run(self.root, sleep_s=0)
         self.assertIn('threshold_mismatch', ev2['reasons'])

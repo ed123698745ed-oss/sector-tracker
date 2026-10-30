@@ -1,15 +1,17 @@
-"""市場非常態（瘋狂）判定：下跌瘋狂、上漲瘋狂、資金集中炒作。
+"""市場非常態（瘋狂）判定。
 
-每日指標（全市場上市櫃普通股）在「2005/01/01 起至當日（含當日）」的 expanding 歷史百分位。
-滾動窗與百分位都只讀到該日為止，不用該日之後的輸入。
+現行規則 2026-10-30（價格規則，Ed 2026-10-30 指定方向：抓劇烈快速下跌／急漲波段、盡量抓到頂部，
+搭配非常態期間累積漲跌；命中率不是主要標準）：
 
-  下跌分數＝平均（5日跌幅、20日跌幅、5日跌停家數占比、20日報酬波動度、離250日高點≥20%占比）的百分位
-  上漲分數＝平均（20日漲幅、加權指數對60日均線乖離、20日均成交值÷250日均成交值、5日漲停家數占比）的百分位
-  資金集中＝前5大成交值個股（排除台積電）占其餘普通股成交值比重的5日平均之百分位
+  下跌瘋狂：加權指數收盤 <= 近 15 日（含當日）最高收盤 ×（1−9%）時進入；
+            期間追蹤最低收盤，收盤 >= 該最低 ×（1+6%）時解除。
+  上漲瘋狂：收盤 >= 近 40 日（含當日）最低收盤 ×（1+20%）時進入；
+            期間追蹤最高收盤，收盤 <= 該最高 ×（1−5%）時解除。
+  解除當日為常態，不在同日進入另一狀態；常態下同時達標以下跌優先。
+  窗口只用 2005-01-01 起、至當日（含）的收盤；指數缺值沿用前一筆。
+  「資金集中炒作」不再是狀態（Ed 2026-10-30 同意）；集中分數仍計算，只供參考。
+  舊版百分位分數 down／up 仍寫出供對照，不參與判定。
 
-狀態機（進入／退出皆為 >=；既有非常態優先維持，退出後才依下跌、上漲、集中的順序進入）：
-  下跌瘋狂 0.85／0.72；上漲瘋狂 0.87／0.80；資金集中 0.985／0.96。
-判定用未四捨五入的分數；寫出的分數以 Python round(., 3)（銀行家捨入）到小數三位。
 只供觀察，不是交易訊號。
 
 門檻變更：在 TH_VERSIONS 追加一列，不要改舊列。compute() 使用最後一列。
@@ -28,14 +30,26 @@ TH_VERSIONS = [
         'introduced_commit': '2def1cf129c1e44a777d117d04e8c4f21fc876f8',
         'note': '試行版初版。Ed 2026-10-29 指定非常態約占 10～15% 交易日。此列上線後未再改門檻。',
         'th': {'down': (0.85, 0.72), 'up': (0.87, 0.80), 'conc': (0.985, 0.96)},
+        'kind': 'score',
         'start': START,
         'minhist': MINHIST,
         'priority': ['down', 'up', 'conc'],
     },
+    {
+        'id': '2026-10-30',
+        'effective': '2026-10-30',
+        'kind': 'price',
+        'note': 'Ed 2026-10-30 改為價格規則（下跌 15 日高回落 9%、反彈 6% 解除；上漲 40 日低上漲 20%、回落 5% 解除），取消資金集中狀態。',
+        'th': {'down': (0.09, 0.06), 'up': (0.20, 0.05)},
+        'win': {'down': 15, 'up': 40},
+        'start': START,
+        'priority': ['down', 'up'],
+    },
 ]
 TH = TH_VERSIONS[-1]['th']
+WIN = TH_VERSIONS[-1]['win']
 RULE_ID = TH_VERSIONS[-1]['id']
-STATE_NAME = {-1: '下跌瘋狂', 1: '上漲瘋狂', 2: '資金集中炒作', 0: '常態'}
+STATE_NAME = {-1: '下跌瘋狂', 1: '上漲瘋狂', 2: '資金集中炒作（舊版）', 0: '常態'}
 
 
 def _roll(x, k, fn):
@@ -72,7 +86,7 @@ def _expanding_pr(x, dates, start=START, minh=MINHIST):
     return out
 
 
-def transition(prev, dv, uv, cv, th=None):
+def transition_v1(prev, dv, uv, cv, th=None):
     """由前一狀態與當日三個分數得到當日狀態。分數 None 視為未達該側門檻。
 
     順序：
@@ -80,7 +94,7 @@ def transition(prev, dv, uv, cv, th=None):
       2. 否則先回到常態，再依下跌、上漲、集中檢查進入門檻（>=）。先符合者勝出。
     因此：遲滯優先於「同時達標」的優先序；退出與改入另一狀態可以發生在同一天。
     """
-    th = TH if th is None else th
+    th = TH_VERSIONS[0]['th'] if th is None else th
     if prev == -1 and dv is not None and dv >= th['down'][1]:
         return -1
     if prev == 1 and uv is not None and uv >= th['up'][1]:
@@ -96,14 +110,56 @@ def transition(prev, dv, uv, cv, th=None):
     return 0
 
 
-def apply_states(down, up, conc, th=None):
-    """自常態（前態 0）依序套用 transition。回傳與輸入等長的狀態列。"""
-    th = TH if th is None else th
+def apply_states_v1(down, up, conc, th=None):
+    """舊版 2026-10-29：自常態依序套用 transition_v1。"""
+    th = TH_VERSIONS[0]['th'] if th is None else th
     state, prev = [], 0
     for i in range(len(down)):
-        prev = transition(prev, down[i], up[i], conc[i], th)
+        prev = transition_v1(prev, down[i], up[i], conc[i], th)
         state.append(prev)
     return state
+
+
+def price_states(tx, i0, th=None, win=None):
+    """價格規則狀態機。tx 為已沿用前值的收盤；i0 為 2005-01-01 起第一個索引。
+
+    回傳 (state, dd, ru)：dd＝收盤相對近 win['down'] 日（含當日）最高收盤的漲跌，
+    ru＝相對近 win['up'] 日最低收盤的漲跌。窗口不足或在 i0 之前為 None。
+    比較一律用乘法（收盤 <= 高點×(1−門檻)），避免除法浮點誤差。
+    """
+    th = TH if th is None else th
+    win = WIN if win is None else win
+    T = len(tx)
+    (din, dout), (uin, uout) = th['down'], th['up']
+    wd, wu = win['down'], win['up']
+    state, dd, ru = [0] * T, [None] * T, [None] * T
+    mode, ext = 0, None
+    for i in range(max(0, i0), T):
+        p = tx[i]
+        if p is None:
+            state[i] = mode
+            continue
+        hi = lo = None
+        if i - i0 >= wd and all(v is not None for v in tx[i - wd:i + 1]):
+            hi = max(tx[i - wd:i + 1])
+            dd[i] = p / hi - 1
+        if i - i0 >= wu and all(v is not None for v in tx[i - wu:i + 1]):
+            lo = min(tx[i - wu:i + 1])
+            ru[i] = p / lo - 1
+        if mode == -1:
+            ext = min(ext, p)
+            if p >= ext * (1 + dout):
+                mode = 0
+        elif mode == 1:
+            ext = max(ext, p)
+            if p <= ext * (1 - uout):
+                mode = 0
+        elif hi is not None and p <= hi * (1 - din):
+            mode, ext = -1, p
+        elif lo is not None and p >= lo * (1 + uin):
+            mode, ext = 1, p
+        state[i] = mode
+    return state, dd, ru
 
 
 def compute(dates, taiex, allg, turnover, conc, start=None, minh=None, th=None):
@@ -145,9 +201,11 @@ def compute(dates, taiex, allg, turnover, conc, start=None, minh=None, th=None):
     down = [avg(['nr5', 'nr20', 'ld5', 'vol', 'dd'], i) for i in range(T)]
     up = [avg(['r20', 'bias', 'turn', 'lu5'], i) for i in range(T)]
     cc = P['conc']
-    state = apply_states(down, up, cc, th)
-    r = lambda x: [round(v, 3) if v is not None else None for v in x]
-    return {'state': state, 'down': r(down), 'up': r(up), 'conc': r(cc), 'th': th, 'rule': RULE_ID}
+    i0 = next((i for i, d in enumerate(dates) if d >= start), T)
+    state, dd, ru = price_states(tx, i0, th, WIN)
+    r = lambda x, k=3: [round(v, k) if v is not None else None for v in x]
+    return {'state': state, 'dd': r(dd, 4), 'ru': r(ru, 4), 'down': r(down), 'up': r(up), 'conc': r(cc),
+            'th': th, 'win': WIN, 'rule': RULE_ID}
 
 
 def _step(down, up, conc):
@@ -160,7 +218,7 @@ def _below(x):
 
 # 可重現邊界案例。steps 為當日分數（未捨入），expected 為逐日狀態。
 # 前態由上一日結果帶入，首日的前態為常態 0。
-BOUNDARY_CASES = [
+BOUNDARY_CASES_V1 = [
     {
         'id': 'enter-down-exact',
         'group': '恰等於進入',
@@ -388,30 +446,41 @@ BOUNDARY_CASES = [
 ]
 
 
+def _pc(pid, group, desc, prices, expected):
+    return {'id': pid, 'group': group, 'desc': desc, 'prices': prices, 'expected': expected}
+
+
+_W3 = {'down': 3, 'up': 3}
+_D_IN = 100 * (1 - 0.09)
+_U_IN = 100 * (1 + 0.20)
+# 價格規則邊界案例（窗口縮成 3 日以便手算）。prices 為逐日收盤，expected 為逐日狀態。
+BOUNDARY_CASES = [
+    _pc('down-enter-exact', '恰等於進入', '3 日高 100，收盤恰等於 100×0.91，進入下跌', [100, 100, 100, _D_IN], [0, 0, 0, -1]),
+    _pc('down-enter-just-above', '恰等於進入', '收盤比 100×0.91 高一個浮點數，維持常態', [100, 100, 100, math.nextafter(_D_IN, 1e9)], [0, 0, 0, 0]),
+    _pc('up-enter-exact', '恰等於進入', '3 日低 100，收盤恰等於 100×1.2，進入上漲', [100, 100, 100, _U_IN], [0, 0, 0, 1]),
+    _pc('up-enter-just-below', '恰等於進入', '收盤比 100×1.2 低一個浮點數，維持常態', [100, 100, 100, math.nextafter(_U_IN, 0)], [0, 0, 0, 0]),
+    _pc('warmup', '暖機不足', '窗口未滿（前 3 日）即使大跌也不判定', [100, 50, 40], [0, 0, 0]),
+    _pc('down-hold-track-low', '維持與解除', '進入後續跌，低點更新；反彈未達低點×1.06 維持', [100, 100, 100, 90, 80, 84], [0, 0, 0, -1, -1, -1]),
+    _pc('down-exit-exact', '維持與解除', '低點 80，收盤恰等於 80×1.06，解除為常態', [100, 100, 100, 90, 80, 80 * 1.06], [0, 0, 0, -1, -1, 0]),
+    _pc('down-exit-no-same-day-entry', '維持與解除', '解除當日為常態；隔日收盤再低於 3 日高×0.91 則重新進入', [100, 100, 100, 90, 80, 85, 81], [0, 0, 0, -1, -1, 0, -1]),
+    _pc('up-exit-exact', '維持與解除', '高點 130，收盤恰等於 130×0.95，解除', [100, 100, 100, 120, 130, 130 * (1 - 0.05)], [0, 0, 0, 1, 1, 0]),
+    _pc('up-hold', '維持與解除', '回落未達 5% 維持上漲', [100, 100, 100, 120, 130, 124], [0, 0, 0, 1, 1, 1]),
+    _pc('exit-day-then-priority', '同時達標與競合', '第 6 日解除下跌（同日上漲條件也成立，但解除日不進入）；第 7 日下跌與上漲同時成立，下跌優先', [100, 100, 100, 90, 60, 75, 75], [0, 0, 0, -1, -1, 0, -1]),
+]
+
+
 def boundary_rows(th=None):
-    """跑完全部邊界案例。每一日一列：輸入、前一狀態、預期、實際。"""
+    """跑完全部價格規則邊界案例。每一日一列：收盤、前一狀態、預期、實際。"""
     th = TH if th is None else th
-    rows = []
-    ok = True
+    rows, ok = [], True
     for case in BOUNDARY_CASES:
+        st, dd, ru = price_states(case['prices'], 0, th, _W3)
         prev = 0
-        for i, step in enumerate(case['steps']):
-            actual = transition(prev, step['down'], step['up'], step['conc'], th)
-            exp = case['expected'][i]
-            match = actual == exp
+        for i, exp in enumerate(case['expected']):
+            match = st[i] == exp
             ok = ok and match
-            rows.append({
-                'id': case['id'],
-                'group': case['group'],
-                'desc': case['desc'],
-                'day': i + 1,
-                'prev': prev,
-                'down': step['down'],
-                'up': step['up'],
-                'conc': step['conc'],
-                'expected': exp,
-                'actual': actual,
-                'match': match,
-            })
-            prev = actual
+            rows.append({'id': case['id'], 'group': case['group'], 'desc': case['desc'], 'day': i + 1,
+                         'prev': prev, 'price': case['prices'][i], 'dd': dd[i], 'ru': ru[i],
+                         'expected': exp, 'actual': st[i], 'match': match})
+            prev = st[i]
     return {'rule': RULE_ID, 'pass': ok, 'rows': rows}

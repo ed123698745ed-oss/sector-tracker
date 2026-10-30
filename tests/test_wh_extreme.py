@@ -40,7 +40,7 @@ class BoundaryTests(unittest.TestCase):
         bad = [r for r in table['rows'] if not r['match']]
         self.assertEqual(bad, [])
         groups = {r['group'] for r in table['rows']}
-        for name in ('恰等於進入', '同時達標', '既有狀態維持與競合', '退出與切換', '暖機不足與缺值'):
+        for name in ('恰等於進入', '暖機不足', '維持與解除', '同時達標與競合'):
             self.assertIn(name, groups)
 
     def test_thresholds_enter_above_exit(self):
@@ -49,6 +49,12 @@ class BoundaryTests(unittest.TestCase):
 
 
 class PointInTimeTests(unittest.TestCase):
+    def test_price_rule_matches_review_snapshot(self):
+        # 下跌 15 日高 −9% 進入、反彈 6% 解除；上漲 40 日低 +20% 進入、回落 5% 解除
+        px = [100.0] * 20 + [95, 92, 90.5, 85, 86, 90.5, 92]
+        st, dd, ru = wh_extreme.price_states(px, 0)
+        self.assertEqual(st[20:], [0, 0, -1, -1, -1, 0, 0])
+
     def test_warmup_before_minhist_is_normal(self):
         dates, taiex, allg, turnover, conc = inputs(40)
         ext = wh_extreme.compute(dates, taiex, allg, turnover, conc)
@@ -62,6 +68,7 @@ class PointInTimeTests(unittest.TestCase):
         self.assertLess(dates[-1], wh_extreme.START)
         ext = wh_extreme.compute(dates, taiex, allg, turnover, conc)
         self.assertTrue(all(v is None for v in ext['down']))
+        self.assertTrue(all(v is None for v in ext['dd']))
         self.assertTrue(all(s == 0 for s in ext['state']))
 
     def test_every_prefix_matches_full_series(self):
@@ -74,6 +81,8 @@ class PointInTimeTests(unittest.TestCase):
             self.assertEqual(got['down'][-1], full['down'][i], dates[i])
             self.assertEqual(got['up'][-1], full['up'][i], dates[i])
             self.assertEqual(got['conc'][-1], full['conc'][i], dates[i])
+            self.assertEqual(got['dd'][-1], full['dd'][i], dates[i])
+            self.assertEqual(got['ru'][-1], full['ru'][i], dates[i])
 
     def test_future_input_does_not_change_past(self):
         dates, taiex, allg, turnover, conc = inputs(80)
@@ -88,7 +97,7 @@ class PointInTimeTests(unittest.TestCase):
         allg2['ld'][-1] = 80
         allg2['dd'][-1] = [0, 0, 0, 0, 0, 100]
         full2 = wh_extreme.compute(dates, taiex2, allg2, turnover2, conc2, minh=10)
-        for key in ('state', 'down', 'up', 'conc'):
+        for key in ('state', 'dd', 'ru', 'down', 'up', 'conc'):
             self.assertEqual(full2[key][:-1], full[key][:-1])
 
 
@@ -98,14 +107,15 @@ class SnapshotTests(unittest.TestCase):
         if not os.path.exists(path):
             self.skipTest('no wh.json')
         w = json.load(open(path, encoding='utf-8'))
-        if w.get('stock_date') != '20261029':
+        if w.get('stock_date') != '20261029' or w['ext'].get('rule') != '2026-10-30':
             self.skipTest('snapshot moved past review date')
         ext = w['ext']
         scored = sum(v is not None for v in ext['down'])
         abnormal = sum(s != 0 for s in ext['state'])
         self.assertEqual(scored, 5093)
-        self.assertEqual(abnormal, 695)
+        self.assertEqual(abnormal, 842)
         self.assertEqual(ext['state'][-1], 0)
+        self.assertEqual(ext['dd'][-1], -0.0693)
         self.assertEqual(ext['down'][-1], 0.694)
         self.assertEqual(ext['up'][-1], 0.394)
         self.assertEqual(ext['conc'][-1], 0.595)
