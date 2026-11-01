@@ -1,0 +1,52 @@
+name: 融資餘額回補（接力）
+# backfill/MARGIN_REQUEST 第一行為起日 YYYYMMDD；抓起日以後已有收盤精簡檔、但缺融資原始檔的交易日
+on:
+  push:
+    paths: ["backfill/MARGIN_REQUEST"]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: margin-backfill
+  cancel-in-progress: false
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        idx: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          S=$(head -1 backfill/MARGIN_REQUEST)
+          DATES=$(python3 scripts/margin_fetch.py list "$S" ${{ matrix.idx }} 4 | cut -d, -f1-130)
+          echo "本工作日期：$DATES"
+          if [ -n "$DATES" ]; then timeout 65m python3 scripts/margin_fetch.py run "$DATES" || true; fi
+      - if: always()
+        run: |
+          git config user.name "sector-tracker-bot" && git config user.email "actions@users.noreply.github.com"
+          git add archive/raw/twse_margin archive/raw/tpex_margin 2>/dev/null || true
+          git commit -q -m "融資回補 job ${{ matrix.idx }} [skip ci]" || exit 0
+          for i in 1 2 3 4 5 6; do git pull --rebase -q && git push -q && break; sleep $((RANDOM % 30 + 5)); done
+  next:
+    needs: fetch
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git pull -q || true
+          S=$(head -1 backfill/MARGIN_REQUEST)
+          LEFT=$(python3 scripts/margin_fetch.py list "$S" 0 1 | tr ',' '\n' | grep -c . || true)
+          PREV=$(cat backfill/MARGIN_LEFT 2>/dev/null || echo 999999)
+          echo "剩餘缺日：$LEFT（上一輪 $PREV）"
+          echo "$LEFT" > backfill/MARGIN_LEFT
+          git config user.name "sector-tracker-bot" && git config user.email "actions@users.noreply.github.com"
+          git add backfill/MARGIN_LEFT && git commit -q -m "融資回補剩餘 $LEFT [skip ci]" && for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done
+          # 這一輪沒有進展（缺日沒減少）就停，避免官方查無資料的日子無限接力
+          if [ "$LEFT" -gt 0 ] && [ "$LEFT" -lt "$PREV" ] && [ ! -f backfill/MARGIN_STOP ]; then gh workflow run margin_backfill.yml --ref main; fi
