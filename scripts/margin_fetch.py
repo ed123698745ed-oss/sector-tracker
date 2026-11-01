@@ -20,7 +20,8 @@ import datetime, gzip, json, os, re, sys, time, urllib.request
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(ROOT, 'archive', 'raw')
 UA = {'User-Agent': 'Mozilla/5.0 (sector-tracker margin)'}
-MIN_ROWS = {'twse': 600, 'tpex': 400}  # 低於此列數視為不完整（2025～2026 上市約 1,300、上櫃約 900 列）
+TPEX_MARGIN_START = '20070102'  # 櫃買 margin/balance 最早有資料的交易日（2005、2003 查無）
+MIN_ROWS = {'twse': 300, 'tpex': 200}  # 低於此列數視為不完整（2026 上市約 1,300、上櫃約 900 列；2004 年上市約 600、2007 年上櫃約 380）
 
 
 def get_json(url):
@@ -130,7 +131,9 @@ def fetch_one(ds, sleep=4):
         except Exception as e:
             res['twse'] = str(e)[:200]
         time.sleep(sleep)
-    if have('tpex_margin', ds):
+    if ds < TPEX_MARGIN_START:
+        res['tpex'] = 'ok(無資料期間)'
+    elif have('tpex_margin', ds):
         res['tpex'] = 'ok(已有)'
     else:
         try:
@@ -161,7 +164,8 @@ def missing(start, end=None):
     end = end or '99999999'
     qd = os.path.join(ROOT, 'data', 'quotes')
     days = sorted(f[:8] for f in os.listdir(qd) if f.endswith('.json') and start <= f[:8] <= end)
-    return [d for d in reversed(days) if not (have('twse_margin', d) and have('tpex_margin', d))]  # 由新到舊
+    # 櫃買融資餘額查詢自 2007-01 起才有資料，之前的日子只需要上市
+    return [d for d in reversed(days) if not (have('twse_margin', d) and (d < TPEX_MARGIN_START or have('tpex_margin', d)))]  # 由新到舊
 
 
 def backfill(start, end=None):
