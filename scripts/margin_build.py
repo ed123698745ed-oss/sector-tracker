@@ -8,7 +8,10 @@
   日均價＝成交金額 ÷ 成交股數；無成交日不更新價格，沿用最近一次收盤（標記為沿用）
 
 大盤維持率（上市、上櫃分開算，不是個股平均）
-  Σ（各證券融資今日餘額張數 × 1000 × 當日收盤價）÷ 該市場官方融資金額餘額
+  主數字（對齊財經M平方，Ed 2026-11-01 指定）：Σ（普通股融資今日餘額張數 × 1000 × 當日收盤價）÷ 該市場官方融資金額餘額
+    分子只算普通股（4 碼、首碼非 0，不含 ETF），分母為官方全部融資金額。2019～2025 年 14 個 M平方 對照日中
+    7 個差距在 ±1.5 個百分點內；2018 年 3 個對照日則與「全部證券」口徑完全相同，2022/9～10 差約 10 點，原因不明
+  參考數字 maint_all：分子含 ETF 等所有可融資證券
   分母：上市「信用交易統計」融資金額(仟元)今日餘額；上櫃表尾「融資金(仟元)」資餘額欄
   當日無收盤價者用最近一次收盤（fallback 清單一併輸出）
 
@@ -190,7 +193,7 @@ def main():
                 last_px[c] = (ds, v[1])
         for mkt, src, parse in (('TWSE', 'twse_margin', margin_twse), ('TPEX', 'tpex_margin', margin_tpex)):
             loan, rows = parse(load(src, ds))
-            coll = est_loan = 0.0
+            coll = coll_stk = est_loan = 0.0
             bal_total = 0.0
             fallback = []
             todo = []
@@ -288,6 +291,8 @@ def main():
                 # 大盤
                 if bal > 0 and close is not None:
                     coll += bal * 1000 * close
+                    if COMMON.match(c):
+                        coll_stk += bal * 1000 * close
                 bal_total += bal
                 if bal > 0 and p.cost:
                     est_loan += bal * 1000 * p.cost * RATIO
@@ -314,7 +319,8 @@ def main():
                                close / (RATIO * p.cost) * 100,
                                rc, close / (RATIO * rc) * 100 if rc else None, p.rdays >= RECENT_N))
             todo.clear()
-            market.append(dict(date=ds, market=mkt, maint=round(coll / loan * 100, 4) if loan else None,
+            market.append(dict(date=ds, market=mkt, maint=round(coll_stk / loan * 100, 4) if loan else None,
+                               maint_all=round(coll / loan * 100, 4) if loan else None,
                                loan=loan, collateral=round(coll), balance=bal_total,
                                calib=round(est_loan / loan, 4) if loan else None, k=round(k, 4),
                                fallback=fallback))
