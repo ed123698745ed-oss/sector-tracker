@@ -106,7 +106,20 @@ td.num{font-size:15px}
   </section>
 
   <section>
+    <h2>崩跌觀察<small>近 30 日融資追價者，估算維持率低於 130% 的家數</small></h2>
+    <div class="panel">
+      <div class="idx" id="ccard"></div>
+      <div class="xtools"><span class="sub">期間</span><div class="tabs seg" id="cspan" style="margin:0"></div></div>
+      <svg id="cchart" viewBox="0 0 420 210" role="img" aria-label="近期追價者估算維持率低於130%家數占比與加權指數"></svg>
+      <div class="legend"><span><i style="background:var(--down)"></i>低於 130% 家數占比（左軸）</span><span><i style="background:var(--d3)"></i>低於 140%</span><span><i style="background:var(--fg)"></i>加權指數（右軸）</span></div>
+      <details style="margin-top:10px" id="cdet"><summary class="sub" style="cursor:pointer" id="clsum">今日低於 130% 的個股</summary><div class="tblwrap" style="margin-top:8px"><table id="ctbl"></table></div></details>
+      <div class="note">追繳壓力主要落在最近進場的融資戶，所以這裡用「近 30 個交易日淨融資買進（扣當日沖銷）的加權均價」當成本：估算維持率＝收盤 ÷（60% × 近期成本）。近 30 日幾乎沒有融資買進的股票不列入。家數占比衝高常出現在急跌段，可對照融資餘額是否同時大減（清算）；這是觀察，不是驗證過的底部訊號。距 20 日高＝融資餘額相對近 20 個交易日最高餘額的減幅。</div>
+    </div>
+  </section>
+
+  <section>
     <h2>個股估算維持率分布<small id="dsub"></small></h2>
+    <div class="tabs" id="basis"></div>
     <div class="cards" id="bcards"></div>
     <div class="panel">
       <svg id="hist" viewBox="0 0 420 180" role="img" aria-label="個股估算融資維持率分布"></svg>
@@ -136,10 +149,10 @@ td.num{font-size:15px}
       <div class="xtools" style="margin:0 0 6px"><span class="sub">期間</span><div class="tabs seg" id="dspan" style="margin:0"></div></div>
       <div class="sub">股價、估算成本與融資餘額</div>
       <svg id="dchart1" viewBox="0 0 420 220" role="img" aria-label="股價、估算融資成本與融資餘額歷史"></svg>
-      <div class="legend"><span><i style="background:var(--fg)"></i>收盤（左軸）</span><span><i style="background:var(--d4)"></i>估算成本（左軸）</span><span><i style="background:var(--d3)"></i>融資餘額張數（右軸）</span><span><i style="background:var(--up)"></i>每日融資增</span><span><i style="background:var(--down)"></i>減</span></div>
+      <div class="legend"><span><i style="background:var(--fg)"></i>收盤（左軸）</span><span><i style="background:var(--down)"></i>近 30 日追價成本（左軸）</span><span><i style="background:var(--d4)"></i>全體平均成本（虛線）</span><span><i style="background:var(--d3)"></i>融資餘額張數（右軸）</span><span><i style="background:var(--up)"></i>每日融資增</span><span><i style="background:var(--down)"></i>減</span></div>
       <div class="sub" style="margin-top:12px">估算維持率與融資使用率</div>
       <svg id="dchart2" viewBox="0 0 420 200" role="img" aria-label="估算融資維持率與融資使用率歷史"></svg>
-      <div class="legend"><span><i style="background:var(--accent)"></i>估算維持率（左軸）</span><span><i style="background:var(--d4)"></i>融資使用率（右軸）</span><span>虛線＝130／140／150%，只供風險觀察</span></div>
+      <div class="legend"><span><i style="background:var(--down)"></i>近期追價者維持率（左軸）</span><span><i style="background:var(--accent)"></i>全體平均（虛線）</span><span><i style="background:var(--d4)"></i>融資使用率（右軸）</span><span>虛線＝130／140／150%，只供風險觀察</span></div>
       <div class="note" id="dnote"></div>
     </div>
   </section>
@@ -156,7 +169,7 @@ const f2 = (v, d=2) => v == null ? '—' : (+v).toLocaleString('zh-TW', {minimum
 const sg = (v, d=2) => v == null ? '—' : (v > 0 ? '+' : '') + (+v).toFixed(d);
 const cls = v => v > 0 ? 'up' : v < 0 ? 'down' : 'flat';
 const MK = {TWSE:'上市', TPEX:'上櫃'};
-let M, mk = 'TWSE', mspan = '60', F = {m:'all', t:'all', u:'0', s:'mp'}, page = 0, PER = 20, D = null, dspan = '250';
+let M, mk = 'TWSE', mspan = '60', cspan = '250', B = 'r', F = {m:'all', t:'all', u:'0', s:'mp'}, page = 0, PER = 20, D = null, dspan = '250';
 
 function tabs(sel, opts, get, set){
   const el = $(sel); el.innerHTML = '';
@@ -194,12 +207,14 @@ fetch('margin.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).the
   tabs('#ft', {all:'不限', 130:'低於 130%', 140:'低於 140%', 150:'低於 150%'}, () => F.t, v => { F.t = v; page = 0; drawTable(); });
   tabs('#fu', {0:'不限', 5:'≥5%', 10:'≥10%', 20:'≥20%', 30:'≥30%'}, () => F.u, v => { F.u = v; page = 0; drawTable(); });
   tabs('#fs', {mp:'維持率低→高', u:'使用率高→低', c5:'5 日融資增', c5d:'5 日融資減'}, () => F.s, v => { F.s = v; page = 0; drawTable(); });
+  tabs('#cspan', {60:'60 日', 120:'120 日', 250:'1 年', 99999:'全部'}, () => cspan, v => { cspan = v; drawCrash(); });
+  tabs('#basis', {r:'近 30 日追價者（預設）', a:'全體平均'}, () => B, v => { B = v; page = 0; drawDist(); drawTable(); });
   tabs('#dspan', {60:'60 日', 120:'120 日', 250:'250 日', 99999:'全部'}, () => dspan, v => { dspan = v; drawDetail(); });
   $('#q').oninput = () => { page = 0; drawTable(); };
   $('#showx').onchange = () => { page = 0; drawTable(); };
   $('#prev').onclick = () => { if (page > 0) { page--; drawTable(); } };
   $('#next').onclick = () => { page++; drawTable(); };
-  drawMarket(); drawDist(); drawTable(); drawMethod();
+  drawMarket(); drawCrash(); drawDist(); drawTable(); drawMethod();
   const h = location.hash.match(/s=(\w+)/); if (h) openStock(h[1]);
 }).catch(e => { $('#sub').textContent = '資料讀取失敗：' + e; });
 
@@ -236,10 +251,41 @@ function drawMarket(){
     模型校準：未校準前，個股模型融資金額合計 ÷ 官方融資金額 ＝ <b class="num">${L.calib == null ? '—' : (L.calib * 100).toFixed(1) + '%'}</b>（越接近 100% 表示模型越接近官方總額）；個股成本已再乘上校準係數，使合計等於官方融資金額。`;
 }
 
+const MP = r => B === 'r' ? r.rmp : r.mp, OK = r => B === 'r' ? r.rok : r.ok;
+function drawCrash(){
+  const all = M.crash.filter(x => x.n), a = all.slice(-Math.min(+cspan, all.length)), L = all[all.length - 1];
+  const pk = a.reduce((m, x) => x.b130 / x.n > m.b130 / m.n ? x : m, a[0]);
+  $('#ccard').innerHTML = `<div><div class="sub">低於 130%・${fd(L.date)}</div><div class="big num">${L.b130} 家</div><div class="sub">占 ${(L.b130 / L.n * 100).toFixed(1)}%（樣本 ${L.n}）；低於 140% ${L.b140} 家</div></div>
+    <div><div class="sub">期間最高</div><div class="num" style="font-size:26px;font-weight:700">${pk.b130} 家</div><div class="sub">${fd(pk.date)}，占 ${(pk.b130 / pk.n * 100).toFixed(1)}%</div></div>`;
+  const svg = $('#cchart'), W = 420, H = 210, l = 34, r = 46, t = 10, b = 186;
+  const xs = a.map((_, i) => l + (a.length > 1 ? i / (a.length - 1) : .5) * (W - l - r));
+  const p1 = a.map(x => x.b130 / x.n * 100), p2 = a.map(x => x.b140 / x.n * 100);
+  const ym = Math.max(5, ...p2) * 1.05, sy = v => b - v / ym * (b - t);
+  const [i0, i1] = ext(a.map(x => x.taiex)), si = v => b - (v - i0) / (i1 - i0) * (b - t);
+  const bw = Math.max(1, (W - l - r) / a.length * .8);
+  let g = '';
+  for (const v of ticks(0, ym)) g += `<line x1="${l}" x2="${W - r}" y1="${sy(v)}" y2="${sy(v)}" stroke="var(--line)"/><text x="${l - 4}" y="${sy(v) + 4}" text-anchor="end">${v}%</text>`;
+  for (const v of ticks(i0, i1, 3)) g += `<text x="${W - r + 4}" y="${si(v) + 4}">${Math.round(v).toLocaleString()}</text>`;
+  a.forEach((x, i) => { g += `<rect x="${xs[i] - bw / 2}" y="${sy(p2[i])}" width="${bw}" height="${b - sy(p2[i])}" fill="var(--d3)" opacity=".55"/><rect x="${xs[i] - bw / 2}" y="${sy(p1[i])}" width="${bw}" height="${b - sy(p1[i])}" fill="var(--down)"/>`; });
+  g += `<path d="${path(xs, a.map(x => x.taiex), si)}" fill="none" stroke="var(--fg)" stroke-width="1.4"/>`;
+  const step = Math.max(1, Math.ceil(a.length / 6));
+  a.forEach((x, i) => { if (i % step === 0 || i === a.length - 1) g += `<text x="${xs[i]}" y="${H - 4}" text-anchor="middle">${a.length > 260 ? x.date.slice(2,4) + '/' + +x.date.slice(4,6) : fds(x.date)}</text>`; });
+  g += `<line class="cur" y1="${t}" y2="${b}" stroke="var(--muted)" stroke-dasharray="3 3" style="display:none"/>`;
+  svg.innerHTML = g;
+  hover(svg, xs, k => { const x = a[k]; return `<b>${fd(x.date)}</b><br>低於 130%：${x.b130} 家（${p1[k].toFixed(1)}%）<br>低於 140%：${x.b140} 家<br>低於 130% 個股融資餘額 ${Math.round(x.bal130).toLocaleString()} 張<br>加權指數 ${x.taiex ? x.taiex.toLocaleString() : '—'}`; });
+  const rows = M.rows.filter(r => r.rok && r.rmp < 130).sort((x, y) => x.rmp - y.rmp);
+  $('#cdet').open = rows.length <= 20;
+  $('#clsum').textContent = `今日低於 130% 的個股（${rows.length} 檔，依近期維持率排序）`;
+  $('#ctbl').innerHTML = `<tr><th>股票</th><th>收盤</th><th>近期成本</th><th>近期維持率</th><th>當日增減</th><th>5 日增減</th><th>距 20 日高</th><th>融資餘額</th></tr>` +
+    rows.map(r => `<tr style="cursor:pointer" data-s="${r.s}"><td>${r.s} ${r.n}</td><td class="num">${f2(r.c)}</td><td class="num">${f2(r.rc)}</td><td class="num down"><b>${f2(r.rmp)}%</b></td>
+      <td class="num ${cls(r.ch)}">${sg(r.ch, 0)}</td><td class="num ${cls(r.c5)}">${r.c5 == null ? '—' : sg(r.c5, 0)}</td><td class="num ${cls(r.dd20)}">${r.dd20 == null ? '—' : sg(r.dd20, 1) + '%'}</td><td class="num">${r.b.toLocaleString()}</td></tr>`).join('') +
+    (rows.length ? '' : '<tr><td colspan="8" style="text-align:center">今日沒有</td></tr>');
+  [...$('#ctbl').querySelectorAll('tr[data-s]')].forEach(tr => tr.onclick = () => openStock(tr.dataset.s));
+}
 const BINS = [[0,100,'<100'],[100,120,'100–120'],[120,130,'120–130'],[130,140,'130–140'],[140,150,'140–150'],[150,170,'150–170'],[170,200,'170–200'],[200,250,'200–250'],[250,1e9,'≥250']];
 function drawDist(){
-  const ok = M.rows.filter(r => r.ok), st = M.stats;
-  $('#dsub').textContent = `${fd(M.date)}，有效 ${st.valid}／原始 ${st.raw} 檔`;
+  const ok = M.rows.filter(OK).map(r => ({...r, mp: MP(r)})), st = B === 'r' ? M.rstats : M.stats;
+  $('#dsub').textContent = `${fd(M.date)}，${B === 'r' ? '近 30 日追價者' : '全體平均'}，有效 ${st.valid}／原始 ${st.raw} 檔`;
   const card = (title, o, n) => `<div class="card"><h3>${title}</h3>${[130,140,150].map(t => `<div class="k">低於 ${t}%<b>${o[t]} 家<span class="sub" style="font-weight:400"> ${n ? (o[t] / n * 100).toFixed(1) : '—'}%</span></b></div>`).join('')}<div class="k">有效樣本<b>${n}</b></div></div>`;
   $('#bcards').innerHTML = card('全部', st.below, st.valid) + card('上市', st.by_market.TWSE.below, st.by_market.TWSE.valid) + card('上櫃', st.by_market.TPEX.below, st.by_market.TPEX.valid);
   const cnt = BINS.map(([a, b]) => ok.filter(r => r.mp >= a && r.mp < b).length);
@@ -252,15 +298,15 @@ function drawDist(){
   });
   s += `<text x="${W - r}" y="${b + 28}" text-anchor="end">估算維持率（%）</text>`;
   svg.innerHTML = s;
-  const ex = st.excluded;
-  $('#hnote').textContent = `分布與家數只算通過檢查的同一批樣本（與排行榜一致）。排除：有效歷史未滿 ${M.model.min_days} 日 ${ex.insufficient}、期初庫存占比過高 ${ex.pending}、成本敏感度過大 ${ex.sensitive}、其他（餘額過小、當日無成交、股數基準異常）${ex.other}。低於 130% 不代表已發生追繳。`;
+  const ex = M.stats.excluded;
+  $('#hnote').textContent = B === 'r' ? `近 30 日追價者：成本＝近 30 個交易日淨融資買進的加權均價；近 30 日淨買進不足 ${M.model.min_balance} 張、上市未滿 30 個交易日、融資餘額過小或當日無成交者不列入。分布與家數只算這一批樣本（與排行榜一致）。低於 130% 不代表已發生追繳。` : `分布與家數只算通過檢查的同一批樣本（與排行榜一致）。排除：有效歷史未滿 ${M.model.min_days} 日 ${ex.insufficient}、期初庫存占比過高 ${ex.pending}、成本敏感度過大 ${ex.sensitive}、其他（餘額過小、當日無成交、股數基準異常）${ex.other}。低於 130% 不代表已發生追繳。`;
 }
 
 function filtered(){
   const q = $('#q').value.trim(), sx = $('#showx').checked;
-  let a = M.rows.filter(r => (sx || r.ok) && (F.m === 'all' || r.m === F.m) && (F.t === 'all' || r.mp < +F.t) && (+F.u === 0 || (r.u != null && r.u >= +F.u))
+  let a = M.rows.filter(r => (sx || OK(r)) && MP(r) != null && (F.m === 'all' || r.m === F.m) && (F.t === 'all' || MP(r) < +F.t) && (+F.u === 0 || (r.u != null && r.u >= +F.u))
     && (!q || r.s.includes(q) || r.n.includes(q)));
-  const k = {mp: (x, y) => x.mp - y.mp, u: (x, y) => (y.u ?? -1) - (x.u ?? -1), c5: (x, y) => (y.c5 ?? -1e9) - (x.c5 ?? -1e9), c5d: (x, y) => (x.c5 ?? 1e9) - (y.c5 ?? 1e9)}[F.s];
+  const k = {mp: (x, y) => MP(x) - MP(y), u: (x, y) => (y.u ?? -1) - (x.u ?? -1), c5: (x, y) => (y.c5 ?? -1e9) - (x.c5 ?? -1e9), c5d: (x, y) => (x.c5 ?? 1e9) - (y.c5 ?? 1e9)}[F.s];
   return a.sort(k);
 }
 function drawTable(){
@@ -268,11 +314,12 @@ function drawTable(){
   $('#rsub').textContent = `${fd(M.date)}，共 ${a.length} 檔`;
   $('#pg').textContent = `${page + 1} / ${np}`;
   const rows = a.slice(page * PER, (page + 1) * PER);
-  $('#tbl').innerHTML = `<tr><th>#</th><th>股票</th><th>市場</th><th>收盤</th><th>估算成本</th><th>估算維持率</th><th>使用率</th><th>融資餘額</th><th>5 日增減</th></tr>` +
-    rows.map((r, i) => `<tr style="cursor:pointer" data-s="${r.s}"><td>${page * PER + i + 1}</td><td>${r.s} ${r.n}${r.ok ? '' : `<span class="tag" title="${r.why}">未通過</span>`}</td><td>${MK[r.m]}</td>
-      <td class="num">${f2(r.c)}</td><td class="num">${f2(r.cost)}</td><td class="num ${r.mp < 130 ? 'down' : ''}"><b>${f2(r.mp)}%</b></td><td class="num">${r.u == null ? '—' : f2(r.u) + '%'}</td>
+  const rv = B === 'r';
+  $('#tbl').innerHTML = `<tr><th>#</th><th>股票</th><th>市場</th><th>收盤</th><th>${rv ? '近期成本' : '估算成本'}</th><th>${rv ? '近期維持率' : '估算維持率'}</th><th>${rv ? '全體平均' : '近期'}</th><th>使用率</th><th>融資餘額</th><th>5 日增減</th></tr>` +
+    rows.map((r, i) => `<tr style="cursor:pointer" data-s="${r.s}"><td>${page * PER + i + 1}</td><td>${r.s} ${r.n}${OK(r) ? '' : `<span class="tag" title="${rv ? '近期口徑未列入' : r.why}">未通過</span>`}</td><td>${MK[r.m]}</td>
+      <td class="num">${f2(r.c)}</td><td class="num">${f2(rv ? r.rc : r.cost)}</td><td class="num ${MP(r) < 130 ? 'down' : ''}"><b>${f2(MP(r))}%</b></td><td class="num">${(rv ? r.mp : r.rmp) == null ? '—' : f2(rv ? r.mp : r.rmp) + '%'}</td><td class="num">${r.u == null ? '—' : f2(r.u) + '%'}</td>
       <td class="num">${r.b.toLocaleString()}</td><td class="num ${cls(r.c5)}">${r.c5 == null ? '—' : sg(r.c5, 0)}</td></tr>`).join('') +
-    (rows.length ? '' : '<tr><td colspan="9" style="text-align:center">沒有符合目前條件的股票</td></tr>');
+    (rows.length ? '' : '<tr><td colspan="10" style="text-align:center">沒有符合目前條件的股票</td></tr>');
   [...$('#tbl').querySelectorAll('tr[data-s]')].forEach(tr => tr.onclick = () => openStock(tr.dataset.s));
 }
 
@@ -280,7 +327,7 @@ function openStock(s){
   const r = M.rows.find(x => x.s === s);
   history.replaceState(null, '', '#s=' + s);
   fetch('margin/s/' + s + '.csv?t=' + M.generated, {cache:'no-cache'}).then(x => x.ok ? x.text() : Promise.reject(x.status)).then(t => {
-    const L = t.trim().split('\n').slice(1).map(l => { const c = l.split(','); return {d:c[0], c:+c[1], cost:+c[2], b:+c[3], ch:+c[4], mp:+c[5], u:c[6] === '' ? null : +c[6]}; });
+    const L = t.trim().split('\n').slice(1).map(l => { const c = l.split(','); return {d:c[0], c:+c[1], cost:+c[2], b:+c[3], ch:+c[4], mp:+c[5], u:c[6] === '' ? null : +c[6], rc:c[7] ? +c[7] : null, rmp:c[8] ? +c[8] : null}; });
     D = {s, r, L}; $('#detail').hidden = false; drawDetail(); $('#detail').scrollIntoView({behavior:'smooth'});
   }).catch(e => alert('讀不到 ' + s + ' 的歷史：' + e));
 }
@@ -292,7 +339,7 @@ function drawDetail(){
   const step = Math.max(1, Math.ceil(a.length / 6)), xl = H => a.map((x, i) => (i % step === 0 || i === a.length - 1) ? `<text x="${xs[i]}" y="${H - 4}" text-anchor="middle">${fds(x.d)}</text>` : '').join('');
   // 圖一：收盤、成本（左）、餘額（右）、每日增減
   { const svg = $('#dchart1'), mid = 145, b = 200;
-    const [p0, p1] = ext(a.flatMap(x => [x.c, x.cost])), [b0, b1] = ext(a.map(x => x.b));
+    const [p0, p1] = ext(a.flatMap(x => [x.c, x.cost, x.rc])), [b0, b1] = ext(a.map(x => x.b));
     const sp = v => mid - (v - p0) / (p1 - p0) * (mid - t), sb = v => mid - (v - b0) / (b1 - b0) * (mid - t);
     const cm = Math.max(1, ...a.map(x => Math.abs(x.ch))), zb = (mid + 10 + b) / 2, sc = v => zb - v / cm * (b - mid - 10) / 2, bw = Math.max(1, (W - l - rr) / a.length * .7);
     let g = '';
@@ -302,26 +349,28 @@ function drawDetail(){
     a.forEach((x, i) => { const y = sc(x.ch); g += `<rect x="${xs[i] - bw / 2}" y="${Math.min(y, zb)}" width="${bw}" height="${Math.max(.5, Math.abs(y - zb))}" fill="var(${x.ch >= 0 ? '--up' : '--down'})" opacity=".8"/>`; });
     g += `<path d="${path(xs, a.map(x => x.b), sb)}" fill="none" stroke="var(--d3)" stroke-width="1.5"/>`;
     g += `<path d="${path(xs, a.map(x => x.cost), sp)}" fill="none" stroke="var(--d4)" stroke-width="1.8" stroke-dasharray="5 3"/>`;
+    g += `<path d="${path(xs, a.map(x => x.rc), sp)}" fill="none" stroke="var(--down)" stroke-width="1.6"/>`;
     g += `<path d="${path(xs, a.map(x => x.c), sp)}" fill="none" stroke="var(--fg)" stroke-width="1.6"/>` + xl(220);
     g += `<line class="cur" y1="${t}" y2="${b}" stroke="var(--muted)" stroke-dasharray="3 3" style="display:none"/>`;
     svg.innerHTML = g;
-    hover(svg, xs, k => { const x = a[k]; return `<b>${fd(x.d)}</b><br>收盤 ${f2(x.c)}<br>估算成本 ${f2(x.cost)}（價差 ${sg(x.c - x.cost)}）<br>融資餘額 ${x.b.toLocaleString()} 張<br>當日增減 <span class="${cls(x.ch)}">${sg(x.ch, 0)}</span> 張`; });
+    hover(svg, xs, k => { const x = a[k]; return `<b>${fd(x.d)}</b><br>收盤 ${f2(x.c)}<br>近 30 日追價成本 ${f2(x.rc)}<br>全體平均成本 ${f2(x.cost)}<br>融資餘額 ${x.b.toLocaleString()} 張<br>當日增減 <span class="${cls(x.ch)}">${sg(x.ch, 0)}</span> 張`; });
   }
   // 圖二：維持率（左）、使用率（右）
   { const svg = $('#dchart2'), b = 178;
-    const [m0, m1] = ext(a.map(x => x.mp).concat([130, 150])), [u0, u1] = ext(a.map(x => x.u).concat([0]));
+    const [m0, m1] = ext(a.flatMap(x => [x.mp, x.rmp]).concat([130, 150])), [u0, u1] = ext(a.map(x => x.u).concat([0]));
     const sm = v => b - (v - m0) / (m1 - m0) * (b - t), su = v => b - (v - u0) / (u1 - u0) * (b - t);
     let g = '';
     for (const v of ticks(m0, m1)) g += `<line x1="${l}" x2="${W - rr}" y1="${sm(v)}" y2="${sm(v)}" stroke="var(--line)"/><text x="${l - 4}" y="${sm(v) + 4}" text-anchor="end">${v}%</text>`;
     for (const v of ticks(u0, u1, 3)) g += `<text x="${W - rr + 4}" y="${su(v) + 4}">${v}%</text>`;
     for (const v of [130, 140, 150]) g += `<line x1="${l}" x2="${W - rr}" y1="${sm(v)}" y2="${sm(v)}" stroke="var(${v === 130 ? '--down' : '--d3'})" stroke-dasharray="4 4"/>`;
     g += `<path d="${path(xs, a.map(x => x.u), su)}" fill="none" stroke="var(--d4)" stroke-width="1.5"/>`;
-    g += `<path d="${path(xs, a.map(x => x.mp), sm)}" fill="none" stroke="var(--accent)" stroke-width="2"/>` + xl(200);
+    g += `<path d="${path(xs, a.map(x => x.mp), sm)}" fill="none" stroke="var(--accent)" stroke-width="1.4" stroke-dasharray="5 3"/>`;
+    g += `<path d="${path(xs, a.map(x => x.rmp), sm)}" fill="none" stroke="var(--down)" stroke-width="2"/>` + xl(200);
     g += `<line class="cur" y1="${t}" y2="${b}" stroke="var(--muted)" stroke-dasharray="3 3" style="display:none"/>`;
     svg.innerHTML = g;
-    hover(svg, xs, k => { const x = a[k]; return `<b>${fd(x.d)}</b><br>估算維持率 ${f2(x.mp)}%<br>融資使用率 ${x.u == null ? '—' : f2(x.u) + '%'}`; });
+    hover(svg, xs, k => { const x = a[k]; return `<b>${fd(x.d)}</b><br>近期追價者 ${x.rmp == null ? '—' : f2(x.rmp) + '%'}<br>全體平均 ${f2(x.mp)}%<br>融資使用率 ${x.u == null ? '—' : f2(x.u) + '%'}`; });
   }
-  $('#dnote').innerHTML = r ? (r.ok ? `已通過檢查：有效歷史 ${r.d} 日、期初庫存占 ${r.i}%、成本敏感度 ${r.sens} 個百分點。` : `<b>未通過檢查：${r.why}</b>，數字僅供參考。`) + ' 估算成本＝逐日以日均價重播融資買進的平均成本，不是個別投資人的實際成本。'
+  $('#dnote').innerHTML = r ? (r.ok ? `已通過檢查：有效歷史 ${r.d} 日、期初庫存占 ${r.i}%、成本敏感度 ${r.sens} 個百分點。` : `<b>未通過檢查：${r.why}</b>，數字僅供參考。`) + ' 近 30 日追價成本＝最近 30 個交易日淨融資買進的加權均價；全體平均成本＝逐日重播全部融資庫存的平均成本。兩者都不是個別投資人的實際成本。'
     : '此股今日已無融資餘額或不在排行中。';
 }
 
@@ -329,7 +378,8 @@ function drawMethod(){
   const m = M.model;
   $('#method').innerHTML = `<b>計算方式（模型 ${m.version}，起算 ${fd(m.start)}）</b><br>
   大盤：上市、上櫃分開，Σ（各證券融資餘額張數 × 1000 × 當日收盤）÷ 該市場官方融資金額餘額，不是個股平均。<br>
-  個股：逐日重播融資庫存（批次法）——每日淨融資買進為一批，成本＝當日均價（成交金額 ÷ 成交股數）；同日融資買進與賣出先互抵（當日沖銷）；淨賣出與現金償還先從估算維持率已低於 130% 的批次移出（追繳優先，成本高者先），其餘按比例移出。起算日已有的期初庫存以前 60 個交易日均價為成本，另用最低／最高日均價計算敏感度。交易所「前日餘額」與前一日餘額不同時（減資、面額分割等）依比例換算張數與成本，統一股份基準。每日再以官方融資金額校準（個股成本 × 官方總額 ÷ 模型總額）。估算維持率＝收盤 ÷（${m.financing_ratio * 100}% × 估算成本）。融資使用率＝融資餘額 ÷ 融資限額。<br>
+  個股（預設）：近 30 日追價者——成本＝最近 30 個交易日淨融資買進（同日融資買進與賣出先互抵）的加權均價（成交金額 ÷ 成交股數），估算維持率＝收盤 ÷（${m.financing_ratio * 100}% × 近期成本）。用意是看最可能被追繳的最近進場者；與三竹 App 2026/7 的 7 檔×13 日數字比，平均誤差約 15 個百分點。<br>
+  個股（全體平均，對照用）：逐日重播融資庫存（批次法）——每日淨融資買進為一批，成本＝當日均價（成交金額 ÷ 成交股數）；同日融資買進與賣出先互抵（當日沖銷）；淨賣出與現金償還先從估算維持率已低於 130% 的批次移出（追繳優先，成本高者先），其餘按比例移出。起算日已有的期初庫存以前 60 個交易日均價為成本，另用最低／最高日均價計算敏感度。交易所「前日餘額」與前一日餘額不同時（減資、面額分割等）依比例換算張數與成本，統一股份基準。每日再以官方融資金額校準（個股成本 × 官方總額 ÷ 模型總額）。估算維持率＝收盤 ÷（${m.financing_ratio * 100}% × 估算成本）。融資使用率＝融資餘額 ÷ 融資限額。<br>
   排行與統計只收普通股，且有效歷史 ≥ ${m.min_days} 日、期初庫存占目前餘額 ≤ ${m.max_init_pct}%、成本敏感度 ≤ ${m.max_sensitivity} 個百分點、融資餘額 ≥ ${m.min_balance} 張、當日有成交。<br>
   限制：批次、當日沖銷與追繳優先都是假設；整戶擔保下個股估算維持率可能長期低於 100%。所有個股一律以 ${m.financing_ratio * 100}% 融資成數估算，實際成數可能因股票或券商而不同；現金股利不調整成本（除息後維持率下降，與實際擔保計算一致），配股未加計擔保品。個股與大盤均為公開資料模型估算，並非券商實際整戶擔保維持率；130% 為常見整戶追繳基準，低於 130% 不代表已追繳。<br>
   資料來源：證交所融資融券彙總（MI_MARGN）、每日收盤行情（MI_INDEX）；櫃買中心融資融券餘額、上櫃股票每日收盤行情。只供觀察，不是交易訊號。`;

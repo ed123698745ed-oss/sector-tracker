@@ -40,14 +40,16 @@ import datetime, glob, gzip, json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(ROOT, 'archive', 'raw')
-OUT_JSON = os.path.join(ROOT, 'docs', 'margin.json')
-OUT_DIR = os.path.join(ROOT, 'docs', 'margin', 's')
+OUT_JSON = os.environ.get('MR_OUT', os.path.join(ROOT, 'docs')) + '/margin.json'
+OUT_DIR = os.environ.get('MR_OUT', os.path.join(ROOT, 'docs')) + '/margin/s'
 START = '20250102'   # 模型起算日（固定，起算日改變會改寫全部歷史，須經 Ed 確認）
 MODEL = 'MR01'
 RATIO = 0.6
 MIN_DAYS, MAX_INIT, MAX_SENS, MIN_BAL = 120, 35.0, 10.0, 10
-NET_DAYTRADE = True
-FORCED_FIRST, CALL = True, 130.0
+NET_DAYTRADE = os.environ.get('MR_NET', '1') == '1'
+RECENT_N = 30   # 近期追價者窗口（交易日）；以三竹 7 檔×13 日校準選定
+FORCED_FIRST, CALL = os.environ.get('MR_FORCED', '1') == '1', 130.0
+ORDER = os.environ.get('MR_ORDER', 'prop')   # 其餘出場順序：prop 按比例、fifo 舊先、lifo 新先
 COMMON = re.compile(r'^[1-9]\d{3}$')
 
 
@@ -138,7 +140,7 @@ def price_days_before(ds, n):
 
 class Pos:
     __slots__ = ('mkt', 'name', 'inv', 'cost', 'cost_lo', 'cost_hi', 'init', 'days', 'bad', 'last_bal', 'hist',
-                 'last_close', 'stale', 'lots')
+                 'last_close', 'stale', 'lots', 'win', 'rdays')
 
     def __init__(self, mkt, name):
         self.mkt, self.name = mkt, name
@@ -151,6 +153,8 @@ class Pos:
         self.hist = []
         self.last_close = None
         self.stale = False
+        self.win = []    # 近期淨融資買進 [(張數, 金額)]，最多 RECENT_N 日
+        self.rdays = 0
         self.lots = []   # 批次 [張數, 成本, 期初低成本, 期初高成本, 是否期初]
 
 
@@ -168,11 +172,20 @@ def main():
 
     pos = {}
     market = []
+    crash = {}     # 日期 → [近期口徑樣本數, <130 家數, <140 家數, <130 個股融資餘額合計張數]
+    taiex = {}
     last_px = {}   # 代號 → (日期, 收盤)
     for di, ds in enumerate(days):
         px = {}
         for src, fn in (('twse', prices_twse), ('tpex', prices_tpex)):
-            for c, v in fn(load(src, ds)).items():
+            raw = load(src, ds)
+            if src == 'twse':
+                for t in raw.get('tables', []):
+                    if (t.get('title') or '').endswith('價格指數(臺灣證券交易所)'):
+                        for rr in t['data']:
+                            if rr[0] in ('發行量加權股價指數', '加權股價指數'):
+                                taiex[ds] = num(rr[1])
+            for c, v in fn(raw).items():
                 px[c] = v
                 last_px[c] = (ds, v[1])
         for mkt, src, parse in (('TWSE', 'twse_margin', margin_twse), ('TPEX', 'tpex_margin', margin_tpex)):
@@ -194,6 +207,7 @@ def main():
                         if 1 / 20 <= k <= 20:
                             for L in p.lots:
                                 L[0] *= k; L[1] /= k; L[2] /= k; L[3] /= k
+                            p.win = [(q * k, v) for q, v in p.win]
                         else:
                             p.bad = f'{ds} 股數基準比例異常 {k:.3f}'
                     else:
@@ -217,6 +231,11 @@ def main():
                 # 當日沖銷：同日融資買進與融資賣出先互抵（視為當日進出，不進庫存），只有淨買進才以當日均價入庫
                 net = min(r['buy'], r['sell']) if NET_DAYTRADE else 0
                 buy, out = r['buy'] - net, r['sell'] - net + r['repay']
+                # 近期追價者：最近 RECENT_N 個交易日淨融資買進（扣當日沖銷）的加權均價
+                p.win.append((buy, buy * avg) if buy > 0 and avg else (0.0, 0.0))
+                if len(p.win) > RECENT_N:
+                    p.win.pop(0)
+                p.rdays += 1
                 if buy > 0 and (avg or close):
                     q = avg or close
                     p.lots.append([buy, q, q, q, 0])
@@ -228,10 +247,15 @@ def main():
                             if out <= 0:
                                 break
                     tot = sum(L[0] for L in p.lots)
-                    if out > 0 and tot > 0:
+                    if out > 0 and tot > 0 and ORDER == 'prop':
                         keep = max(tot - out, 0) / tot
                         for L in p.lots:
                             L[0] *= keep
+                    elif out > 0 and tot > 0:   # fifo：舊批次先出；lifo：新批次先出
+                        for L in (p.lots if ORDER == 'fifo' else reversed(p.lots)):
+                            x = min(L[0], out); L[0] -= x; out -= x
+                            if out <= 0:
+                                break
                     p.lots = [L for L in p.lots if L[0] > 1e-9]
                 # 與交易所今日餘額對齊（正常情況恆等式成立，差異只來自上面的未知成本或四捨五入）
                 tot = sum(L[0] for L in p.lots)
@@ -240,8 +264,7 @@ def main():
                 elif tot > 0 and abs(tot - bal) > 1e-6:
                     for L in p.lots:
                         L[0] *= bal / tot
-                if len(p.lots) > 400:   # 合併同成本附近的舊批次，控制記憶體
-                    p.lots.sort(key=lambda L: L[1])
+                if len(p.lots) > 400:   # 合併時間相鄰、成本相近的批次，控制記憶體（保留先後順序）
                     m = []
                     for L in p.lots:
                         if m and not L[4] and not m[-1][4] and abs(L[1] / m[-1][1] - 1) < 0.005:
@@ -272,15 +295,24 @@ def main():
                 if COMMON.match(c) and bal > 0 and p.cost and close:
                     usage = bal / r['limit'] * 100 if r['limit'] else None
                     todo.append((p, close, bal, bal - r['prev'], usage))
+                    if p.rdays >= RECENT_N and bal >= MIN_BAL and not p.stale:
+                        q = sum(x[0] for x in p.win)
+                        if q >= MIN_BAL:
+                            rmp = close / (RATIO * sum(x[1] for x in p.win) / q) * 100
+                            cr = crash.setdefault(ds, [0, 0, 0, 0])
+                            cr[0] += 1; cr[1] += rmp < 130; cr[2] += rmp < 140; cr[3] += bal if rmp < 130 else 0
             # 官方校準：成本 × k，k＝官方融資金額 ÷ 模型融資金額合計（同市場同日），使模型總額等於官方總額
             k = loan / est_loan if loan and est_loan else 1.0
             for p, close, bal, chg, usage in todo:
+                q = sum(x[0] for x in p.win)
+                rc = sum(x[1] for x in p.win) / q if q >= MIN_BAL else None
                 cost = p.cost * k
                 p.hist.append((ds, close, cost, bal, chg, close / (RATIO * cost) * 100, usage,
                                p.init / bal * 100 if bal else 0,
                                close / (RATIO * p.cost_lo * k) * 100 if p.cost_lo else None,
                                close / (RATIO * p.cost_hi * k) * 100 if p.cost_hi else None, 1 if p.stale else 0,
-                               close / (RATIO * p.cost) * 100))
+                               close / (RATIO * p.cost) * 100,
+                               rc, close / (RATIO * rc) * 100 if rc else None, p.rdays >= RECENT_N))
             todo.clear()
             market.append(dict(date=ds, market=mkt, maint=round(coll / loan * 100, 4) if loan else None,
                                loan=loan, collateral=round(coll), balance=bal_total,
@@ -299,13 +331,17 @@ def main():
         fn = f'{c}.csv'
         keep_files.add(fn)
         with open(os.path.join(OUT_DIR, fn), 'w') as f:
-            f.write('date,close,cost,balance,change,maint,usage\n')
-            for (ds, close, cost, bal, chg, mp, usage, *_rest) in h:  # cost、mp 為校準後
-                f.write(f'{ds},{close:g},{cost:.4f},{bal:g},{chg:g},{mp:.2f},{"" if usage is None else f"{usage:.2f}"}\n')
+            f.write('date,close,cost,balance,change,maint,usage,rcost,rmaint\n')
+            for (ds, close, cost, bal, chg, mp, usage, *_rest) in h:  # cost、mp 為全體平均（校準後）；rcost、rmaint 為近期口徑
+                rc, rmp = _rest[5], _rest[6]
+                f.write(f'{ds},{close:g},{cost:.4f},{bal:g},{chg:g},{mp:.2f},{"" if usage is None else f"{usage:.2f}"},'
+                        f'{"" if rc is None else f"{rc:.4f}"},{"" if rmp is None else f"{rmp:.2f}"}\n')
         last = h[-1]
         if last[0] != latest:
             continue   # 今天已無融資部位
-        ds, close, cost, bal, chg, mp, usage, init_pct, mp_lo, mp_hi, stale, mp_raw = last
+        ds, close, cost, bal, chg, mp, usage, init_pct, mp_lo, mp_hi, stale, mp_raw, rc, rmp, rlong = last
+        hi20 = max(x[3] for x in h[-20:])
+        rok = bool(rmp is not None and rlong and not stale and bal >= MIN_BAL)
         sens = abs((mp_lo or mp) - (mp_hi or mp))
         b5 = next((x[3] for x in reversed(h[:-1]) if days.index(x[0]) <= days.index(latest) - 5), None) \
             if len(h) > 1 else None
@@ -327,12 +363,20 @@ def main():
         rows.append(dict(s=c, n=p.name, m=p.mkt, c=close, cost=round(cost, 2), mp=round(mp, 2),
                          u=None if usage is None else round(usage, 2), b=bal, ch=chg, raw=round(mp_raw, 2),
                          c5=None if b5 is None else bal - b5, d=p.days, i=round(init_pct, 1),
-                         sens=round(sens, 1), ok=reason is None, why=reason))
+                         sens=round(sens, 1), ok=reason is None, why=reason,
+                         rc=None if rc is None else round(rc, 2), rmp=None if rmp is None else round(rmp, 2), rok=rok,
+                         dd20=round((bal / hi20 - 1) * 100, 1) if hi20 else None))
     for fn in os.listdir(OUT_DIR):
         if fn.endswith('.csv') and fn not in keep_files:
             os.remove(os.path.join(OUT_DIR, fn))
 
     ok = [r for r in rows if r['ok']]
+    rk = [r for r in rows if r['rok']]
+    rstats = dict(raw=len(rows), valid=len(rk),
+                  below={str(t): sum(1 for r in rk if r['rmp'] < t) for t in (130, 140, 150)},
+                  by_market={m: dict(valid=sum(1 for r in rk if r['m'] == m),
+                                     below={str(t): sum(1 for r in rk if r['m'] == m and r['rmp'] < t) for t in (130, 140, 150)})
+                             for m in ('TWSE', 'TPEX')})
     stats = dict(raw=len(rows), valid=len(ok), excluded=excluded,
                  below={str(t): sum(1 for r in ok if r['mp'] < t) for t in (130, 140, 150)},
                  by_market={m: dict(valid=sum(1 for r in ok if r['m'] == m),
@@ -340,11 +384,12 @@ def main():
                             for m in ('TWSE', 'TPEX')})
     out = dict(date=latest, generated=datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).isoformat(timespec='seconds'),
                model=dict(version=MODEL, start=START, financing_ratio=RATIO, min_days=MIN_DAYS, max_init_pct=MAX_INIT,
-                          max_sensitivity=MAX_SENS, min_balance=MIN_BAL),
-               market=market, stats=stats, rows=rows)
+                          max_sensitivity=MAX_SENS, min_balance=MIN_BAL, recent_days=RECENT_N),
+               market=market, stats=stats, rstats=rstats, rows=rows,
+               crash=[dict(date=d, n=v[0], b130=v[1], b140=v[2], bal130=v[3], taiex=taiex.get(d)) for d, v in sorted(crash.items())])
     with open(OUT_JSON, 'w') as f:
         json.dump(out, f, ensure_ascii=False, separators=(',', ':'))
-    print(latest, '個股', len(rows), '有效', len(ok), '排除', excluded, '低於130', stats['below']['130'])
+    print(latest, '個股', len(rows), '有效', len(ok), '排除', excluded, '低於130', stats['below']['130'], '| 近期口徑', rstats)
     for m in market[-2:]:
         print(m['date'], m['market'], m['maint'], '校準', m['calib'], 'fallback', len(m['fallback']))
 
