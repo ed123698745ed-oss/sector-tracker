@@ -12,7 +12,7 @@
 
 防錯（Emit 防錯清單）：
   - 日期以回應內文的資料日為準，與要求日不符（休市日回前一日資料）就不存檔（A1）
-  - 回應 2xx 但不是 JSON、stat 不是 OK、或個股列數過少，都視為失敗（B 補充、B2）
+  - 回應 2xx 但不是 JSON、stat 不是 OK、個股列數過少或比前一份少一成以上，都視為失敗（B 補充、B2）
   - 上市、上櫃分開存，一邊失敗不影響另一邊（B 補充）
 """
 import datetime, gzip, json, os, re, sys, time, urllib.request
@@ -78,6 +78,26 @@ def check_tpex(j, ds):
     return None
 
 
+def prev_rows(src, ds):
+    """ds 之前最近一份同來源原始檔的個股列數（B2：與前一交易日相比大減就不存）"""
+    d = os.path.join(RAW, src)
+    if not os.path.isdir(d):
+        return None
+    prev = sorted(f for f in os.listdir(d) if f[:8] < ds)
+    if not prev:
+        return None
+    with gzip.open(os.path.join(d, prev[-1]), 'rt', encoding='utf-8') as f:
+        j = json.load(f)
+    tabs = j.get('tables') or []
+    t = next((t for t in tabs if '融資融券彙總' in (t.get('title') or '')), None) if src == 'twse_margin' else (tabs[0] if tabs else None)
+    return len((t or {}).get('data') or [])
+
+
+def count_ok(src, ds, n):
+    p = prev_rows(src, ds)
+    return p is None or n >= p * 0.9
+
+
 def save(src, ds, obj):
     d = os.path.join(RAW, src)
     os.makedirs(d, exist_ok=True)
@@ -99,6 +119,10 @@ def fetch_one(ds, sleep=4):
         try:
             j = get_json(f'https://www.twse.com.tw/rwd/zh/marginTrading/MI_MARGN?date={ds}&selectType=ALL&response=json')
             err = check_twse(j, ds)
+            if not err:
+                n = len(next(t for t in j['tables'] if '融資融券彙總' in (t.get('title') or ''))['data'])
+                if not count_ok('twse_margin', ds, n):
+                    err = f'個股列數 {n} 比前一份少一成以上'
             if err:
                 res['twse'] = err
             else:
@@ -112,6 +136,8 @@ def fetch_one(ds, sleep=4):
         try:
             j = get_json(f'https://www.tpex.org.tw/www/zh-tw/margin/balance?date={d.year}%2F{d.month:02d}%2F{d.day:02d}&response=json')
             err = check_tpex(j, ds)
+            if not err and not count_ok('tpex_margin', ds, len(j['tables'][0]['data'])):
+                err = f'個股列數 {len(j["tables"][0]["data"])} 比前一份少一成以上'
             if err:
                 res['tpex'] = err
             else:

@@ -1,0 +1,58 @@
+name: 融資觀察每日更新
+# 證交所、櫃買融資餘額約 21:00 公布。目標日＝最新一份收盤精簡檔（data/quotes）的日期，
+# 不用執行當下日期（防錯清單 A1、A3）：跨午夜、隔天早上補跑都還是補同一個交易日；休市日沒有收盤檔，自然不會抓。
+on:
+  schedule:
+    # 台北時間週一至週五 21:12、21:42、22:12、22:52，週二至週六 07:12（cron 為 UTC）
+    - cron: '12 13 * * 1-5'
+    - cron: '42 13 * * 1-5'
+    - cron: '12 14 * * 1-5'
+    - cron: '52 14 * * 1-5'
+    - cron: '12 23 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: '指定日期 YYYYMMDD（空白＝最新收盤日）'
+        required: false
+permissions:
+  contents: write
+concurrency:
+  group: margin-update
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 抓取融資餘額
+        id: fetch
+        run: |
+          D="${{ github.event.inputs.date }}"
+          [ -z "$D" ] && D=$(ls data/quotes | grep -E '^[0-9]{8}\.json$' | sort | tail -1 | cut -c1-8)
+          echo "目標交易日 $D"
+          echo "d=$D" >> "$GITHUB_OUTPUT"
+          if [ -f "archive/raw/twse_margin/$D.json.gz" ] && [ -f "archive/raw/tpex_margin/$D.json.gz" ]; then echo "$D 已處理，跳過"; echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          python3 scripts/margin_fetch.py run "$D" || true
+          if [ -f "archive/raw/twse_margin/$D.json.gz" ] && [ -f "archive/raw/tpex_margin/$D.json.gz" ]; then exit 0; fi
+          # 只抓到一邊也先存檔（下次只補另一邊），網站等兩邊都到才重算
+          git config user.name "sector-tracker-bot"; git config user.email "actions@users.noreply.github.com"
+          git add archive/raw/twse_margin archive/raw/tpex_margin 2>/dev/null || true
+          git diff --cached --quiet || { git commit -q -m "融資原始檔（部分）$D"; for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done; }
+          H=$(TZ=Asia/Taipei date +%H)
+          if [ "$H" -lt 12 ]; then echo "::error::$D 融資資料到隔天早上仍未取得"; exit 1; fi
+          echo "$D 融資資料尚未公布，等下一次排程"; echo "skip=1" >> "$GITHUB_OUTPUT"
+      - name: 計算維持率
+        if: steps.fetch.outputs.skip != '1'
+        run: python3 scripts/margin_build.py --expect "${{ steps.fetch.outputs.d }}"
+      - name: 提交
+        if: steps.fetch.outputs.skip != '1'
+        run: |
+          git config user.name "sector-tracker-bot"; git config user.email "actions@users.noreply.github.com"
+          git add archive/raw/twse_margin archive/raw/tpex_margin docs/margin.json docs/margin
+          if git diff --cached --quiet; then echo "沒有新資料"; exit 0; fi
+          git commit -q -m "融資觀察更新 ${{ steps.fetch.outputs.d }}"
+          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && exit 0; sleep 10; done
+          exit 1
