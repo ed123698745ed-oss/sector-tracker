@@ -202,12 +202,12 @@ fetch('margin.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).the
   M = m;
   $('#sub').textContent = `資料日 ${fd(m.date)}・盤後（官方資料約 21:00 公布）・產生 ${m.generated.slice(0,16).replace('T',' ')}`;
   tabs('#mtabs', MK, () => mk, v => { mk = v; drawMarket(); });
-  tabs('#mspan', {20:'20 日', 60:'60 日', 120:'120 日', 99999:'全部'}, () => mspan, v => { mspan = v; drawMarket(); });
+  tabs('#mspan', {20:'20 日', 60:'60 日', 120:'120 日', 250:'1 年', 1250:'5 年', 99999:'全部'}, () => mspan, v => { mspan = v; drawMarket(); });
   tabs('#fm', {all:'全部', TWSE:'上市', TPEX:'上櫃'}, () => F.m, v => { F.m = v; page = 0; drawTable(); });
   tabs('#ft', {all:'不限', 130:'低於 130%', 140:'低於 140%', 150:'低於 150%'}, () => F.t, v => { F.t = v; page = 0; drawTable(); });
   tabs('#fu', {0:'不限', 5:'≥5%', 10:'≥10%', 20:'≥20%', 30:'≥30%'}, () => F.u, v => { F.u = v; page = 0; drawTable(); });
   tabs('#fs', {mp:'維持率低→高', u:'使用率高→低', c5:'5 日融資增', c5d:'5 日融資減'}, () => F.s, v => { F.s = v; page = 0; drawTable(); });
-  tabs('#cspan', {60:'60 日', 120:'120 日', 250:'1 年', 99999:'全部'}, () => cspan, v => { cspan = v; drawCrash(); });
+  tabs('#cspan', {60:'60 日', 120:'120 日', 250:'1 年', 1250:'5 年', 99999:'全部'}, () => cspan, v => { cspan = v; drawCrash(); });
   tabs('#basis', {r:'近 30 日追價者（預設）', a:'全體平均'}, () => B, v => { B = v; page = 0; drawDist(); drawTable(); });
   tabs('#dspan', {60:'60 日', 120:'120 日', 250:'250 日', 99999:'全部'}, () => dspan, v => { dspan = v; drawDetail(); });
   $('#q').oninput = () => { page = 0; drawTable(); };
@@ -242,13 +242,13 @@ function drawMarket(){
   s += `<path d="${path(xs, a.map(x => x.loan), sl)}" fill="none" stroke="var(--d3)" stroke-width="1.6"/>`;
   s += `<path d="${path(xs, a.map(x => x.maint), sm)}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
   const step = Math.max(1, Math.ceil(a.length / 6));
-  a.forEach((x, i) => { if (i % step === 0 || i === a.length - 1) s += `<text x="${xs[i]}" y="${H - 4}" text-anchor="middle">${fds(x.date)}</text>`; });
+  a.forEach((x, i) => { if (i % step === 0 || i === a.length - 1) s += `<text x="${xs[i]}" y="${H - 4}" text-anchor="middle">${a.length > 260 ? (a.length > 1300 ? x.date.slice(0,4) : x.date.slice(2,4) + '/' + +x.date.slice(4,6)) : fds(x.date)}</text>`; });
   s += `<line class="cur" y1="${t}" y2="${b}" stroke="var(--muted)" stroke-dasharray="3 3" style="display:none"/>`;
   svg.innerHTML = s;
   hover(svg, xs, k => { const x = a[k]; return `<b>${fd(x.date)}</b><br>維持率 ${f2(x.maint)}%<br>融資金額 ${yi(x.loan)} 億${ch[k] == null ? '' : `<br>當日 <span class="${cls(ch[k])}">${sg(ch[k] / 1e8)} 億</span>`}<br>含 ETF 口徑 ${f2(x.maint_all)}%`; });
   const fb = L.fallback || [];
   const up = L.unpriced || [];
-  $('#mnote').innerHTML = (up.length ? `<b>⚠ 有 ${up.length} 檔有融資餘額卻查無任何價格，未計入市值：${up.map(x => x.symbol + ' ' + x.balance + ' 張').join('、')}。</b><br>` : '') + `資料 ${all.length} 個交易日（${fd(all[0].date)} 起）。主數字分子只算普通股（不含 ETF），分母為官方全部融資金額，與財經M平方較接近；「含 ETF 口徑」分子含所有可融資證券。當日無成交的 ${fb.length} 檔用最近一次收盤${fb.length ? '（' + fb.map(x => `${x.symbol} ${x.balance} 張，${fd(x.price_date)} 價`).join('、') + '）' : ''}。
+  $('#mnote').innerHTML = (up.length ? `<b>⚠ 有 ${up.length} 檔有融資餘額卻查無任何價格，未計入市值：${up.map(x => x.symbol + ' ' + x.balance + ' 張').join('、')}。</b><br>` : '') + `資料 ${all.length} 個交易日（${fd(all[0].date)} 起；上市 2004/2、上櫃 2007/7 起）。主數字分子只算普通股（不含 ETF），分母為官方全部融資金額，與財經M平方較接近；「含 ETF 口徑」分子含所有可融資證券。當日無成交的 ${fb.length} 檔用最近一次收盤${fb.length ? '（' + fb.map(x => `${x.symbol} ${x.balance} 張，${fd(x.price_date)} 價`).join('、') + '）' : ''}。
     模型校準：未校準前，個股模型融資金額合計 ÷ 官方融資金額 ＝ <b class="num">${L.calib == null ? '—' : (L.calib * 100).toFixed(1) + '%'}</b>（越接近 100% 表示模型越接近官方總額）；個股成本已再乘上校準係數，使合計等於官方融資金額。`;
 }
 
@@ -270,7 +270,7 @@ function drawCrash(){
   a.forEach((x, i) => { g += `<rect x="${xs[i] - bw / 2}" y="${sy(p2[i])}" width="${bw}" height="${b - sy(p2[i])}" fill="var(--d3)" opacity=".55"/><rect x="${xs[i] - bw / 2}" y="${sy(p1[i])}" width="${bw}" height="${b - sy(p1[i])}" fill="var(--down)"/>`; });
   g += `<path d="${path(xs, a.map(x => x.taiex), si)}" fill="none" stroke="var(--fg)" stroke-width="1.4"/>`;
   const step = Math.max(1, Math.ceil(a.length / 6));
-  a.forEach((x, i) => { if (i % step === 0 || i === a.length - 1) g += `<text x="${xs[i]}" y="${H - 4}" text-anchor="middle">${a.length > 260 ? x.date.slice(2,4) + '/' + +x.date.slice(4,6) : fds(x.date)}</text>`; });
+  a.forEach((x, i) => { if (i % step === 0 || i === a.length - 1) g += `<text x="${xs[i]}" y="${H - 4}" text-anchor="middle">${a.length > 260 ? (a.length > 1300 ? x.date.slice(0,4) : x.date.slice(2,4) + '/' + +x.date.slice(4,6)) : fds(x.date)}</text>`; });
   g += `<line class="cur" y1="${t}" y2="${b}" stroke="var(--muted)" stroke-dasharray="3 3" style="display:none"/>`;
   svg.innerHTML = g;
   hover(svg, xs, k => { const x = a[k]; return `<b>${fd(x.date)}</b><br>低於 130%：${x.b130} 家（${p1[k].toFixed(1)}%）<br>低於 140%：${x.b140} 家<br>低於 130% 個股融資餘額 ${Math.round(x.bal130).toLocaleString()} 張<br>加權指數 ${x.taiex ? x.taiex.toLocaleString() : '—'}`; });
