@@ -37,7 +37,8 @@
 已知限制
   - 批次法、當日沖銷互抵與追繳優先都是假設；實際各投資人成本、券商融資成數（上市上櫃一般 60%，
     個別股票或券商可能不同）與整戶擔保都不同。整戶擔保下，個股估算維持率可能長期低於 100%
-  - 除權息：現金股利不調整成本（與實際擔保維持率計算一致，除息後維持率下降）；配股不加計擔保品
+  - 簡化指標，不是券商整戶擔保維持率：未含融券、保證金與抵繳品；未做除權息前六個營業日的擔保品市值調整；
+    無收盤價時一律沿用最近收盤（法規另有報價與開盤基準等計價規則）；現金股利不調整成本、配股不加計擔保品
 """
 import datetime, glob, gzip, json, os, re, sys
 
@@ -53,7 +54,7 @@ NET_DAYTRADE = os.environ.get('MR_NET', '1') == '1'
 RECENT_N = 30   # 近期追價者窗口（交易日）；以三竹 7 檔×13 日校準選定
 FORCED_FIRST, CALL = os.environ.get('MR_FORCED', '1') == '1', 130.0
 ORDER = os.environ.get('MR_ORDER', 'prop')   # 其餘出場順序：prop 按比例、fifo 舊先、lifo 新先
-COMMON = re.compile(r'^[1-9]\d{3}$')
+COMMON = re.compile(r'^(?!91)[1-9]\d{3}$')   # 普通股：4 碼、首碼非 0，排除 91 開頭的存託憑證（TDR）；與 wh_prices.py 同口徑
 
 
 def num(s):
@@ -143,7 +144,7 @@ def price_days_before(ds, n):
 
 class Pos:
     __slots__ = ('mkt', 'name', 'inv', 'cost', 'cost_lo', 'cost_hi', 'init', 'days', 'bad', 'last_bal', 'hist',
-                 'last_close', 'stale', 'lots', 'win', 'rdays')
+                 'last_close', 'stale', 'lots', 'win', 'rdays', 'fac', 'bh')
 
     def __init__(self, mkt, name):
         self.mkt, self.name = mkt, name
@@ -158,6 +159,8 @@ class Pos:
         self.stale = False
         self.win = []    # 近期淨融資買進 [(張數, 金額)]，最多 RECENT_N 日
         self.rdays = 0
+        self.fac = 1.0   # 累積張數基準係數
+        self.bh = {}     # 日期 → (今日餘額, 當時基準係數)，含零餘額日
         self.lots = []   # 批次 [張數, 成本, 期初低成本, 期初高成本, 是否期初]
 
 
@@ -177,7 +180,11 @@ def main():
     market = []
     crash = {}     # 日期 → [近期口徑樣本數, <130 家數, <140 家數, <130 個股融資餘額合計張數]
     taiex = {}
-    last_px = {}   # 代號 → (日期, 收盤)
+    last_px = {}   # 代號 → (日期, 收盤)；以起算前約一年的真實收盤初始化（Eve F2）
+    for d in price_days_before(days[0], 250):
+        for src, fn in (('twse', prices_twse), ('tpex', prices_tpex)):
+            for c, v in fn(load(src, d)).items():
+                last_px[c] = (d, v[1])
     for di, ds in enumerate(days):
         px = {}
         for src, fn in (('twse', prices_twse), ('tpex', prices_tpex)):
@@ -196,13 +203,17 @@ def main():
             coll = coll_stk = est_loan = 0.0
             bal_total = 0.0
             fallback = []
+            unpriced = []   # 有餘額卻完全查無價格（不計入市值，明列）
             todo = []
             for c, r in rows.items():
                 p = pos.get(c)
                 if p is None:
                     p = pos[c] = Pos(mkt, r['name'])
-                p.name = r['name']
+                p.name, p.mkt = r['name'], mkt   # 市場依當日來源更新（Eve F1：轉上市／轉上櫃）
                 bal = r['bal']
+                # 張數基準係數（Eve F3）：前日餘額與前一日今日餘額不同時累乘，供跨分割比較餘額
+                if p.last_bal and r['prev'] > 0 and abs(r['prev'] - p.last_bal) > 0.5 and 1 / 20 <= r['prev'] / p.last_bal <= 20:
+                    p.fac *= r['prev'] / p.last_bal
                 # 股數基準：交易所前日餘額與我們記錄的前一日餘額不同（減資、面額分割等）
                 if p.last_bal is not None and p.lots and abs(r['prev'] - p.last_bal) > 0.5:
                     if p.last_bal > 0 and r['prev'] > 0:
@@ -221,6 +232,8 @@ def main():
                 if not name_px and bal > 0:
                     if close is not None:
                         fallback.append(dict(symbol=c, balance=bal, close=close, price_date=last_px[c][0]))
+                    else:
+                        unpriced.append(dict(symbol=c, balance=bal))
                 p.stale = name_px is None
                 if not p.lots and r['prev'] > 0 and p.last_bal is None:
                     # 期初庫存：起算日已有的餘額，或起算後才第一次出現就已有前日餘額（轉上市等），成本未知
@@ -288,6 +301,7 @@ def main():
                 if bal > 0:
                     p.days += 1 if p.cost is not None else 0
                 p.last_bal = bal
+                p.bh[ds] = (bal, p.fac)
                 # 大盤
                 if bal > 0 and close is not None:
                     coll += bal * 1000 * close
@@ -323,7 +337,7 @@ def main():
                                maint_all=round(coll / loan * 100, 4) if loan else None,
                                loan=loan, collateral=round(coll), balance=bal_total,
                                calib=round(est_loan / loan, 4) if loan else None, k=round(k, 4),
-                               fallback=fallback))
+                               fallback=fallback, unpriced=unpriced))
 
     latest = days[-1]
     # 個股最新列與驗證
@@ -346,11 +360,14 @@ def main():
         if last[0] != latest:
             continue   # 今天已無融資部位
         ds, close, cost, bal, chg, mp, usage, init_pct, mp_lo, mp_hi, stale, mp_raw, rc, rmp, rlong = last
-        hi20 = max(x[3] for x in h[-20:])
+        li = days.index(latest)
+        adj = lambda d: (lambda v: v[0] * p.fac / v[1] if v[1] else None)(p.bh[d]) if d in p.bh else None
+        last20 = [adj(d) for d in days[max(0, li - 19):li + 1]]
+        last20 = [v for v in last20 if v is not None]
+        hi20 = max(last20) if last20 else None
         rok = bool(rmp is not None and rlong and not stale and bal >= MIN_BAL)
         sens = abs((mp_lo or mp) - (mp_hi or mp))
-        b5 = next((x[3] for x in reversed(h[:-1]) if days.index(x[0]) <= days.index(latest) - 5), None) \
-            if len(h) > 1 else None
+        b5 = adj(days[li - 5]) if li >= 5 else None   # 精確 T−5，換算到今日張數基準；查無當日列＝N/A
         reason = None
         if p.days < MIN_DAYS:
             reason, key = f'有效歷史 {p.days} 日，未滿 {MIN_DAYS} 日', 'insufficient'
@@ -368,7 +385,7 @@ def main():
             excluded[key] += 1
         rows.append(dict(s=c, n=p.name, m=p.mkt, c=close, cost=round(cost, 2), mp=round(mp, 2),
                          u=None if usage is None else round(usage, 2), b=bal, ch=chg, raw=round(mp_raw, 2),
-                         c5=None if b5 is None else bal - b5, d=p.days, i=round(init_pct, 1),
+                         c5=None if b5 is None else round(bal - b5), d=p.days, i=round(init_pct, 1),
                          sens=round(sens, 1), ok=reason is None, why=reason,
                          rc=None if rc is None else round(rc, 2), rmp=None if rmp is None else round(rmp, 2), rok=rok,
                          dd20=round((bal / hi20 - 1) * 100, 1) if hi20 else None))
