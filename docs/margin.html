@@ -79,6 +79,7 @@ td.num{font-size:15px}
 .unverified{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:999px;border:1px solid #d99a1e;color:#b07a10;background:rgba(217,154,30,.12)}
 .livetag{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:999px;background:var(--accent);color:#fff;margin-left:6px;vertical-align:middle}
 .liverow{margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}
+table.pct th,table.pct td{padding:6px 7px;cursor:default}
 #tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px;display:none;z-index:9;box-shadow:0 4px 14px rgba(0,0,0,.12)}
 </style>
 </head>
@@ -98,6 +99,7 @@ td.num{font-size:15px}
     <div class="tabs" id="mtabs"></div>
     <div class="panel">
       <div class="idx" id="mcard"></div>
+      <div id="mpct" style="margin-top:10px"></div>
       <div class="xtools"><span class="sub">期間</span><div class="tabs seg" id="mspan" style="margin:0"></div></div>
       <svg id="mchart" viewBox="0 0 420 230" role="img" aria-label="大盤融資維持率、融資金額與每日增減"></svg>
       <div class="legend"><span><i style="background:var(--accent)"></i>融資維持率（左軸）</span><span><i style="background:var(--d3)"></i>融資金額（右軸）</span><span><i style="background:var(--up)"></i>融資金額增加</span><span><i style="background:var(--down)"></i>減少</span></div>
@@ -261,6 +263,7 @@ function drawMarket(){
     <div class="chg num ${cls(dM)}">${dM == null ? '' : sg(dM) + ' 個百分點'}<div class="sub">含 ETF 口徑 ${f2(L.maint_all)}%</div></div>
     <div><div class="sub">融資金額餘額</div><div class="num" style="font-size:26px;font-weight:700">${yi(L.loan)} 億</div><div class="num ${cls(dL)}">${dL == null ? '' : '當日 ' + sg(dL / 1e8) + ' 億'}</div></div>` +
     (LV ? (() => { const v = liveMarket(mk); return `<div style="flex-basis:100%" class="liverow">${liveTag()} <span class="sub">暫估 <b class="num" style="font-size:20px">${f2(v.maint)}%</b>（較 ${fd(L.date)} ${sg(v.maint - L.maint)} 個百分點；${(v.cover * 100).toFixed(0)}% 檔數有盤中價，依前一日融資餘額）</span></div>`; })() : '');
+  drawPct(all, L);
   const svg = $('#mchart'), W = 420, H = 230, l = 40, r = 44, t = 10, mid = 150, b = 210;
   const xs = a.map((_, i) => l + (a.length > 1 ? i / (a.length - 1) : .5) * (W - l - r));
   const [m0, m1] = ext(a.map(x => x.maint)), [y0, y1] = ext(a.map(x => x.loan));
@@ -286,6 +289,26 @@ function drawMarket(){
   const up = L.unpriced || [];
   $('#mnote').innerHTML = (up.length ? `<b>⚠ 有 ${up.length} 檔有融資餘額卻查無任何價格，未計入市值：${up.map(x => x.symbol + ' ' + x.balance + ' 張').join('、')}。</b><br>` : '') + `資料 ${all.length} 個交易日（${fd(all[0].date)} 起；上市 2004/2、上櫃 2007/7 起）。主數字分子只算普通股（不含 ETF），分母為官方全部融資金額，與財經M平方較接近；「含 ETF 口徑」分子含所有可融資證券。當日無成交的 ${fb.length} 檔用最近一次收盤${fb.length ? '（' + fb.map(x => `${x.symbol} ${x.balance} 張，${fd(x.price_date)} 價`).join('、') + '）' : ''}。
     模型校準：未校準前，個股模型融資金額合計 ÷ 官方融資金額 ＝ <b class="num">${L.calib == null ? '—' : (L.calib * 100).toFixed(1) + '%'}</b>（越接近 100% 表示模型越接近官方總額）；個股成本已再乘上校準係數，使合計等於官方融資金額。`;
+}
+
+// 歷史百分位：期間內維持率「低於」目前值的交易日占比（0% 最低、100% 最高）。
+// 低端（≤1%）＝追繳壓力極端；高端（≥99%）＝融資戶普遍獲利、槓桿偏熱。
+const PCT_WIN = [['全期', 0], ['近 10 年', 10], ['近 5 年', 5], ['近 1 年', 1]];
+function pctOf(xs, v){ let lo = 0; for (const x of xs) if (x < v) lo++; return xs.length ? lo / xs.length * 100 : null; }
+function qOf(xs, p){ const s = [...xs].sort((a, b) => a - b); if (!s.length) return null; const i = (s.length - 1) * p, j = Math.floor(i); return s[j] + (s[Math.min(j + 1, s.length - 1)] - s[j]) * (i - j); }
+function drawPct(all, L){
+  const live = LV ? liveMarket(mk).maint : null;
+  const pf = v => v == null ? '—' : (v < 1 && v > 0 ? v.toFixed(2) : v.toFixed(1)) + '%';
+  const zone = v => v == null ? '' : v <= 1 ? 'down' : v <= 5 ? 'down' : v >= 99 ? 'up' : v >= 95 ? 'up' : '';
+  const rows = PCT_WIN.map(([lab, y]) => {
+    const cut = y ? String(+L.date.slice(0, 4) - y) + L.date.slice(4) : '0';
+    const xs = all.filter(r => r.date > cut).map(r => r.maint);
+    const p = pctOf(xs, L.maint), pl = live == null ? null : pctOf(xs, live);
+    return `<tr><td title="${xs.length.toLocaleString()} 個交易日">${lab}</td><td class="num ${zone(p)}"><b>${pf(p)}</b></td>${live == null ? '' : `<td class="num ${zone(pl)}">${pf(pl)}</td>`}<td class="num">${qOf(xs, .01).toFixed(1)}%</td><td class="num">${qOf(xs, .5).toFixed(1)}%</td><td class="num">${qOf(xs, .99).toFixed(1)}%</td></tr>`;
+  }).join('');
+  $('#mpct').innerHTML = `<div class="sub" style="margin-bottom:4px">歷史百分位・${fd(L.date)}（${MK[mk]}主口徑；期間內維持率低於目前值的交易日占比）</div>
+    <div class="tblwrap"><table class="pct"><thead><tr><th>期間</th><th>百分位</th>${live == null ? '' : `<th>盤中 ${LV.time}</th>`}<th>1% 分位</th><th>中位數</th><th>99% 分位</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="note" style="margin-top:4px">百分位越接近 0% 越極端偏低（融資戶普遍虧損、接近 130% 追繳線）；接近 100% 為極端偏高（槓桿偏熱）。≤5% 標綠、≥95% 標紅。長期水位會因融資規則與市場結構改變而漂移，請同時看全期與近期。只供觀察，未經回測驗證。</div>`;
 }
 
 const MP = r => B === 'r' ? r.rmp : r.mp, OK = r => B === 'r' ? r.rok : r.ok;
