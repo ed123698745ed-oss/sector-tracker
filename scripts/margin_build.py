@@ -450,10 +450,12 @@ def main():
             for kk in ('calib', 'k'):
                 if m.get(kk) is None:
                     m.pop(kk, None)
+    # 盤中暫估用：最新交易日各普通股融資餘額（含未列入排行者），網頁以盤中價格 × 餘額 ÷ 官方融資金額暫估大盤
+    balmap = {c: [p.mkt[1], p.last_bal] for c, p in pos.items() if COMMON.match(c) and p.last_bal and p.bh.get(latest)}
     out = dict(date=latest, generated=datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).isoformat(timespec='seconds'),
                model=dict(version=MODEL, start=START, financing_ratio=RATIO, min_days=MIN_DAYS, max_init_pct=MAX_INIT,
                           max_sensitivity=MAX_SENS, min_balance=MIN_BAL, recent_days=RECENT_N),
-               market=market, stats=stats, rstats=rstats, rows=rows,
+               market=market, bal=balmap, stats=stats, rstats=rstats, rows=rows,
                crash=[dict(date=d, n=v[0], b130=v[1], b140=v[2], bal130=round(v[3]), taiex=taiex.get(d)) for d, v in sorted(crash.items())])
     with open(OUT_JSON, 'w') as f:
         json.dump(out, f, ensure_ascii=False, separators=(',', ':'))
