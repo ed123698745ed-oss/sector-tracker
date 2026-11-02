@@ -93,7 +93,7 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
       <h1>融資觀察</h1>
       <div class="sub" id="sub">讀取資料中…</div>
     </div>
-    <span class="unverified" title="Ed 確認前為試行">試行 MR01</span>
+    <div style="display:flex;gap:8px;align-items:center"><span class="unverified" title="Ed 確認前為試行">試行 MR01</span><button id="reload" type="button" aria-label="重新載入頁面">重新整理</button></div>
   </header>
   <div class="panel" id="srcbar" style="display:flex;flex-direction:column;gap:8px;padding:10px 14px"></div>
 
@@ -167,6 +167,16 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
 <div id="tip"></div>
 <script>
 const $ = s => document.querySelector(s);
+// 加到主畫面的 app 沒有瀏覽器的重新整理鍵，而且會沿用舊版頁面：按鈕強制抓新版；開啟或回到前景時自動比對版本
+const PAGE_VER = '20261102b';
+document.addEventListener('DOMContentLoaded', () => { const b = document.querySelector('#reload'); if (b) b.onclick = () => { location.replace('margin.html?v=' + Date.now() + location.hash); }; });
+function checkVer(){
+  fetch('margin.html?t=' + Date.now(), {cache: 'no-store'}).then(r => r.text()).then(t => {
+    const m = t.match(/PAGE_VER = '([^']+)'/); if (m && m[1] !== PAGE_VER) location.replace('margin.html?v=' + Date.now() + location.hash);
+  }).catch(() => {});
+}
+checkVer();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { checkVer(); if (typeof loadLive === 'function' && typeof M !== 'undefined' && M) loadLive(); } });
 const fd = s => s.slice(0,4) + '/' + s.slice(4,6) + '/' + s.slice(6);
 const fds = s => +s.slice(4,6) + '/' + +s.slice(6);
 const yi = v => (v / 1e8).toLocaleString('zh-TW', {minimumFractionDigits:2, maximumFractionDigits:2});
