@@ -80,6 +80,7 @@ td.num{font-size:15px}
 .closetag{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:999px;background:var(--chip);color:var(--muted);border:1px solid var(--line);margin-left:6px;vertical-align:middle}
 .srcrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13px}
 .livetag{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:999px;background:var(--accent);color:#fff;margin-left:6px;vertical-align:middle}
+.dtag{display:inline-block;white-space:nowrap;font-size:11px;font-weight:500;padding:0 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:4px;vertical-align:middle}
 .liverow{margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}
 table.pct th,table.pct td{padding:6px 7px;cursor:default}
 #tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px;display:none;z-index:9;box-shadow:0 4px 14px rgba(0,0,0,.12)}
@@ -168,7 +169,7 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
 <script>
 const $ = s => document.querySelector(s);
 // 加到主畫面的 app 沒有瀏覽器的重新整理鍵，而且會沿用舊版頁面：按鈕強制抓新版；開啟或回到前景時自動比對版本
-const PAGE_VER = '20261102b';
+const PAGE_VER = '20261102c';
 document.addEventListener('DOMContentLoaded', () => { const b = document.querySelector('#reload'); if (b) b.onclick = () => { location.replace('margin.html?v=' + Date.now() + location.hash); }; });
 function checkVer(){
   fetch('margin.html?t=' + Date.now(), {cache: 'no-store'}).then(r => r.text()).then(t => {
@@ -184,7 +185,7 @@ const f2 = (v, d=2) => v == null ? '—' : (+v).toLocaleString('zh-TW', {minimum
 const sg = (v, d=2) => v == null ? '—' : (v > 0 ? '+' : '') + (+v).toFixed(d);
 const cls = v => v > 0 ? 'up' : v < 0 ? 'down' : 'flat';
 const MK = {TWSE:'上市', TPEX:'上櫃'};
-let LV = null, ROWS0 = null, MODE = 'live'; // 盤中暫估
+let LV = null, ROWS0 = null; // 盤中暫估
 let M, mk = 'TWSE', mspan = '60', cspan = '250', B = 'r', F = {m:'all', t:'all', u:'0', s:'mp'}, page = 0, PER = 20, D = null, dspan = '250';
 
 function tabs(sel, opts, get, set){
@@ -247,15 +248,13 @@ function loadLive(){
     LV = px; applyLive(); drawAll(); if (D) drawDetail();
   }).catch(() => {});
 }
-const liveOn = () => !!LV && MODE === 'live';
+const liveOn = () => !!LV;
 function applyLive(){
   if (!liveOn()) { M.rows = ROWS0; return; }
   M.rows = ROWS0.map(r => { const lp = LV.p[r.s]; if (!lp || !r.c) return r;
     const k = lp / r.c; return {...r, c0: r.c, c: lp, mp: r.mp * k, rmp: r.rmp == null ? null : r.rmp * k, live: 1}; });
 }
-const closeTag = () => `<span class="closetag">盤後正式 ${+M.date.slice(4,6)}/${+M.date.slice(6)}</span>`;
-const modeTag = () => liveOn() ? liveTag() : closeTag();
-const liveTag = () => LV ? `<span class="livetag">${+LV.date.slice(4,6)}/${+LV.date.slice(6)} 盤中暫定 ${LV.time}</span>` : '';
+const dTag = () => LV ? `<span class="dtag">${fds(M.date)} 官方</span>` : '';   // 盤中無法更新的項目才標日期
 function liveMarket(m){   // 回傳 {maint, cover}：普通股融資市值以盤中價重算；無盤中價者沿用收盤
   const L = M.market.filter(r => r.market === m).slice(-1)[0];
   const close = Object.fromEntries(ROWS0.map(r => [r.s, r.c]));
@@ -268,20 +267,19 @@ function liveMarket(m){   // 回傳 {maint, cover}：普通股融資市值以盤
 }
 function drawAll(){
   $('#sub').textContent = '只供觀察，不是交易訊號';
-  $('#srcbar').innerHTML = `<div class="srcrow">${closeTag()}<span>官方融資資料 ${fd(M.date)}；每個交易日約 21:00 公布、21:12 起自動更新</span></div>
-    <div class="srcrow">${LV ? liveTag() + `<span>盤中價格 ${LV.time}；每 10 分鐘更新，只換股價，融資餘額與成本沿用 ${fd(M.date)}</span>` : '<span class="closetag">盤中暫估</span><span>目前沒有（非盤中，或今天資料尚未產生）</span>'}</div>` +
-    (LV ? `<div class="srcrow"><span class="sub">下方分布、家數與排行顯示</span><div class="tabs" id="modetabs"></div></div>` : '');
-  if (LV) tabs('#modetabs', {live: '盤中暫估', close: '盤後正式'}, () => MODE, v => { MODE = v; applyLive(); drawAll(); if (D) drawDetail(); });
+  $('#srcbar').innerHTML = LV
+    ? `<div class="srcrow"><span>盤中 <b>${LV.time}</b> 更新（約 10 分鐘一次）：維持率、家數、分布、排行用盤中股價重算；沒標日期的都是盤中即時，標「${fds(M.date)} 官方」的是融資餘額、成本等只在收盤後公布的資料</span></div>`
+    : `<div class="srcrow"><span>官方融資資料 ${fd(M.date)}；每個交易日約 21:00 公布、21:12 起自動更新</span></div>`;
   drawMarket(); drawCrash(); drawDist(); drawTable();
 }
 function drawMarket(){
   const all = M.market.filter(r => r.market === mk && r.maint != null);
   const n = Math.min(+mspan, all.length), a = all.slice(-n), L = all[all.length - 1], P = all[all.length - 2];
   const dL = P ? L.loan - P.loan : null, dM = P ? L.maint - P.maint : null;
-  $('#mcard').innerHTML = `<div><div class="sub">${MK[mk]}融資維持率 ${closeTag()}</div><div class="big num">${f2(L.maint)}%</div></div>
-    <div class="chg num ${cls(dM)}">${dM == null ? '' : sg(dM) + ' 個百分點'}<div class="sub">含 ETF 口徑 ${f2(L.maint_all)}%</div></div>
-    <div><div class="sub">融資金額餘額</div><div class="num" style="font-size:26px;font-weight:700">${yi(L.loan)} 億</div><div class="num ${cls(dL)}">${dL == null ? '' : '當日 ' + sg(dL / 1e8) + ' 億'}</div></div>` +
-    (liveOn() ? (() => { const v = liveMarket(mk); return `<div style="flex-basis:100%" class="liverow">${liveTag()} <span class="sub">暫估 <b class="num" style="font-size:20px">${f2(v.maint)}%</b>（較 ${fd(L.date)} ${sg(v.maint - L.maint)} 個百分點；${(v.cover * 100).toFixed(0)}% 檔數有盤中價，依前一日融資餘額）</span></div>`; })() : '');
+  const LVm = liveOn() ? liveMarket(mk) : null, cur = LVm && LVm.maint != null ? LVm.maint : L.maint, dC = LVm ? cur - L.maint : dM;
+  $('#mcard').innerHTML = `<div><div class="sub">${MK[mk]}融資維持率</div><div class="big num">${f2(cur)}%</div></div>
+    <div class="chg num ${cls(dC)}">${dC == null ? '' : sg(dC) + ' 個百分點' + (LVm ? `<span class="sub">（較 ${fds(L.date)}）</span>` : '')}<div class="sub">含 ETF 口徑 ${f2(L.maint_all)}%${dTag()}</div>${LVm ? `<div class="sub">${(LVm.cover * 100).toFixed(0)}% 檔數有盤中價，餘額沿用 ${fds(L.date)}</div>` : ''}</div>
+    <div><div class="sub">融資金額餘額${dTag()}</div><div class="num" style="font-size:26px;font-weight:700">${yi(L.loan)} 億</div><div class="num ${cls(dL)}">${dL == null ? '' : '當日 ' + sg(dL / 1e8) + ' 億'}</div></div>`;
   drawPct(all, L);
   const svg = $('#mchart'), W = 420, H = 230, l = 40, r = 44, t = 10, mid = 150, b = 210;
   const xs = a.map((_, i) => l + (a.length > 1 ? i / (a.length - 1) : .5) * (W - l - r));
@@ -322,11 +320,11 @@ function drawPct(all, L){
   const rows = PCT_WIN.map(([lab, y]) => {
     const cut = y ? String(+L.date.slice(0, 4) - y) + L.date.slice(4) : '0';
     const xs = all.filter(r => r.date > cut).map(r => r.maint);
-    const p = pctOf(xs, L.maint), pl = live == null ? null : pctOf(xs, live);
-    return `<tr><td title="${xs.length.toLocaleString()} 個交易日">${lab}</td><td class="num ${zone(p)}"><b>${pf(p)}</b></td>${live == null ? '' : `<td class="num ${zone(pl)}">${pf(pl)}</td>`}<td class="num">${qOf(xs, .01).toFixed(1)}%</td><td class="num">${qOf(xs, .5).toFixed(1)}%</td><td class="num">${qOf(xs, .99).toFixed(1)}%</td></tr>`;
+    const p = pctOf(xs, live == null ? L.maint : live);
+    return `<tr><td title="${xs.length.toLocaleString()} 個交易日">${lab}</td><td class="num ${zone(p)}"><b>${pf(p)}</b></td><td class="num">${qOf(xs, .01).toFixed(1)}%</td><td class="num">${qOf(xs, .5).toFixed(1)}%</td><td class="num">${qOf(xs, .99).toFixed(1)}%</td></tr>`;
   }).join('');
-  $('#mpct').innerHTML = `<div class="sub" style="margin-bottom:4px">歷史百分位・${fd(L.date)}（${MK[mk]}主口徑；期間內維持率低於目前值的交易日占比）</div>
-    <div class="tblwrap"><table class="pct"><thead><tr><th>期間</th><th>百分位</th>${live == null ? '' : `<th>盤中 ${LV.time}</th>`}<th>1% 分位</th><th>中位數</th><th>99% 分位</th></tr></thead><tbody>${rows}</tbody></table></div>
+  $('#mpct').innerHTML = `<div class="sub" style="margin-bottom:4px">歷史百分位・${live == null ? fd(L.date) : '盤中 ' + LV.time + ' ' + f2(live) + '%'}（${MK[mk]}主口徑；期間內維持率低於目前值的交易日占比）</div>
+    <div class="tblwrap"><table class="pct"><thead><tr><th>期間</th><th>百分位</th><th>1% 分位</th><th>中位數</th><th>99% 分位</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="note" style="margin-top:4px">百分位越接近 0% 越極端偏低（融資戶普遍虧損、接近 130% 追繳線）；接近 100% 為極端偏高（槓桿偏熱）。≤5% 標綠、≥95% 標紅。長期水位會因融資規則與市場結構改變而漂移，請同時看全期與近期。只供觀察，未經回測驗證。</div>`;
 }
 
@@ -334,10 +332,9 @@ const MP = r => B === 'r' ? r.rmp : r.mp, OK = r => B === 'r' ? r.rok : r.ok;
 function drawCrash(){
   const all = M.crash.filter(x => x.n), a = all.slice(-Math.min(+cspan, all.length)), L = all[all.length - 1];
   const pk = a.reduce((m, x) => x.b130 / x.n > m.b130 / m.n ? x : m, a[0]);
-  $('#ccard').innerHTML = `<div><div class="sub">低於 130% ${closeTag()}</div><div class="big num">${L.b130} 家</div><div class="sub">占 ${(L.b130 / L.n * 100).toFixed(1)}%（樣本 ${L.n}）；低於 140% ${L.b140} 家</div></div>
-    <div><div class="sub">期間最高</div><div class="num" style="font-size:26px;font-weight:700">${pk.b130} 家</div><div class="sub">${fd(pk.date)}，占 ${(pk.b130 / pk.n * 100).toFixed(1)}%</div></div>` +
-    (liveOn() ? (() => { const rk = M.rows.filter(r => r.rok && r.rmp != null), b1 = rk.filter(r => r.rmp < 130).length, b2 = rk.filter(r => r.rmp < 140).length;
-      return `<div style="flex-basis:100%" class="liverow">${liveTag()} <span class="sub">低於 130% 暫估 <b class="num" style="font-size:20px">${b1} 家</b>（占 ${(b1 / rk.length * 100).toFixed(1)}%）；低於 140% ${b2} 家</span></div>`; })() : '');
+  let C = L; if (liveOn()) { const rk = M.rows.filter(r => r.rok && r.rmp != null); C = {n: rk.length, b130: rk.filter(r => r.rmp < 130).length, b140: rk.filter(r => r.rmp < 140).length}; }
+  $('#ccard').innerHTML = `<div><div class="sub">低於 130%</div><div class="big num">${C.b130} 家</div><div class="sub">占 ${(C.b130 / C.n * 100).toFixed(1)}%（樣本 ${C.n}）；低於 140% ${C.b140} 家</div></div>
+    <div><div class="sub">期間最高</div><div class="num" style="font-size:26px;font-weight:700">${pk.b130} 家</div><div class="sub">${fd(pk.date)}，占 ${(pk.b130 / pk.n * 100).toFixed(1)}%</div></div>`;
   const svg = $('#cchart'), W = 420, H = 210, l = 34, r = 46, t = 10, b = 186;
   const xs = a.map((_, i) => l + (a.length > 1 ? i / (a.length - 1) : .5) * (W - l - r));
   const p1 = a.map(x => x.b130 / x.n * 100), p2 = a.map(x => x.b140 / x.n * 100);
@@ -356,7 +353,7 @@ function drawCrash(){
   hover(svg, xs, k => { const x = a[k]; return `<b>${fd(x.date)}</b><br>低於 130%：${x.b130} 家（${p1[k].toFixed(1)}%）<br>低於 140%：${x.b140} 家<br>低於 130% 個股融資餘額 ${Math.round(x.bal130).toLocaleString()} 張<br>加權指數 ${x.taiex ? x.taiex.toLocaleString() : '—'}`; });
   const rows = M.rows.filter(r => r.rok && r.rmp < 130).sort((x, y) => x.rmp - y.rmp);
   $('#cdet').open = rows.length <= 20;
-  $('#clsum').innerHTML = `低於 130% 的個股（${rows.length} 檔，依近期維持率排序）${modeTag()}`;
+  $('#clsum').innerHTML = `低於 130% 的個股（${rows.length} 檔，依近期維持率排序）`;
   $('#ctbl').innerHTML = `<tr><th>股票</th><th>收盤</th><th>近期成本</th><th>近期維持率</th><th>當日增減</th><th>5 日增減</th><th>距 20 日高</th><th>融資餘額</th></tr>` +
     rows.map(r => `<tr style="cursor:pointer" data-s="${r.s}"><td>${r.s} ${r.n}</td><td class="num">${f2(r.c)}</td><td class="num">${f2(r.rc)}</td><td class="num down"><b>${f2(r.rmp)}%</b></td>
       <td class="num ${cls(r.ch)}">${sg(r.ch, 0)}</td><td class="num ${cls(r.c5)}">${r.c5 == null ? '—' : sg(r.c5, 0)}</td><td class="num ${cls(r.dd20)}">${r.dd20 == null ? '—' : sg(r.dd20, 1) + '%'}</td><td class="num">${r.b.toLocaleString()}</td></tr>`).join('') +
@@ -368,7 +365,7 @@ function drawDist(){
   const ok = M.rows.filter(OK).map(r => ({...r, mp: MP(r)})), st0 = B === 'r' ? M.rstats : M.stats;
   const cntB = a => ({130: a.filter(r => r.mp < 130).length, 140: a.filter(r => r.mp < 140).length, 150: a.filter(r => r.mp < 150).length});
   const st = {raw: st0.raw, valid: ok.length, below: cntB(ok), by_market: Object.fromEntries(['TWSE', 'TPEX'].map(m => { const a = ok.filter(r => r.m === m); return [m, {valid: a.length, below: cntB(a)}]; }))};
-  $('#dsub').innerHTML = `${B === 'r' ? '近 30 日追價者' : '全體平均'}，有效 ${st.valid}／原始 ${st.raw} 檔 ${modeTag()}`;
+  $('#dsub').innerHTML = `${B === 'r' ? '近 30 日追價者' : '全體平均'}，有效 ${st.valid}／原始 ${st.raw} 檔`;
   const card = (title, o, n) => `<div class="card"><h3>${title}</h3>${[130,140,150].map(t => `<div class="k">低於 ${t}%<b>${o[t]} 家<span class="sub" style="font-weight:400"> ${n ? (o[t] / n * 100).toFixed(1) : '—'}%</span></b></div>`).join('')}<div class="k">有效樣本<b>${n}</b></div></div>`;
   $('#bcards').innerHTML = card('全部', st.below, st.valid) + card('上市', st.by_market.TWSE.below, st.by_market.TWSE.valid) + card('上櫃', st.by_market.TPEX.below, st.by_market.TPEX.valid);
   const cnt = BINS.map(([a, b]) => ok.filter(r => r.mp >= a && r.mp < b).length);
@@ -394,11 +391,11 @@ function filtered(){
 }
 function drawTable(){
   const a = filtered(), np = Math.max(1, Math.ceil(a.length / PER)); page = Math.min(page, np - 1);
-  $('#rsub').innerHTML = `共 ${a.length} 檔 ${modeTag()}` + (liveOn() ? '（收盤欄為盤中價）' : '');
+  $('#rsub').innerHTML = `共 ${a.length} 檔` + (liveOn() ? `（股價、維持率為盤中；成本、使用率、融資餘額、5 日增減為 ${fds(M.date)} 官方）` : '');
   $('#pg').textContent = `${page + 1} / ${np}`;
   const rows = a.slice(page * PER, (page + 1) * PER);
   const rv = B === 'r';
-  $('#tbl').innerHTML = `<tr><th>#</th><th>股票</th><th>市場</th><th>收盤</th><th>${rv ? '近期成本' : '估算成本'}</th><th>${rv ? '近期維持率' : '估算維持率'}</th><th>${rv ? '全體平均' : '近期'}</th><th>使用率</th><th>融資餘額</th><th>5 日增減</th></tr>` +
+  $('#tbl').innerHTML = `<tr><th>#</th><th>股票</th><th>市場</th><th>${liveOn() ? "股價" : "收盤"}</th><th>${rv ? '近期成本' : '估算成本'}</th><th>${rv ? '近期維持率' : '估算維持率'}</th><th>${rv ? '全體平均' : '近期'}</th><th>使用率</th><th>融資餘額</th><th>5 日增減</th></tr>` +
     rows.map((r, i) => `<tr style="cursor:pointer" data-s="${r.s}"><td>${page * PER + i + 1}</td><td>${r.s} ${r.n}${OK(r) ? '' : `<span class="tag" title="${rv ? '近期口徑未列入' : r.why}">未通過</span>`}</td><td>${MK[r.m]}</td>
       <td class="num">${f2(r.c)}</td><td class="num">${f2(rv ? r.rc : r.cost)}</td><td class="num ${MP(r) < 130 ? 'down' : ''}"><b>${f2(MP(r))}%</b></td><td class="num">${(rv ? r.mp : r.rmp) == null ? '—' : f2(rv ? r.mp : r.rmp) + '%'}</td><td class="num">${r.u == null ? '—' : f2(r.u) + '%'}</td>
       <td class="num">${r.b.toLocaleString()}</td><td class="num ${cls(r.c5)}">${r.c5 == null ? '—' : sg(r.c5, 0)}</td></tr>`).join('') +

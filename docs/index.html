@@ -213,6 +213,17 @@ footer .fine{font-size:12px;margin-top:6px}
 </div>
 
 <script>
+// 加到主畫面的 app 會沿用舊版頁面：開啟或回到前景時比對版本，有新版就重新載入
+const PAGE_VER = '20261102c';
+function checkVer(){
+  fetch('index.html?t=' + Date.now(), {cache: 'no-store'}).then(r => r.text()).then(t => {
+    const m = t.match(/PAGE_VER = '([^']+)'/); if (m && m[1] !== PAGE_VER) location.replace('index.html?v=' + Date.now() + location.hash);
+  }).catch(() => {});
+}
+checkVer();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVer(); });
+</script>
+<script>
 const RULE_TXT = {A:'A 齊漲',B:'B 帶頭擴散',C:'C 強勢'};
 const $ = id => document.getElementById(id);
 const cls = v => v > 0 ? 'up' : v < 0 ? 'down' : 'flat';
@@ -275,7 +286,7 @@ function loadIntra(){
     $('intraBody').innerHTML = rows.length ? rows.map((r, k) => (k === 0 || gi(rows[k-1][0]) !== gi(r[0]) ? `<div class="g">${gi(r[0])}</div>` : '')
       + `<div class="row"><span>${r[0]} <span class="chip rule">${r[1]}</span></span><span class="num"><span class="${cls(r[2])}">${pct(r[2])}</span>　≥${geTxt(r[0])}% ${r[3]}/${r[4]}</span></div>`).join('')
       : '<div class="row">目前沒有題材上榜</div>';
-    $('intra').hidden = false;
+    // 盤中區塊不再另外顯示：摘要、熱門題材、全部題材表已直接改用盤中數字
   }).catch(() => {});
 }
 setInterval(loadIntra, 120000);
@@ -304,8 +315,8 @@ function render(i){
   const ba = live ? ((META.ba_now || [])[bucket(d.tx)] ?? null) : (d.ba ?? null);
   const closeTxt = `${fmtD(D[i].d).slice(5)} 收盤`;
   $('mpNote').textContent = `規則 ${META.mp_rule || 'MP01'}・只供觀察${live ? `・依 ${closeTxt}` : ''}`;
-  $('allNote').textContent = live && LIVE_D ? `點欄位排序・點題材名稱展開成分股・均漲到連續為盤中暫定；狀態、本週主流、主流週、延續週為 ${closeTxt}` : '點欄位排序・點題材名稱展開成分股';
-  const liveTag = live ? `${fmtD(live.date)} 盤中暫定 ${live.time}（報價至 ${live.quote_time || '—'}，收盤後以正式資料為準）` : '';
+  $('allNote').textContent = live && LIVE_D ? `點欄位排序・點題材名稱展開成分股・狀態、本週主流、主流週、延續週為 ${closeTxt}，其餘為盤中` : '點欄位排序・點題材名稱展開成分股';
+  const liveTag = live ? `盤中 ${live.time} 更新（報價至 ${live.quote_time || '—'}）；沒標日期的都是盤中即時，標「收盤」日期的是該日收盤資料` : '';
   $('sub').textContent = live ? liveTag : `資料日 ${fmtD(d.d)}・更新 ${META.generated}`;
   // 摘要
   let tag = '', tagCls = '';
@@ -321,13 +332,12 @@ function render(i){
       <div>大盤${BUCKET_TXT[bucket(d.tx)] ?? ''}的日子，近三年平均 <b>${ba != null ? ba.toFixed(1) : '—'}</b> 個上榜</div>
       ${(() => { const c = contSummary(i); return c ? `<div>本週主流族群 <b>${c.week}</b> 組${c.prog ? '（進行中）' : ''}・當日主流 <b>${c.day}</b> 組${live ? `（${closeTxt}）` : ''}</div>` : ''; })()}
       ${tag ? `<div><span class="badge ${tagCls}">${tag}</span></div>` : ''}
-      ${live ? `<div><span class="badge live">盤中暫定 ${live.time}</span></div>` : ''}
     </div>`;
   drawMP(i);
   drawLiveable(drawTrend);
   // 今日熱門（盤中：連續天數與近 5／20 日次數把今天算進去）
   const hot = d.t.map((r, ti) => ({r, ti})).filter(x => x.r[0]);
-  $('hotTitle').textContent = live ? `盤中熱門題材（${hot.length}）・${live.time} 暫定` : `當日熱門題材（${hot.length}）`;
+  $('hotTitle').textContent = live ? `當日熱門題材（${hot.length}）` : `當日熱門題材（${hot.length}）`;
   const cnt = (ti, w) => live ? count(ti, i, w - 1) + 1 : count(ti, i, w);
   hot.forEach(x => { x.s = live ? streak(x.ti, i) + 1 : streak(x.ti, i); x.c20 = cnt(x.ti, 20); });
   hot.sort((a,b) => b.s - a.s || b.c20 - a.c20 || b.r[1] - a.r[1]);
@@ -453,7 +463,7 @@ function drawTrend(i){
   const lab = [0, Math.floor(seg.length/2), seg.length-1];
   lab.forEach(k => { const x = L + k*bw + bw/2; g += `<text x="${x}" y="${H-8}" text-anchor="${k===0?'start':k===seg.length-1?'end':'middle'}" font-size="11" fill="var(--muted)">${fmtD(seg[k].d).slice(5)}</text>`; });
   const svg = $('trend'); svg.innerHTML = g; const S = D;
-  const tipTxt = d => { const ba = d.ba ?? null; return `${fmtD(d.d)}${d.live ? '（盤中暫定）' : ''}：熱門 <b>${d.hits}</b> 個，加權 <span class="${cls(d.tx)}">${pct(d.tx)}</span>，同級近三年平均 ${ba != null ? ba.toFixed(1) : '—'}`; };
+  const tipTxt = d => { const ba = d.ba ?? null; return `${fmtD(d.d)}${d.live ? '（盤中）' : ''}：熱門 <b>${d.hits}</b> 個，加權 <span class="${cls(d.tx)}">${pct(d.tx)}</span>，同級近三年平均 ${ba != null ? ba.toFixed(1) : '—'}`; };
   svg.onclick = svg.onmousemove = e => {
     const k = e.target.dataset && e.target.dataset.k; if (k == null) return;
     $('tip').innerHTML = tipTxt(S[+k]);
@@ -490,7 +500,7 @@ function memRow(r, d, n){
     const got = new Set(r.mem.map(x => x[0]));
     body = r.mem.map(([nm, p]) => `<span>${nm}<b class="${cls(p)}">${pct(p)}</b></span>`).join('')
       + all.filter(nm => !got.has(nm)).map(nm => `<span class="na">${nm} 無成交</span>`).join('');
-    note = d.live ? '盤中暫定漲跌' : `${fmtD(d.d)} 收盤漲跌`;
+    note = d.live ? '盤中漲跌' : `${fmtD(d.d)} 收盤漲跌`;
   } else {
     body = all.map(nm => `<span>${nm}</span>`).join('');
     note = '這天未上榜，只列成分股名稱（最新一天與盤中會顯示每檔漲跌）';

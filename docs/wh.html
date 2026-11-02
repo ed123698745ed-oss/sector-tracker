@@ -77,6 +77,7 @@ td.num{font-size:15px}
 .tag{display:inline-block;font-size:11px;padding:0 6px;border-radius:999px;background:var(--chip);color:var(--muted);margin-left:3px}
 .unverified{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:999px;border:1px solid #d99a1e;color:#b07a10;background:rgba(217,154,30,.12)}
 .livetag{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:999px;background:var(--accent);color:#fff;margin-left:6px;vertical-align:middle}
+.dtag{display:inline-block;white-space:nowrap;font-size:11px;font-weight:500;padding:0 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:4px;vertical-align:middle}
 .liverow{margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}
 #tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px;display:none;z-index:9;box-shadow:0 4px 14px rgba(0,0,0,.12)}
 </style>
@@ -133,7 +134,7 @@ td.num{font-size:15px}
   </section>
 
   <section>
-    <h2>離高點分布<small>收盤離近 250 日最高價</small></h2>
+    <h2>離高點分布<small>收盤離近 250 日最高價<span id="ddtag"></span></small></h2>
     <div class="tabs" id="gtabs"></div>
     <div class="tabs" id="rtabs"></div>
     <div class="panel">
@@ -166,6 +167,17 @@ td.num{font-size:15px}
   </div>
 </div>
 <div id="tip"></div>
+<script>
+// 加到主畫面的 app 會沿用舊版頁面：開啟或回到前景時比對版本，有新版就重新載入
+const PAGE_VER = '20261102c';
+function checkVer(){
+  fetch('wh.html?t=' + Date.now(), {cache: 'no-store'}).then(r => r.text()).then(t => {
+    const m = t.match(/PAGE_VER = '([^']+)'/); if (m && m[1] !== PAGE_VER) location.replace('wh.html?v=' + Date.now() + location.hash);
+  }).catch(() => {});
+}
+checkVer();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVer(); });
+</script>
 <script>
 const G = {all:'全市場', twse:'上市市值前50', otc:'上櫃市值前30', hp:'高價股前30'};
 const DIST = ['≤-9','-9~-5','-5~-3','-3~-1','-1~0','0','0~1','1~3','3~5','5~9','≥9'];
@@ -202,7 +214,8 @@ function loadLive(){
   }).catch(() => {});
 }
 const liveOn = () => LIVE && idx === W.dates.length - 1;
-const liveTag = t => `<span class="livetag">${+LIVE.date.slice(4,6)}/${+LIVE.date.slice(6)} 盤中暫定 ${t || LIVE.time}</span>`;
+const fds = s => +s.slice(4,6) + '/' + +s.slice(6);
+const dTag = () => liveOn() ? `<span class="dtag">${fds(W.dates[idx])} 收盤</span>` : '';   // 盤中無法更新的項目才標日期
 
 function tabs(sel, opts, get, set){
   const el = $(sel); el.innerHTML = '';
@@ -215,14 +228,14 @@ function tabs(sel, opts, get, set){
 }
 function draw(){
   const ds = W.dates[idx];
-  $('#sub').textContent = `資料日 ${fd(ds)}・盤後` + (liveOn() ? `；盤中暫定 ${LIVE.time}（來源：${LIVE.source || '證交所基本市況報導'}）每 5 分鐘更新加權指數、市場狀態、三組卡片與個股表，每 10 分鐘更新全市場漲跌分布與全市場卡片；均線、新高低、離高點分布等仍為收盤資料` : '');
+  $('#sub').textContent = liveOn() ? `盤中 ${LIVE.time} 更新（約 5～10 分鐘一次）；沒標日期的數字都是盤中即時，標「收盤」日期的是該日收盤資料` : `資料日 ${fd(ds)}`;
   drawIdx(); drawX(); drawDist(); drawCards(); drawDD(); drawTrend(); drawTable();
 }
 function drawIdx(){
   let t = W.taiex[idx], p = W.taiex[idx-1], lab = '加權指數';
-  if (liveOn()) { t = LIVE.taiex; p = LIVE.taiex_y; lab = '加權指數' + liveTag(); }
+  if (liveOn()) { t = LIVE.taiex; p = LIVE.taiex_y; }
   const ch = t && p ? t - p : null, cp = ch != null ? ch / p * 100 : null;
-  $('#idx').innerHTML = `<div><div class="sub">${lab}</div><div class="big num">${t ? t.toLocaleString('zh-TW',{maximumFractionDigits:2}) : '—'}</div>${liveOn() ? `<div class="sub">報價至 ${LIVE.quote_time || '—'}，收盤後以正式資料為準</div>` : ''}</div>
+  $('#idx').innerHTML = `<div><div class="sub">${lab}</div><div class="big num">${t ? t.toLocaleString('zh-TW',{maximumFractionDigits:2}) : '—'}</div>${liveOn() ? `<div class="sub">報價至 ${LIVE.quote_time || '—'}</div>` : ''}</div>
     <div class="chg num ${cls(ch)}">${ch == null ? '' : (ch>0?'+':'') + ch.toFixed(2) + '（' + (cp>0?'+':'') + cp.toFixed(2) + '%）'}</div>`;
 }
 const XS = {'-1': ['下跌瘋狂', 'var(--down)'], '1': ['上漲瘋狂', 'var(--up)'], '2': ['資金集中炒作', '#d99a1e'], '0': ['常態', 'var(--flat)']};
@@ -252,7 +265,7 @@ function xLiveLine(){   // 以盤中指數暫算今日狀態（同一規則；�
   else note = '若收盤維持，仍為';
   const pc = z => (z > 0 ? '+' : '') + (z * 100).toFixed(1) + '%';
   const k = prev && !st ? prev : st;
-  return `<div style="flex-basis:100%" class="liverow">${liveTag()} <span class="sub">距 ${wn.down} 日高 <b class="num">${pc(dd)}</b>／距 ${wn.up} 日低 <b class="num">${pc(ru)}</b>：${note}<b style="color:${XS[String(k)][1]}">${XS[String(k)][0]}</b></span></div>`;
+  return `<div style="flex-basis:100%" class="liverow"><span class="sub">盤中 距 ${wn.down} 日高 <b class="num">${pc(dd)}</b>／距 ${wn.up} 日低 <b class="num">${pc(ru)}</b>：${note}<b style="color:${XS[String(k)][1]}">${XS[String(k)][0]}</b></span></div>`;
 }
 function xStart(){ const i = W.dates.findIndex(d => d >= '20050101'); return i < 0 ? 0 : i; }
 const XV = {span: 750, end: null};
@@ -305,7 +318,7 @@ function drawX(){
   const k = x_.state[idx], [lab, col] = XS[String(k)];
   const pc = v => v == null ? '—' : (v > 0 ? '+' : '') + (v * 100).toFixed(1) + '%';
   const th = x_.th || {down: [0.09, 0.06], up: [0.2, 0.05]}, wn = x_.win || {down: 15, up: 40};
-  let h = `<span style="font-size:20px;font-weight:700;color:${col}">● ${lab}</span>`;
+  let h = `<span style="font-size:20px;font-weight:700;color:${col}">● ${lab}</span>${dTag()}`;
   const ep = xEpisodes().find(e => e.s <= idx && e.e >= idx);
   if (ep && k) { const L = xLeg({s: ep.s, e: idx, k}), cur = W.taiex[idx];
     h += `<span class="sub">已連續 <b class="num">${idx - ep.s + 1}</b> 個交易日</span>` +
@@ -357,7 +370,7 @@ function renderX(){
 function drawDist(){
   const A = liveOn() && LIVE.all ? LIVE.all : null, g0 = W.groups.all;
   const o = A ? {n: [A.n], up: [A.up], flat: [A.flat], down: [A.down], lu: [A.lu], ld: [A.ld], dist: [A.dist]} : g0, k0 = A ? 0 : idx;
-  $('#distsub').innerHTML = A ? `上市櫃普通股 ${liveTag(A.time)} <span class="sub">每 10 分鐘更新；來源：${LIVE.source || '證交所基本市況報導'}；收盤後改用證交所、櫃買中心收盤行情</span>`
+  $('#distsub').innerHTML = A ? `上市櫃普通股 <span class="sub">（${A.time}）</span>`
     : W.dates[idx] < '20070702' ? '僅上市普通股（櫃買資料 2007/07 起）' : '上市櫃普通股';
   const n = o.n[k0];
   if (n == null) return;
@@ -373,19 +386,15 @@ function drawDist(){
   });
   $('#dist').innerHTML = g;
 }
-function cardLive(g){
-  if (!liveOn()) return '';
-  if (g === 'all') { const A = LIVE.all; if (!A || !A.n) return '';
-    return `<div class="liverow"><div class="k">${liveTag(A.time)}</div>
-    <div class="k">上漲／下跌 <b><span class="up">${A.up}</span>／<span class="down">${A.down}</span></b>（有成交 ${A.n} 檔）</div>
-    <div class="k">上漲比例 <b>${fmt(A.up / A.n * 100)}%</b>　漲停／跌停 <b><span class="up">${A.lu}</span>／<span class="down">${A.ld}</span></b></div></div>`; }
-  const v = W.stocks.filter(r => r.g.includes(g)).map(r => LIVE.stocks[r.c]).filter(Boolean);
-  if (!v.length) return '';
-  const u = v.filter(z => z[1] > 0).length, d = v.filter(z => z[1] < 0).length;
-  const lu = v.filter(z => z[2] === 1).length, ld = v.filter(z => z[2] === -1).length;
-  return `<div class="liverow"><div class="k">${liveTag()}</div>
-    <div class="k">上漲／下跌 <b><span class="up">${u}</span>／<span class="down">${d}</span></b>（有成交 ${v.length} 檔）</div>
-    <div class="k">上漲比例 <b>${fmt(u / v.length * 100)}%</b>　漲停／跌停 <b><span class="up">${lu}</span>／<span class="down">${ld}</span></b></div></div>`;
+function cardUD(g, o){   // 上漲／下跌／漲跌停：盤中有資料就用盤中，否則用收盤
+  let u, d, n, lu = null, ld = null, note = '';
+  const L = liveOn() && (g === 'all' ? LIVE.all : W.stocks.filter(r => r.g.includes(g)).map(r => LIVE.stocks[r.c]).filter(Boolean));
+  if (L && g === 'all' && L.n) { u = L.up; d = L.down; n = L.n; lu = L.lu; ld = L.ld; note = `（有成交 ${n} 檔）`; }
+  else if (L && g !== 'all' && L.length) { n = L.length; u = L.filter(z => z[1] > 0).length; d = L.filter(z => z[1] < 0).length;
+    lu = L.filter(z => z[2] === 1).length; ld = L.filter(z => z[2] === -1).length; note = `（有成交 ${n} 檔）`; }
+  else { u = o.up[idx]; d = o.down[idx]; n = o.n[idx]; lu = o.lu ? o.lu[idx] : null; ld = o.ld ? o.ld[idx] : null; note = dTag(); }
+  return `<div class="k">上漲／下跌 <b><span class="up">${u}</span>／<span class="down">${d}</span></b>${note}</div>
+      <div class="k">上漲比例 <b>${fmt(u / n * 100)}%</b>${lu != null ? `　漲停／跌停 <b><span class="up">${lu}</span>／<span class="down">${ld ?? '—'}</span></b>` : ''}</div>`;
 }
 function drawCards(){
   let h = '';
@@ -395,12 +404,11 @@ function drawCards(){
     const o = W.groups[g]; if (o.n[idx] == null) continue;
     const n = o.n[idx], ma = o.ma[idx], mad = o.mad[idx], hi = o.hi[idx], lo = o.lo[idx], hd = o.hld[idx];
     h += `<div class="card"><h3>${G[g]}<span class="tag">${n} 檔</span></h3>
-      <div class="k">上漲／下跌 <b><span class="up">${o.up[idx]}</span>／<span class="down">${o.down[idx]}</span></b></div>
-      <div class="k">上漲比例 <b>${fmt(o.up[idx]/n*100)}%</b></div>
-      <div class="k">站上 月／季／半年／年線 <b>${[0,1,2,3].map(k => fmt(pctS(ma[k],mad[k]),0)).join('／')}%</b></div>
-      <div class="k">新高 20／60／250 <b class="up">${hi.map((v, k) => hd[k] ? v : '—').join('／')}</b></div>
-      <div class="k">新低 20／60／250 <b class="down">${lo.map((v, k) => hd[k] ? v : '—').join('／')}</b></div>
-      <div class="k">今年報酬中位數 <b class="${cls(o.ytd[idx])}">${fmt(o.ytd[idx])}%</b></div>${cardLive(g)}</div>`;
+      ${cardUD(g, o)}
+      <div class="k">站上 月／季／半年／年線 <b>${[0,1,2,3].map(k => fmt(pctS(ma[k],mad[k]),0)).join('／')}%</b>${dTag()}</div>
+      <div class="k">新高 20／60／250 <b class="up">${hi.map((v, k) => hd[k] ? v : '—').join('／')}</b>${dTag()}</div>
+      <div class="k">新低 20／60／250 <b class="down">${lo.map((v, k) => hd[k] ? v : '—').join('／')}</b>${dTag()}</div>
+      <div class="k">今年報酬中位數 <b class="${cls(o.ytd[idx])}">${fmt(o.ytd[idx])}%</b>${dTag()}</div></div>`;
   }
   $('#cards').innerHTML = h;
 }
@@ -453,7 +461,7 @@ function drawDD(){
 }
 function drawTrend(){
   const [s, e] = range(), o = W.groups[ddG], Wd = 420, H = 200;
-  $('#trendg').textContent = G[ddG];
+  $('#trendg').innerHTML = G[ddG] + dTag(); $('#ddtag').innerHTML = dTag();
   const x = i => (i - s) / Math.max(1, e - s) * Wd, y = v => 8 + (1 - v / 100) * (H - 20);
   const lines = [[0,'月線','var(--d5)'],[1,'季線','var(--d3)'],[3,'年線','var(--d0)']];
   let g = xAxis(s, e, Wd, x);
@@ -490,7 +498,7 @@ function hover(sel, s, e, x, fn){
 function drawTable(){
   const latest = idx === W.dates.length - 1;
   const lv = latest && liveOn();
-  $('#stockdate').innerHTML = lv ? `${liveTag()} 收盤、市值、漲跌% 為盤中暫定；其他欄位為 ${fd(W.stock_date)} 收盤` : latest ? `資料日 ${fd(W.stock_date)}` : `個股表只提供最新交易日（${fd(W.stock_date)}）`;
+  $('#stockdate').innerHTML = lv ? `價格、市值、漲跌% 為盤中；今年%、近20日%、距高點%、均線、創高為 ${fds(W.stock_date)} 收盤` : latest ? `資料日 ${fd(W.stock_date)}` : `個股表只提供最新交易日（${fd(W.stock_date)}）`;
   const cols = [['c','代號'],['n','名稱'],['px','收盤'],['cap','市值(億)'],['pct','漲跌%'],['ytd','今年%'],['r20','近20日%'],['dd','距高點%'],['ma','均線'],['hi','創高']];
   const rows = W.stocks.filter(r => r.g.includes(stG)).map(r => { const z = lv && LIVE.stocks[r.c];
     return z ? {...r, px: z[0], pct: z[1], cap: r.cap != null && r.px ? Math.round(r.cap * z[0] / r.px) : r.cap} : r; }).sort((a, b) => {
