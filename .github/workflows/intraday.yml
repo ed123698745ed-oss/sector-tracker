@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: intraday
@@ -25,6 +26,17 @@ jobs:
         run: |
           H=$(TZ=Asia/Taipei date +%H%M); W=$(TZ=Asia/Taipei date +%u)
           if [ "$W" -le 5 ] && [ "$H" -ge 0900 ] && [ "$H" -le 1345 ]; then echo "go=1" >> "$GITHUB_OUTPUT"; else echo "非盤中時間，略過"; fi
+      - name: 權值高價股／融資觀察盤中迴圈若沒在跑就啟動（GitHub 排程常漏觸發，靠本工作每 10 分鐘補）
+        if: steps.tw.outputs.go == '1'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          D=$(TZ=Asia/Taipei date +%Y-%m-%d)
+          N=$(gh run list -w wh_intraday.yml -L 10 --json status,createdAt --jq "[.[] | select((.status==\"in_progress\" or .status==\"queued\" or .status==\"waiting\" or .status==\"pending\"))] | length")
+          echo "權值盤中迴圈進行中／排隊：$N"
+          if [ "$N" = "0" ]; then gh workflow run wh_intraday.yml --ref main && echo "已啟動權值盤中迴圈"; fi
       - uses: actions/checkout@v4
         if: steps.tw.outputs.go == '1'
       - uses: actions/setup-python@v5

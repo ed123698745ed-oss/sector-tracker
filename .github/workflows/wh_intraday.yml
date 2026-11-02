@@ -4,6 +4,8 @@ name: 權值高價股盤中暫定
 # 多個排程只是備援：同組 concurrency 不取消進行中的工作，後到的排隊；開盤迴圈結束後才輪到的會因非盤中直接結束。
 on:
   workflow_dispatch:
+  push:
+    paths: ['test/WH_TRIGGER']   # 備用：改這個檔案即可手動觸發
   schedule:
     - cron: '50 0 * * 1-5'   # 台北 08:50
     - cron: '20 1 * * 1-5'   # 台北 09:20 備援
