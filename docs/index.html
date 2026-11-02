@@ -36,6 +36,7 @@ select{font:inherit;font-size:14px;padding:6px 10px;border-radius:8px;border:1px
 select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 section{display:flex;flex-direction:column;gap:10px}
 h2{margin:0;font-size:16px}
+.upd{font-size:12px;font-weight:500;color:var(--muted);margin-left:8px;white-space:nowrap}
 h2 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
 .num{font-family:var(--num);font-variant-numeric:tabular-nums}
 .up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--flat)}
@@ -78,6 +79,7 @@ h2 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
 .mp .ok{color:var(--accent);font-weight:700}.mp .no{color:var(--muted)}
 .mp .ev{font-size:13px;color:var(--muted)}.mp .ev b{color:var(--fg)}
 .mp svg{width:100%;height:auto;display:block}
+section[hidden]{display:none}
 .intra{background:var(--panel);border:1px solid var(--accent);border-radius:14px;padding:12px 14px}
 .intra .row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
 .intra .row:last-child{border-bottom:0}
@@ -181,12 +183,12 @@ footer .fine{font-size:12px;margin-top:6px}
   <div class="summary" id="summary"></div>
 
   <section id="mpsec">
-    <h2>市場階段<small id="mpNote">規則 MP01・只供觀察</small></h2>
+    <h2>市場階段<small id="mpNote">規則 MP01・只供觀察</small><span class="upd" id="u_mp"></span></h2>
     <div class="mp" id="mp"></div>
   </section>
 
   <section>
-    <h2>熱門題材數<small>近 60 個交易日</small></h2>
+    <h2>熱門題材數<small>近 60 個交易日</small><span class="upd" id="u_cnt"></span></h2>
     <div class="chart">
       <svg id="trend" viewBox="0 0 420 200" role="img" aria-label="近 60 日每日熱門題材數"></svg>
       <div class="legend"><span><i style="background:var(--accent)"></i>熱門題材數</span><span><i style="background:var(--muted);border-radius:50%"></i>大盤漲跌相近時的近三年平均</span></div>
@@ -195,17 +197,17 @@ footer .fine{font-size:12px;margin-top:6px}
   </section>
 
   <section>
-    <h2 id="hotTitle">當日熱門題材</h2>
+    <h2><span id="hotTitle">當日熱門題材</span><span class="upd" id="u_hot"></span></h2>
     <div class="cards" id="cards"></div>
   </section>
 
   <section>
-    <h2>近 20 日上榜熱度<small>藍格＝當天上榜，右側為 20 日上榜次數</small></h2>
+    <h2>近 20 日上榜熱度<small>藍格＝當天上榜，右側為 20 日上榜次數</small><span class="upd" id="u_heat"></span></h2>
     <div class="scroll"><table class="heat" id="heat"></table></div>
   </section>
 
   <section>
-    <h2>全部題材<small id="allNote">點欄位排序・點題材名稱展開成分股</small></h2>
+    <h2>全部題材<small id="allNote">點欄位排序・點題材名稱展開成分股</small><span class="upd" id="u_all"></span></h2>
     <div class="scroll"><table class="all" id="all"></table></div>
   </section>
 
@@ -214,7 +216,7 @@ footer .fine{font-size:12px;margin-top:6px}
 
 <script>
 // 加到主畫面的 app 會沿用舊版頁面：開啟或回到前景時比對版本，有新版就重新載入
-const PAGE_VER = '20261102c';
+const PAGE_VER = '20261102f';
 function checkVer(){
   fetch('index.html?t=' + Date.now(), {cache: 'no-store'}).then(r => r.text()).then(t => {
     const m = t.match(/PAGE_VER = '([^']+)'/); if (m && m[1] !== PAGE_VER) location.replace('index.html?v=' + Date.now() + location.hash);
@@ -314,9 +316,9 @@ function render(i){
     t: TH.map(t => { const r = live.hits.find(h => h[0] === t); return r ? [r[1], r[2], r[3], r[4], r[6] || 0, r[5]] : ['']; })} : D[i];
   const ba = live ? ((META.ba_now || [])[bucket(d.tx)] ?? null) : (d.ba ?? null);
   const closeTxt = `${fmtD(D[i].d).slice(5)} 收盤`;
-  $('mpNote').textContent = `規則 ${META.mp_rule || 'MP01'}・只供觀察${live ? `・依 ${closeTxt}` : ''}`;
-  $('allNote').textContent = live && LIVE_D ? `點欄位排序・點題材名稱展開成分股・狀態、本週主流、主流週、延續週為 ${closeTxt}，其餘為盤中` : '點欄位排序・點題材名稱展開成分股';
-  const liveTag = live ? `盤中 ${live.time} 更新（報價至 ${live.quote_time || '—'}）；沒標日期的都是盤中即時，標「收盤」日期的是該日收盤資料` : '';
+  $('mpNote').textContent = `規則 ${META.mp_rule || 'MP01'}・只供觀察`;
+  $('allNote').textContent = '點欄位排序・點題材名稱展開成分股';
+  const liveTag = live ? '盤中約 10 分鐘更新一次；各區塊標題旁為最後更新時間' : '';
   $('sub').textContent = live ? liveTag : `資料日 ${fmtD(d.d)}・更新 ${META.generated}`;
   // 摘要
   let tag = '', tagCls = '';
@@ -332,6 +334,7 @@ function render(i){
       <div>大盤${BUCKET_TXT[bucket(d.tx)] ?? ''}的日子，近三年平均 <b>${ba != null ? ba.toFixed(1) : '—'}</b> 個上榜</div>
       ${(() => { const c = contSummary(i); return c ? `<div>本週主流族群 <b>${c.week}</b> 組${c.prog ? '（進行中）' : ''}・當日主流 <b>${c.day}</b> 組${live ? `（${closeTxt}）` : ''}</div>` : ''; })()}
       ${tag ? `<div><span class="badge ${tagCls}">${tag}</span></div>` : ''}
+      <div style="color:var(--muted);font-size:12px">最後更新 ${+d.d.slice(4,6)}/${+d.d.slice(6)} ${live ? live.time : '收盤'}</div>
     </div>`;
   drawMP(i);
   drawLiveable(drawTrend);
@@ -355,6 +358,12 @@ function render(i){
     : `<div class="empty">這天沒有題材符合上榜規則。</div>`;
   drawLiveable(drawHeat);
   drawLiveable(drawTable);
+  { // 每個區塊只標一個「最後更新」；混合區塊在括號註明哪些欄位是收盤資料
+    const fds = x => +x.slice(4,6) + '/' + +x.slice(6), C = `${fds(D[i].d)} 收盤`, Lt = live ? `${fds(live.date)} ${live.time}` : null;
+    const set = (id, t) => { const e = $(id); if (e) e.textContent = '最後更新 ' + t; };
+    set('u_mp', C); set('u_cnt', Lt || C); set('u_hot', Lt ? `${Lt}（連續天數、近 5／20 日次數含今天）` : C); set('u_heat', Lt || C);
+    set('u_all', Lt && LIVE_D ? `${Lt}（狀態、本週主流、主流週、延續週為 ${C}）` : Lt || C);
+  }
   $('foot').innerHTML = `
     <div class="leg">
       <h4>上榜規則 ${META.rule_version}<small>符合任一條就上榜</small></h4>

@@ -38,6 +38,7 @@ h1{margin:0;font-size:22px}
 select,button{font:inherit;font-size:14px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
 section{display:flex;flex-direction:column;gap:10px}
 h2{margin:0;font-size:16px}
+.upd{font-size:12px;font-weight:500;color:var(--muted);margin-left:8px;white-space:nowrap}
 h2 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
 .num{font-family:var(--num);font-variant-numeric:tabular-nums}
@@ -99,7 +100,7 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
   <div class="panel" id="srcbar" style="display:flex;flex-direction:column;gap:8px;padding:10px 14px"></div>
 
   <section>
-    <h2>大盤融資維持率<small>普通股融資餘額 × 收盤價 ÷ 官方融資金額（對齊財經M平方）</small></h2>
+    <h2>大盤融資維持率<small>普通股融資餘額 × 收盤價 ÷ 官方融資金額（對齊財經M平方）</small><span class="upd" id="u_m"></span></h2>
     <div class="tabs" id="mtabs"></div>
     <div class="panel">
       <div class="idx" id="mcard"></div>
@@ -112,7 +113,7 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
   </section>
 
   <section>
-    <h2>崩跌觀察<small>近 30 日融資追價者，估算維持率低於 130% 的家數</small></h2>
+    <h2>崩跌觀察<small>近 30 日融資追價者，估算維持率低於 130% 的家數</small><span class="upd" id="u_c"></span></h2>
     <div class="panel">
       <div class="idx" id="ccard"></div>
       <div class="xtools"><span class="sub">期間</span><div class="tabs seg" id="cspan" style="margin:0"></div></div>
@@ -124,7 +125,7 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
   </section>
 
   <section>
-    <h2>個股估算維持率分布<small id="dsub"></small></h2>
+    <h2>個股估算維持率分布<small id="dsub"></small><span class="upd" id="u_d"></span></h2>
     <div class="tabs" id="basis"></div>
     <div class="cards" id="bcards"></div>
     <div class="panel">
@@ -134,7 +135,7 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
   </section>
 
   <section>
-    <h2>個股排行<small id="rsub"></small></h2>
+    <h2>個股排行<small id="rsub"></small><span class="upd" id="u_r"></span></h2>
     <div class="panel" style="display:flex;flex-direction:column;gap:8px">
       <div class="xtools" style="margin:0"><span class="sub">市場</span><div class="tabs" id="fm"></div></div>
       <div class="xtools" style="margin:0"><span class="sub">維持率</span><div class="tabs" id="ft"></div></div>
@@ -169,7 +170,7 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
 <script>
 const $ = s => document.querySelector(s);
 // 加到主畫面的 app 沒有瀏覽器的重新整理鍵，而且會沿用舊版頁面：按鈕強制抓新版；開啟或回到前景時自動比對版本
-const PAGE_VER = '20261102c';
+const PAGE_VER = '20261102f';
 document.addEventListener('DOMContentLoaded', () => { const b = document.querySelector('#reload'); if (b) b.onclick = () => { location.replace('margin.html?v=' + Date.now() + location.hash); }; });
 function checkVer(){
   fetch('margin.html?t=' + Date.now(), {cache: 'no-store'}).then(r => r.text()).then(t => {
@@ -267,9 +268,15 @@ function liveMarket(m){   // 回傳 {maint, cover}：普通股融資市值以盤
 }
 function drawAll(){
   $('#sub').textContent = '只供觀察，不是交易訊號';
-  $('#srcbar').innerHTML = LV
-    ? `<div class="srcrow"><span>盤中 <b>${LV.time}</b> 更新（約 10 分鐘一次）：維持率、家數、分布、排行用盤中股價重算；沒標日期的都是盤中即時，標「${fds(M.date)} 官方」的是融資餘額、成本等只在收盤後公布的資料</span></div>`
-    : `<div class="srcrow"><span>官方融資資料 ${fd(M.date)}；每個交易日約 21:00 公布、21:12 起自動更新</span></div>`;
+  $('#srcbar').innerHTML = `<div class="srcrow"><span>${LV ? '盤中約 10 分鐘更新一次（只換股價）' : '官方融資資料每個交易日約 21:00 公布、21:12 起自動更新'}；各區塊標題旁為最後更新時間</span></div>`;
+  { // 每個區塊只標一個「最後更新」；混合區塊在括號註明哪些是官方收盤後資料
+    const O = `${fds(M.date)} 官方`, Lt = LV ? `${fds(LV.date)} ${LV.time}` : null;
+    const set = (id, t) => { const e = $('#' + id); if (e) e.textContent = '最後更新 ' + t; };
+    set('u_m', Lt ? `${Lt}（融資金額、含 ETF 口徑、歷史走勢為 ${O}）` : O);
+    set('u_c', Lt ? `${Lt}（追價成本、歷史走勢為 ${O}）` : O);
+    set('u_d', Lt ? `${Lt}（成本為 ${O}）` : O);
+    set('u_r', Lt ? `${Lt}（成本、使用率、融資餘額、5 日增減為 ${O}）` : O);
+  }
   drawMarket(); drawCrash(); drawDist(); drawTable();
 }
 function drawMarket(){
@@ -278,8 +285,8 @@ function drawMarket(){
   const dL = P ? L.loan - P.loan : null, dM = P ? L.maint - P.maint : null;
   const LVm = liveOn() ? liveMarket(mk) : null, cur = LVm && LVm.maint != null ? LVm.maint : L.maint, dC = LVm ? cur - L.maint : dM;
   $('#mcard').innerHTML = `<div><div class="sub">${MK[mk]}融資維持率</div><div class="big num">${f2(cur)}%</div></div>
-    <div class="chg num ${cls(dC)}">${dC == null ? '' : sg(dC) + ' 個百分點' + (LVm ? `<span class="sub">（較 ${fds(L.date)}）</span>` : '')}<div class="sub">含 ETF 口徑 ${f2(L.maint_all)}%${dTag()}</div>${LVm ? `<div class="sub">${(LVm.cover * 100).toFixed(0)}% 檔數有盤中價，餘額沿用 ${fds(L.date)}</div>` : ''}</div>
-    <div><div class="sub">融資金額餘額${dTag()}</div><div class="num" style="font-size:26px;font-weight:700">${yi(L.loan)} 億</div><div class="num ${cls(dL)}">${dL == null ? '' : '當日 ' + sg(dL / 1e8) + ' 億'}</div></div>`;
+    <div class="chg num ${cls(dC)}">${dC == null ? '' : sg(dC) + ' 個百分點' + (LVm ? `<span class="sub">（較 ${fds(L.date)}）</span>` : '')}<div class="sub">含 ETF 口徑 ${f2(L.maint_all)}%</div>${LVm ? `<div class="sub">${(LVm.cover * 100).toFixed(0)}% 檔數有盤中價，餘額沿用 ${fds(L.date)}</div>` : ''}</div>
+    <div><div class="sub">融資金額餘額</div><div class="num" style="font-size:26px;font-weight:700">${yi(L.loan)} 億</div><div class="num ${cls(dL)}">${dL == null ? '' : '當日 ' + sg(dL / 1e8) + ' 億'}</div></div>`;
   drawPct(all, L);
   const svg = $('#mchart'), W = 420, H = 230, l = 40, r = 44, t = 10, mid = 150, b = 210;
   const xs = a.map((_, i) => l + (a.length > 1 ? i / (a.length - 1) : .5) * (W - l - r));
@@ -391,7 +398,7 @@ function filtered(){
 }
 function drawTable(){
   const a = filtered(), np = Math.max(1, Math.ceil(a.length / PER)); page = Math.min(page, np - 1);
-  $('#rsub').innerHTML = `共 ${a.length} 檔` + (liveOn() ? `（股價、維持率為盤中；成本、使用率、融資餘額、5 日增減為 ${fds(M.date)} 官方）` : '');
+  $('#rsub').innerHTML = `共 ${a.length} 檔`;
   $('#pg').textContent = `${page + 1} / ${np}`;
   const rows = a.slice(page * PER, (page + 1) * PER);
   const rv = B === 'r';
