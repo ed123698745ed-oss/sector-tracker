@@ -1460,3 +1460,10 @@ quote_time_range ['11:14:46'] ['11:52:15']
 hits 9 封測(ABC) 玻纖布/銅箔(ABC) PCB/伺服器板(AB) 光通訊/矽光子(A) 低軌衛星(AB) 電線電纜(B) 軟體雲端(ABC) 資安(AC) 工具機(ABC)
 count_check returned 610 baseline 609 (20261030)
 
+run_at 2026-11-02 12:02:45
+codes 610 returned 610 priced 610 seconds 74.9
+requests 13 errors 0 last_error 
+quote_time_range ['11:14:47'] ['12:02:36']
+hits 7 封測(ABC) 玻纖布/銅箔(ABC) PCB/伺服器板(AB) 低軌衛星(A) 軟體雲端(ABC) 資安(AC) 工具機(ABC)
+count_check returned 610 baseline 609 (20261030)
+
