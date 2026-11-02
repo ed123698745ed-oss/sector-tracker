@@ -77,6 +77,7 @@ td.num{font-size:15px}
 .tag{display:inline-block;font-size:11px;padding:0 6px;border-radius:999px;background:var(--chip);color:var(--muted);margin-left:3px}
 .unverified{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:999px;border:1px solid #d99a1e;color:#b07a10;background:rgba(217,154,30,.12)}
 .livetag{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:999px;background:var(--accent);color:#fff;margin-left:6px;vertical-align:middle}
+.upd{font-size:12px;font-weight:500;color:var(--muted);margin-left:8px;white-space:nowrap}
 .dtag{display:inline-block;white-space:nowrap;font-size:11px;font-weight:500;padding:0 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:4px;vertical-align:middle}
 .liverow{margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}
 #tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px;display:none;z-index:9;box-shadow:0 4px 14px rgba(0,0,0,.12)}
@@ -98,7 +99,7 @@ td.num{font-size:15px}
   </section>
 
   <section>
-    <h2>市場狀態<small>非常態（瘋狂）判定，約 16% 交易日</small></h2>
+    <h2>市場狀態<small>非常態（瘋狂）判定，約 16% 交易日</small><span class="upd" id="u_x"></span></h2>
     <div class="panel">
       <div style="margin-bottom:8px"><span class="unverified" title="2026-10-30 起改用價格規則，仍在試行觀察">試行規則 2026-10-30 版</span></div>
       <div id="xstate" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px"></div>
@@ -120,7 +121,7 @@ td.num{font-size:15px}
   </section>
 
   <section>
-    <h2>全市場漲跌分布<small id="distsub">上市櫃普通股</small></h2>
+    <h2>全市場漲跌分布<small id="distsub">上市櫃普通股</small><span class="upd" id="u_dist"></span></h2>
     <div class="panel">
       <div class="bar" id="udbar" aria-hidden="true"></div>
       <div class="legend" id="udleg" style="margin:6px 0 10px"></div>
@@ -129,12 +130,12 @@ td.num{font-size:15px}
   </section>
 
   <section>
-    <h2>三組比較<small id="listinfo"></small></h2>
+    <h2>三組比較<small id="listinfo"></small><span class="upd" id="u_cards"></span></h2>
     <div class="cards" id="cards"></div>
   </section>
 
   <section>
-    <h2>離高點分布<small>收盤離近 250 日最高價<span id="ddtag"></span></small></h2>
+    <h2>離高點分布<small>收盤離近 250 日最高價</small><span class="upd" id="u_dd"></span></h2>
     <div class="tabs" id="gtabs"></div>
     <div class="tabs" id="rtabs"></div>
     <div class="panel">
@@ -145,7 +146,7 @@ td.num{font-size:15px}
   </section>
 
   <section>
-    <h2>均線上比例與創高創低<small id="trendg"></small></h2>
+    <h2>均線上比例與創高創低<small id="trendg"></small><span class="upd" id="u_trend"></span></h2>
     <div class="panel">
       <svg id="machart" viewBox="0 0 420 200" role="img" aria-label="站上均線比例歷史"></svg>
       <div class="legend" id="maleg"></div>
@@ -155,7 +156,7 @@ td.num{font-size:15px}
   </section>
 
   <section>
-    <h2>個股表<small id="stockdate"></small></h2>
+    <h2>個股表<small id="stockdate"></small><span class="upd" id="u_tbl"></span></h2>
     <div class="tabs" id="stabs"></div>
     <div class="tblwrap"><table id="tbl"></table></div>
     <div class="note">均線欄依序為 20／60／120／240 日（紅點＝站上）；創高欄為 20／60／250 日（當日最高價突破前 N 日最高價）。距高點＝收盤離近 250 日最高價。均線、創高、距高點都用還原價（交易所每日漲跌%連乘，含除權息），有配息的股票會和看盤軟體的未還原均線略有不同。</div>
@@ -169,7 +170,7 @@ td.num{font-size:15px}
 <div id="tip"></div>
 <script>
 // 加到主畫面的 app 會沿用舊版頁面：開啟或回到前景時比對版本，有新版就重新載入
-const PAGE_VER = '20261102d';
+const PAGE_VER = '20261102e';
 function checkVer(){
   fetch('wh.html?t=' + Date.now(), {cache: 'no-store'}).then(r => r.text()).then(t => {
     const m = t.match(/PAGE_VER = '([^']+)'/); if (m && m[1] !== PAGE_VER) location.replace('wh.html?v=' + Date.now() + location.hash);
@@ -228,14 +229,24 @@ function tabs(sel, opts, get, set){
 }
 function draw(){
   const ds = W.dates[idx];
-  $('#sub').textContent = liveOn() ? `盤中 ${LIVE.time} 更新（約 5～10 分鐘一次）；沒標日期的數字都是盤中即時，標「收盤」日期的是該日收盤資料` : `資料日 ${fd(ds)}`;
-  drawIdx(); drawX(); drawDist(); drawCards(); drawDD(); drawTrend(); drawTable();
+  $('#sub').textContent = liveOn() ? '盤中約 5～10 分鐘更新一次；各區塊標題旁為最後更新時間' : `資料日 ${fd(ds)}`;
+  drawIdx(); drawX(); drawDist(); drawCards(); drawDD(); drawTrend(); drawTable(); drawUpd();
+}
+function drawUpd(){   // 每個區塊只標一個「最後更新」；混合區塊另註哪些欄位是收盤資料
+  const C = `${fds(W.dates[idx])} 收盤`, Lt = liveOn() ? `${fds(LIVE.date)} ${LIVE.time}` : null, A = liveOn() && LIVE.all;
+  const set = (id, t) => { const e = $('#' + id); if (e) e.textContent = '最後更新 ' + t; };
+  set('u_x', Lt ? `${Lt}（判定依 ${C}）` : C);
+  set('u_dist', A ? `${fds(LIVE.date)} ${A.time}` : C);
+  set('u_cards', Lt ? `${Lt}（均線、新高低、今年報酬為 ${C}）` : C);
+  set('u_dd', C); set('u_trend', C);
+  const latest = idx === W.dates.length - 1;
+  set('u_tbl', Lt && latest ? `${Lt}（今年%、近20日%、距高點%、均線、創高為 ${fds(W.stock_date)} 收盤）` : `${fds(W.stock_date)} 收盤`);
 }
 function drawIdx(){
   let t = W.taiex[idx], p = W.taiex[idx-1], lab = '加權指數';
   if (liveOn()) { t = LIVE.taiex; p = LIVE.taiex_y; }
   const ch = t && p ? t - p : null, cp = ch != null ? ch / p * 100 : null;
-  $('#idx').innerHTML = `<div><div class="sub">${lab}</div><div class="big num">${t ? t.toLocaleString('zh-TW',{maximumFractionDigits:2}) : '—'}</div>${liveOn() ? `<div class="sub">報價至 ${LIVE.quote_time || '—'}</div>` : ''}</div>
+  $('#idx').innerHTML = `<div><div class="sub">${lab}</div><div class="big num">${t ? t.toLocaleString('zh-TW',{maximumFractionDigits:2}) : '—'}</div><div class="sub">最後更新 ${liveOn() ? `${fds(LIVE.date)} ${LIVE.time}（報價至 ${LIVE.quote_time || '—'}）` : fds(W.dates[idx]) + ' 收盤'}</div></div>
     <div class="chg num ${cls(ch)}">${ch == null ? '' : (ch>0?'+':'') + ch.toFixed(2) + '（' + (cp>0?'+':'') + cp.toFixed(2) + '%）'}</div>`;
 }
 const XS = {'-1': ['下跌瘋狂', 'var(--down)'], '1': ['上漲瘋狂', 'var(--up)'], '2': ['資金集中炒作', '#d99a1e'], '0': ['常態', 'var(--flat)']};
@@ -318,7 +329,7 @@ function drawX(){
   const k = x_.state[idx], [lab, col] = XS[String(k)];
   const pc = v => v == null ? '—' : (v > 0 ? '+' : '') + (v * 100).toFixed(1) + '%';
   const th = x_.th || {down: [0.09, 0.06], up: [0.2, 0.05]}, wn = x_.win || {down: 15, up: 40};
-  let h = `<span style="font-size:20px;font-weight:700;color:${col}">● ${lab}</span>${dTag()}`;
+  let h = `<span style="font-size:20px;font-weight:700;color:${col}">● ${lab}</span>`;
   const ep = xEpisodes().find(e => e.s <= idx && e.e >= idx);
   if (ep && k) { const L = xLeg({s: ep.s, e: idx, k}), cur = W.taiex[idx];
     h += `<span class="sub">已連續 <b class="num">${idx - ep.s + 1}</b> 個交易日</span>` +
@@ -370,7 +381,7 @@ function renderX(){
 function drawDist(){
   const A = liveOn() && LIVE.all ? LIVE.all : null, g0 = W.groups.all;
   const o = A ? {n: [A.n], up: [A.up], flat: [A.flat], down: [A.down], lu: [A.lu], ld: [A.ld], dist: [A.dist]} : g0, k0 = A ? 0 : idx;
-  $('#distsub').innerHTML = A ? `上市櫃普通股 <span class="sub">（${A.time}）</span>`
+  $('#distsub').innerHTML = A ? '上市櫃普通股'
     : W.dates[idx] < '20070702' ? '僅上市普通股（櫃買資料 2007/07 起）' : '上市櫃普通股';
   const n = o.n[k0];
   if (n == null) return;
@@ -392,7 +403,7 @@ function cardUD(g, o){   // 上漲／下跌／漲跌停：盤中有資料就用�
   if (L && g === 'all' && L.n) { u = L.up; d = L.down; n = L.n; lu = L.lu; ld = L.ld; note = `（有成交 ${n} 檔）`; }
   else if (L && g !== 'all' && L.length) { n = L.length; u = L.filter(z => z[1] > 0).length; d = L.filter(z => z[1] < 0).length;
     lu = L.filter(z => z[2] === 1).length; ld = L.filter(z => z[2] === -1).length; note = `（有成交 ${n} 檔）`; }
-  else { u = o.up[idx]; d = o.down[idx]; n = o.n[idx]; lu = o.lu ? o.lu[idx] : null; ld = o.ld ? o.ld[idx] : null; note = dTag(); }
+  else { u = o.up[idx]; d = o.down[idx]; n = o.n[idx]; lu = o.lu ? o.lu[idx] : null; ld = o.ld ? o.ld[idx] : null; note = ''; }
   return `<div class="k">上漲／下跌 <b><span class="up">${u}</span>／<span class="down">${d}</span></b>${note}</div>
       <div class="k">上漲比例 <b>${fmt(u / n * 100)}%</b>${lu != null ? `　漲停／跌停 <b><span class="up">${lu}</span>／<span class="down">${ld ?? '—'}</span></b>` : ''}</div>`;
 }
@@ -405,10 +416,10 @@ function drawCards(){
     const n = o.n[idx], ma = o.ma[idx], mad = o.mad[idx], hi = o.hi[idx], lo = o.lo[idx], hd = o.hld[idx];
     h += `<div class="card"><h3>${G[g]}<span class="tag">${n} 檔</span></h3>
       ${cardUD(g, o)}
-      <div class="k">站上 月／季／半年／年線 <b>${[0,1,2,3].map(k => fmt(pctS(ma[k],mad[k]),0)).join('／')}%</b>${dTag()}</div>
-      <div class="k">新高 20／60／250 <b class="up">${hi.map((v, k) => hd[k] ? v : '—').join('／')}</b>${dTag()}</div>
-      <div class="k">新低 20／60／250 <b class="down">${lo.map((v, k) => hd[k] ? v : '—').join('／')}</b>${dTag()}</div>
-      <div class="k">今年報酬中位數 <b class="${cls(o.ytd[idx])}">${fmt(o.ytd[idx])}%</b>${dTag()}</div></div>`;
+      <div class="k">站上 月／季／半年／年線 <b>${[0,1,2,3].map(k => fmt(pctS(ma[k],mad[k]),0)).join('／')}%</b></div>
+      <div class="k">新高 20／60／250 <b class="up">${hi.map((v, k) => hd[k] ? v : '—').join('／')}</b></div>
+      <div class="k">新低 20／60／250 <b class="down">${lo.map((v, k) => hd[k] ? v : '—').join('／')}</b></div>
+      <div class="k">今年報酬中位數 <b class="${cls(o.ytd[idx])}">${fmt(o.ytd[idx])}%</b></div></div>`;
   }
   $('#cards').innerHTML = h;
 }
@@ -461,7 +472,7 @@ function drawDD(){
 }
 function drawTrend(){
   const [s, e] = range(), o = W.groups[ddG], Wd = 420, H = 200;
-  $('#trendg').innerHTML = G[ddG] + dTag(); $('#ddtag').innerHTML = dTag();
+  $('#trendg').textContent = G[ddG];
   const x = i => (i - s) / Math.max(1, e - s) * Wd, y = v => 8 + (1 - v / 100) * (H - 20);
   const lines = [[0,'月線','var(--d5)'],[1,'季線','var(--d3)'],[3,'年線','var(--d0)']];
   let g = xAxis(s, e, Wd, x);
@@ -498,7 +509,7 @@ function hover(sel, s, e, x, fn){
 function drawTable(){
   const latest = idx === W.dates.length - 1;
   const lv = latest && liveOn();
-  $('#stockdate').innerHTML = lv ? `價格、市值、漲跌% 為盤中；今年%、近20日%、距高點%、均線、創高為 ${fds(W.stock_date)} 收盤` : latest ? `資料日 ${fd(W.stock_date)}` : `個股表只提供最新交易日（${fd(W.stock_date)}）`;
+  $('#stockdate').innerHTML = latest ? '' : `個股表只提供最新交易日（${fd(W.stock_date)}）`;
   const cols = [['c','代號'],['n','名稱'],['px','收盤'],['cap','市值(億)'],['pct','漲跌%'],['ytd','今年%'],['r20','近20日%'],['dd','距高點%'],['ma','均線'],['hi','創高']];
   const rows = W.stocks.filter(r => r.g.includes(stG)).map(r => { const z = lv && LIVE.stocks[r.c];
     return z ? {...r, px: z[0], pct: z[1], cap: r.cap != null && r.px ? Math.round(r.cap * z[0] / r.px) : r.cap} : r; }).sort((a, b) => {
