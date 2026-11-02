@@ -169,7 +169,7 @@ td.num{font-size:15px}
 <div id="tip"></div>
 <script>
 // 加到主畫面的 app 會沿用舊版頁面：開啟或回到前景時比對版本，有新版就重新載入
-const PAGE_VER = '20261102c';
+const PAGE_VER = '20261102d';
 function checkVer(){
   fetch('wh.html?t=' + Date.now(), {cache: 'no-store'}).then(r => r.text()).then(t => {
     const m = t.match(/PAGE_VER = '([^']+)'/); if (m && m[1] !== PAGE_VER) location.replace('wh.html?v=' + Date.now() + location.hash);
@@ -399,7 +399,7 @@ function cardUD(g, o){   // 上漲／下跌／漲跌停：盤中有資料就用�
 function drawCards(){
   let h = '';
   const ym = W.dates[idx].slice(0,6), lk = Object.keys(W.lists).filter(k => k < ym).pop();
-  $('#listinfo').textContent = lk ? `名單基準 ${fd(W.lists[lk].asof)} 收盤` : '';
+  $('#listinfo').textContent = lk ? `${+ym.slice(4)} 月成分股（依 ${fds(W.lists[lk].asof)} 收盤排名，每月換一次）` : '';
   for (const g of ['all','twse','otc','hp']) {
     const o = W.groups[g]; if (o.n[idx] == null) continue;
     const n = o.n[idx], ma = o.ma[idx], mad = o.mad[idx], hi = o.hi[idx], lo = o.lo[idx], hd = o.hld[idx];
