@@ -9,6 +9,9 @@ on:
     - cron: '12 14 * * 1-5'
     - cron: '52 14 * * 1-5'
     - cron: '12 23 * * 1-5'
+  push:
+    # GitHub 排程常漏觸發（11/2 晚上三次排程都沒跑）：推 test/MARGIN_TRIGGER 可立即補跑
+    paths: ['test/MARGIN_TRIGGER']
   workflow_dispatch:
     inputs:
       date:
