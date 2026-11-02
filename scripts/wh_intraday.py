@@ -139,7 +139,7 @@ def snapshot(w, tse, uni, now=None, full=True, prev_all=None, prev_px=None):
     return out, lines
 
 
-def push_live(path):
+def push_live(path, status=None):
     tok, repo = os.environ.get('GH_TOKEN'), os.environ.get('GITHUB_REPOSITORY')
     if not (tok and repo):
         return 'skip push: no GH_TOKEN/GITHUB_REPOSITORY'
@@ -151,9 +151,13 @@ def push_live(path):
         run('git', 'checkout', '-q', '-b', 'live')
         run('git', 'config', 'user.name', 'sector-tracker-bot')
         run('git', 'config', 'user.email', 'actions@users.noreply.github.com')
-    with open(path, 'rb') as a, open(os.path.join(d, 'wh_intraday.json'), 'wb') as b:
-        b.write(a.read())
-    run('git', 'add', 'wh_intraday.json')
+    if path and os.path.exists(path):
+        with open(path, 'rb') as a, open(os.path.join(d, 'wh_intraday.json'), 'wb') as b:
+            b.write(a.read())
+    if status is not None:   # 每輪執行結果（含略過原因），供 Emit 不需登入即可檢查
+        with open(os.path.join(d, 'wh_status.txt'), 'w', encoding='utf-8') as b:
+            b.write(status)
+    run('git', 'add', '-A')
     # 只保留單一 commit：每次重建，強制推送
     subprocess.run(['git', 'update-ref', '-d', 'HEAD'], cwd=d, capture_output=True)
     run('git', 'commit', '-q', '-m', '權值高價股盤中暫定 [skip ci]')
@@ -199,12 +203,14 @@ def main(argv):
             with open(OUT, 'w', encoding='utf-8') as f:
                 json.dump(out, f, ensure_ascii=False, separators=(',', ':'))
             if do_push:
-                lines.append(push_live(OUT))
+                lines.append(push_live(OUT, '\n'.join(lines) + '\n'))
         else:
             fails += 1
             if fails == 3:
                 alert_once('wh_fail', now.strftime('%Y%m%d'),
                            f"【權值高價股・盤中異常】{now.strftime('%m/%d %H:%M')}\n盤中資料連續 3 次未更新：{lines[-1][:120]}\n請 Emit 檢查。")
+        if not out and do_push:
+            lines.append(push_live(OUT if os.path.exists(OUT) else None, '\n'.join(lines) + '\n'))
         print('\n'.join(lines), flush=True)
         if not loop:
             return 0

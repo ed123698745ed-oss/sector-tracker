@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: wh-intraday
+  group: wh-intraday-v2
   cancel-in-progress: false
 
 jobs:
