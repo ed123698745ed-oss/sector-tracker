@@ -1607,3 +1607,10 @@ quote_time_range [] []
 hits 0 
 skip: quote date None != today（休市或尚無今日報價），不更新 intraday.json
 
+run_at 2026-11-03 10:42:02
+codes 610 returned 610 priced 604 seconds 46.8
+requests 13 errors 0 last_error 
+quote_time_range ['09:59:48'] ['10:41:53']
+hits 1 玻纖布/銅箔(B)
+count_check returned 610 baseline 610 (20261102)
+
