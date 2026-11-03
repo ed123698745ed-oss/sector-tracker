@@ -4,6 +4,8 @@
 2. 重抓今年（1 月時含去年）證交所減資 TWTAUU、變更面額 TWTB8U、除權息 TWT49U 全年表
 3. 跑 wh_lists.py；近 120 日內「權息」事件缺配股率且屬上市市值前 80 者 → 抓除權息基準日公告後重跑
 4. 已存在的月份一律保留原名單（R06 凍結，Ed 2026-10-28），只新增月份；新月份缺上市名單即報錯
+   wh_lists.py 會直接覆寫 config/wh_lists.json：任何一步失敗都還原成執行前的內容（2026-11-03 檢驗報告第 3 項），
+   wh_build 因此沿用上月名單，隔天排程會再補這個月份
 """
 import datetime as dt, json, os, subprocess, sys, urllib.request
 
@@ -25,11 +27,21 @@ def main():
     ends = {}
     for d in days: ends[d[:6]] = d
     ends.pop(days[-1][:6], None)
-    old = json.load(open(LISTS))
+    old_bytes = open(LISTS, 'rb').read()
+    old = json.loads(old_bytes)
     new_months = [ym for ym in sorted(ends) if ym not in old]
     if not new_months:
         print('名單無新月份'); return
     print('新月份', new_months)
+    try:
+        update(days, ends, old, new_months)
+    except BaseException:
+        open(LISTS, 'wb').write(old_bytes)   # 先寫後驗失敗：還原，不留半成品名單
+        print('::error::名單月更新失敗，config/wh_lists.json 已還原，沿用上月名單', flush=True)
+        raise
+
+
+def update(days, ends, old, new_months):
     # 1. MI_QFIIS
     tgt = [ends[ym] for ym in new_months]
     p = os.path.join(ROOT, 'cache', 'wh_qfiis_targets.json'); os.makedirs(os.path.dirname(p), exist_ok=True)

@@ -177,12 +177,17 @@ def main(argv):
     uni, uday = universe()
     print(f'universe {len(uni)} from {uday}', flush=True)
     os.makedirs(OUT_DIR, exist_ok=True)
-    fails, prev_all, prev_px = 0, None, None
+    fails, stale, prev_all, prev_px = 0, 0, None, None
+    cf = os.path.join(ROOT, 'data', 'closed.txt')
     while True:
         now = datetime.datetime.now(TPE)
         hm = now.strftime('%H%M')
         if now.weekday() >= 5 or hm > END:
             print('非盤中時間，結束', now.strftime('%Y-%m-%d %H:%M'))
+            return 0
+        if os.path.exists(cf) and now.strftime('%Y%m%d') in open(cf).read().split():
+            # 臨時休市（颱風等，closure_watch 寫入 closed.txt）：不抓、不算失敗（2026-11-03 檢驗報告第 6 項）
+            print('臨時休市（closed.txt），結束', now.strftime('%Y-%m-%d'))
             return 0
         if hm < START:
             if not loop:
@@ -197,13 +202,20 @@ def main(argv):
         except Exception as e:  # 單次失敗不中斷整個盤中迴圈
             out, lines = None, [f"error {now.strftime('%H:%M:%S')} {str(e)[:200]}"]
         if out:
-            fails = 0
+            fails = stale = 0
             prev_all = out.get('all') or prev_all
             prev_px = out.get('px') or prev_px
             with open(OUT, 'w', encoding='utf-8') as f:
                 json.dump(out, f, ensure_ascii=False, separators=(',', ':'))
             if do_push:
                 lines.append(push_live(OUT, '\n'.join(lines) + '\n'))
+        elif lines and lines[-1].startswith('skip: quote date') and not lines[-1].startswith('skip: quote date None'):
+            # 報價日≠今日（休市或尚未有今日報價）不是抓取失敗，分開計數；平日整整一小時都不是今日才通知
+            stale += 1
+            if stale == 12:
+                alert_once('wh_stale', now.strftime('%Y%m%d'),
+                           f"【權值高價股・盤中異常】{now.strftime('%m/%d %H:%M')}\n報價日連續約 1 小時不是今日（{lines[-1][:80]}）。"
+                           f"若今天臨時休市，請確認 data/closed.txt；否則請 Emit 檢查。")
         else:
             fails += 1
             if fails == 3:

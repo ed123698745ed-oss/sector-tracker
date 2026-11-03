@@ -77,7 +77,7 @@ def run(dates):
                 try:
                     etp = exright.load(exright.FP_TPEX); exright.merge(etp, exright.fetch_tpex(ds, ds)); exright.save(etp, exright.FP_TPEX)
                     ex_tp = etp.get(ds)
-                except SystemExit as e:
+                except quotes.FetchError as e:
                     print(ds, '上櫃除權息參考價抓取失敗，改用漲跌停價推算：', e, flush=True)
             xs = quotes.x_codes(tw) - set(exref or {})  # 標 X 但不在除權息／減資名單：多為暫停交易後恢復
             lc = quotes.last_twse_closes(ds, xs) if xs else {}
@@ -98,7 +98,7 @@ def run(dates):
                 with open(PUBLOG, 'a') as f:
                     f.write(f"{ds} {now.strftime('%H:%M')}\n")
             ok += 1
-        except BaseException as e:  # SystemExit 也只記錄
+        except BaseException as e:  # 抓取失敗（FetchError）、SystemExit 都只記錄
             fail += 1
             print(ds, 'FAILED', e, flush=True)
     print('done ok', ok, 'failed', fail)

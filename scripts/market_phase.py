@@ -80,7 +80,10 @@ def compute(days):
             p = 1
         else:
             p = 0
-        days[k]['mp'] = [W[k], S[k], M[k], w5, s5, cur_main, p, last1[1] if last1 else 0, [(x[1], round(x[2], 1)) for x in last2]]
+        # mp[7]＝上一完整週主流數（不含本週；週結算日 last1 就是本週，要往前取一週，檢驗報告第 8 項）
+        prev_wk = (dw[-2][1] if len(dw) >= 2 else 0) if not in_week else (last1[1] if last1 else 0)
+        # mp[9]、mp[10]＝退潮實際比較的兩個值（本期、對照期），前端與推播照這兩個顯示
+        days[k]['mp'] = [W[k], S[k], M[k], w5, s5, cur_main, p, prev_wk, [(x[1], round(x[2], 1)) for x in last2], cmp_cur, ref]
         phase.append(p); prev = p
     # 事件：階段改變
     events = []

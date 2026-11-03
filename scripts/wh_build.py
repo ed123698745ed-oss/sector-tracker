@@ -46,7 +46,7 @@ def taiex_level(ds):
     for t in json.load(gzip.open(p)).get('tables') or []:
         if '價格指數' in (t.get('title') or ''):
             for r in t.get('data') or []:
-                if '發行量加權股價指數' in r[0]:
+                if r[0].strip() in ('發行量加權股價指數', '加權股價指數'):   # 2019-04-29 原始檔列名為「加權股價指數」
                     try: return float(r[1].replace(',', ''))
                     except ValueError: return None
     return taiex_fmtqik(ds)
@@ -143,6 +143,11 @@ def main():
         ybase[ds[:4]] = t  # 每年最後一日索引（之後用前一年）
 
     lists = json.load(open(os.path.join(ROOT, 'config', 'wh_lists.json')))
+    # 缺上市名單的月份不採用，沿用最近一期完整名單（檢驗報告第 3 項：避免 KeyError 使 wh.json 停更）
+    bad_yms = [ym for ym, v in lists.items() if not v.get('twse') or 'asof' not in v]   # 2007-06 以前本來就沒有上櫃名單
+    if bad_yms:
+        print('::warning::名單不完整、沿用前月：', bad_yms)
+    lists = {ym: v for ym, v in lists.items() if ym not in bad_yms}
     yms = sorted(lists)
 
     def members(ds, g):
@@ -222,7 +227,7 @@ def main():
             'hi': [bool(age[t, k] > n and adjH[t, k] > hi[n][t, k]) for n in (20, 60, 250)],
             'lo': [bool(age[t, k] > n and adjL[t, k] < lo[n][t, k]) for n in (20, 60, 250)],
         })
-    lists_out = {ym: {g: [c for c, _ in lists[ym][g]] for g in ['twse', 'otc', 'hp']} | {'asof': lists[ym]['asof']} for ym in yms}
+    lists_out = {ym: {g: [c for c, _ in lists[ym].get(g, [])] for g in ['twse', 'otc', 'hp']} | {'asof': lists[ym]['asof']} for ym in yms}
     import wh_extreme
     ext = wh_extreme.compute(dates, taiex, out['all'], turnover, conc)
     res = {'ext': ext, 'dates': dates, 'taiex': taiex, 'groups': out, 'stocks': rows, 'stock_date': ds, 'lists': lists_out, 'names': {c: name.get(c, '') for c in set(c for v in lists_out.values() for g in ('twse', 'otc', 'hp') for c in v[g])}}

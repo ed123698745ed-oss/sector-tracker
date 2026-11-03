@@ -18,4 +18,4 @@ jobs:
         run: |
           bash test/probe.sh
           git config user.name "sector-tracker-bot"; git config user.email "actions@users.noreply.github.com"
-          git add test/pref_probe.txt; git commit -qm "特別股抓取連線測試結果 [skip ci]"; for i in 1 2 3; do git pull --rebase -q && git push -q && break; sleep 5; done
+          git add test/pref_probe.txt; git commit -qm "特別股抓取連線測試結果 [skip ci]"; for i in 1 2 3; do git pull --rebase --autostash -q && git push -q && { pushed=1; break; }; sleep 5; done; [ -n "$pushed" ] || { echo "::error::git push 重試後仍失敗"; exit 1; }
