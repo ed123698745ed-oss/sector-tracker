@@ -30,8 +30,8 @@
      - 同日有股數事件（上市：證交所減資恢復買賣 TWTAUU、變更面額恢復買賣 TWTB8U、除權息／減資參考價表；
        上櫃：收盤行情「發行股數」較該股前一次出現時變動 ≥ 0.5%）：視為股數基準改變，比例 r＝前日餘額÷前一日今日餘額，
        各批次張數 × r、成本 ÷ r；r 不在 1/20～20 之間則判為異常
-     - 查無事件、r 在 2/3～1.5 之間：不換算，差額當作當日買進（以當日均價入庫）或償還（按比例移出）
-     - 查無事件、r 超出 2/3～1.5（如換股合併）：判為異常，排除於排行
+     - 查無事件、r ≤ 1.5：不換算，差額當作當日買進（以當日均價入庫）或償還（按比例移出）
+     - 查無事件、r > 1.5（如換股合併）：判為異常，排除於排行
      - ETF 等非普通股沒有事件表（上櫃 ETF 發行單位每日變動），沿用依比例換算；不列入排行，只影響官方校準的模型總額
      觸發的事件與異常寫入 margin.json 的 basis
   6. 官方校準：每日每市場 k＝官方融資金額 ÷ Σ（批次張數 × 1000 × 0.6 × 批次成本），個股成本 × k，
@@ -298,7 +298,7 @@ def main():
                         has_ev = not COMMON.match(c) or ((c, ds) in ev_twse if mkt == 'TWSE' else c in sh_event)
                         if k and has_ev:
                             basis = 'event' if 1 / 20 <= k <= 20 else 'bad'
-                        elif k and not (1 / BASIS_MAX_FLOW <= k <= BASIS_MAX_FLOW):
+                        elif k and k > BASIS_MAX_FLOW:   # 只有無事件的大幅增加才判異常（合併）；無事件減少一律當償還（1323、3596 於 2026/04/09 連續交易、價格與限額不變，非減資）
                             basis = 'bad'
                         else:
                             basis = 'flow'
@@ -343,6 +343,9 @@ def main():
                         base = lo = hi = avg or close
                     if base:
                         p.lots = [[r['prev'], base, lo, hi, 1]]
+                    else:   # 完全查無價格：期初庫存成本未知，不能讓「期初 ≤35%」檢查因無期初批次而被繞過（檢驗報告次要項目）
+                        p.bad = f'{ds} 期初庫存 {r["prev"]:g} 張成本未知'
+                        p.started = True
                 # 當日沖銷：同日融資買進與融資賣出先互抵（視為當日進出，不進庫存），只有淨買進才以當日均價入庫
                 net = min(r['buy'], r['sell']) if NET_DAYTRADE else 0
                 buy, out = r['buy'] - net, r['sell'] - net + r['repay']

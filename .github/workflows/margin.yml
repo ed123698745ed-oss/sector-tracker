@@ -47,6 +47,9 @@ jobs:
           H=$(TZ=Asia/Taipei date +%H)
           if [ "$H" -lt 12 ]; then echo "::error::$D 融資資料到隔天早上仍未取得"; exit 1; fi
           echo "$D 融資資料尚未公布，等下一次排程"; echo "skip=1" >> "$GITHUB_OUTPUT"
+      - name: 更新證交所減資／變更面額事件表（股數事件判斷用；失敗沿用舊表）
+        if: steps.fetch.outputs.skip != '1'
+        run: python3 scripts/fetch_twse_events.py || echo "::warning::事件表更新失敗，沿用舊表；月中分割可能先被判異常"
       - name: 計算維持率
         if: steps.fetch.outputs.skip != '1'
         run: python3 scripts/margin_build.py --expect "${{ steps.fetch.outputs.d }}"
@@ -54,7 +57,7 @@ jobs:
         if: steps.fetch.outputs.skip != '1'
         run: |
           git config user.name "sector-tracker-bot"; git config user.email "actions@users.noreply.github.com"
-          git add archive/raw/twse_margin archive/raw/tpex_margin docs/margin.json docs/margin
+          git add archive/raw/twse_margin archive/raw/tpex_margin archive/raw/twse_events docs/margin.json docs/margin
           if git diff --cached --quiet; then echo "沒有新資料"; exit 0; fi
           git commit -q -m "融資觀察更新 ${{ steps.fetch.outputs.d }}"
           for i in 1 2 3 4 5; do git pull --rebase --autostash -q && git push -q && exit 0; sleep 10; done

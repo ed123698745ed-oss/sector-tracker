@@ -15,7 +15,15 @@ EV = {'TWT49U': 'exRight', 'TWTAUU': 'reducation', 'TWTB8U': 'change'}
 
 
 def get(u):
-    return urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'}), timeout=90).read()
+    """抓取，失敗退避重試 4 次（檢驗報告次要項目：原本沒有重試）"""
+    import time
+    for i in range(4):
+        try:
+            return urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'}), timeout=90).read()
+        except Exception as e:
+            print('retry', i, u, repr(e)[:80], flush=True)
+            time.sleep(15 * (i + 1))
+    raise RuntimeError(f'抓取失敗：{u}')
 
 
 def run(*a):
@@ -53,6 +61,8 @@ def update(days, ends, old, new_months):
             u = f'https://www.twse.com.tw/rwd/zh/{ctl}/{k}?startDate={yy}0101&endDate={yy}1231&response=json'
             b = get(u); j = json.loads(b)
             if j.get('stat') != 'OK': raise SystemExit(f'{k} {yy} 抓取失敗：{j.get("stat")}')
+            if not isinstance(j.get('data', []), list) or not j.get('fields') or len(j['fields']) < 5:
+                raise SystemExit(f'{k} {yy} 格式不符：fields={j.get("fields")}')   # 驗格式再寫檔
             open(os.path.join(ROOT, 'archive', 'raw', 'twse_events', f'{k}_{yy}.json'), 'wb').write(b)
     # 3. 名單＋配股率補件
     run('scripts/wh_prices.py'); run('scripts/wh_lists.py')
