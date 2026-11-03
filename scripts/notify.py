@@ -14,13 +14,19 @@ def main():
     ev = [e for e in alerts['events'] if e['d'] == d['d']]
     if not ev:
         print(d['d'], '階段未改變，不推播'); return
+    sent = f'{ROOT}/data/notify_sent.txt'   # 已推播記號：資料提交失敗、下次排程重跑時不重推（檢驗報告次要項目）
+    key = f"{d['d']} {ev[-1]['from']}→{ev[-1]['to']}"
+    if os.path.exists(sent) and key in open(sent, encoding='utf-8').read().splitlines():
+        print(key, '已推播過，略過'); return
     e = ev[-1]; mp = d['mp']
     msg = (f"【族群網站・市場階段】{d['d'][:4]}-{d['d'][4:6]}-{d['d'][6:]}\n"
            f"{e['from']} → {e['to']}\n"
            f"轉弱 {mp[3]}（今日 {mp[0]}）／站穩月線 {mp[4]}／本週主流 {mp[5]}（上週 {mp[7]}）\n"
            f"只供觀察，不是交易訊號。\nhttps://ed123698745ed-oss.github.io/sector-tracker/")
     print(msg)
-    push(msg)
+    if push(msg):
+        with open(sent, 'a', encoding='utf-8') as f:
+            f.write(key + '\n')
 
 
 def push(msg):

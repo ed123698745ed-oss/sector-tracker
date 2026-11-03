@@ -57,7 +57,7 @@ jobs:
           if git diff --cached --quiet; then echo "沒有新資料"
           else
             git commit -q -m "可轉債追蹤更新 $(TZ=Asia/Taipei date +%Y-%m-%d)"
-            ok=0; for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && { ok=1; break; }; sleep 10; done
+            ok=0; for i in 1 2 3 4 5; do git pull --rebase --autostash -q && git push -q && { ok=1; break; }; sleep 10; done
             [ "$ok" = 1 ] || exit 1
           fi
       - name: 異常即判為失敗（檔數驟減、內容錯誤、隔天早上仍缺）

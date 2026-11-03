@@ -260,6 +260,19 @@ def _holiday_set(day):
     return days
 
 
+COUNT_MIN = 0.9   # 收盤檔數不得少於前一個交易日的 90%（2026-11-03 檢驗報告：原本只檢查非空）
+
+
+def check_count(ds, n):
+    """與 data/quotes 中 ds 之前最近一份精簡檔比較檔數；明顯變少（例：上市只回一半）就不存檔，丟例外讓排程下次重抓"""
+    prev = sorted(f for f in os.listdir(OUT) if re.match(r'^\d{8}\.json$', f) and f[:8] < ds) if os.path.isdir(OUT) else []
+    if not prev:
+        return
+    pn = len(json.load(open(os.path.join(OUT, prev[-1]))).get('q') or {})
+    if pn and n < pn * COUNT_MIN:
+        raise FetchError(f'{ds} 收盤只有 {n} 檔，少於前一交易日 {prev[-1][:8]} 的 {pn} 檔 × {COUNT_MIN:.0%}，不存檔')
+
+
 def save(ds, tw, tp, exref=None, prevtp=None, lastclose=None, exall=None, exref_tpex=None):
     q, taiex = parse_twse(tw, exref, ds, lastclose, exall)
     if not q:
@@ -271,6 +284,7 @@ def save(ds, tw, tp, exref=None, prevtp=None, lastclose=None, exall=None, exref_
             return True
         raise SystemExit(f'{ds} 上市有資料但上櫃無資料，停止，不產生不完整檔案')
     q.update(parse_tpex(tp, prevtp, ds, exref_tpex))
+    check_count(ds, len(q))
     os.makedirs(OUT, exist_ok=True)
     json.dump({'date': ds, 'taiex': taiex, 'q': q}, open(f'{OUT}/{ds}.json', 'w'), separators=(',', ':'))
     return True

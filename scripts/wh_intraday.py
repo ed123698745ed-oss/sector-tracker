@@ -154,6 +154,10 @@ def push_live(path, status=None):
     if path and os.path.exists(path):
         with open(path, 'rb') as a, open(os.path.join(d, 'wh_intraday.json'), 'wb') as b:
             b.write(a.read())
+    af = os.path.join(ROOT, 'test', 'mis_alert.txt')
+    if os.path.exists(af):   # 異常通知去重紀錄也放進 live，迴圈重啟後讀回（檢驗報告次要項目）
+        with open(af, 'rb') as a, open(os.path.join(d, 'mis_alert.txt'), 'wb') as b:
+            b.write(a.read())
     if status is not None:   # 每輪執行結果（含略過原因），供 Emit 不需登入即可檢查
         with open(os.path.join(d, 'wh_status.txt'), 'w', encoding='utf-8') as b:
             b.write(status)
@@ -170,8 +174,28 @@ def push_live(path, status=None):
     return 'push failed: ' + r.stderr.replace(tok, '[redacted]')[:200]
 
 
+def restore_alerts():
+    """從 origin/live 取回今天已推過的異常通知紀錄，併入 test/mis_alert.txt；取不到就略過"""
+    try:
+        subprocess.run(['git', 'fetch', '-q', 'origin', 'live'], cwd=ROOT, capture_output=True, timeout=60)
+        r = subprocess.run(['git', 'show', 'origin/live:mis_alert.txt'], cwd=ROOT, capture_output=True, text=True, timeout=30)
+        if r.returncode != 0:
+            return
+        af = os.path.join(ROOT, 'test', 'mis_alert.txt')
+        have = set(open(af, encoding='utf-8').read().split('\n')) if os.path.exists(af) else set()
+        add = [x for x in r.stdout.split('\n') if x and x not in have]
+        if add:
+            os.makedirs(os.path.dirname(af), exist_ok=True)
+            with open(af, 'a', encoding='utf-8') as f:
+                f.write('\n'.join(add) + '\n')
+    except Exception as e:
+        print('restore_alerts', e)
+
+
 def main(argv):
     loop, do_push = '--loop' in argv, '--push' in argv
+    if do_push:
+        restore_alerts()
     w = json.load(open(os.path.join(ROOT, 'docs', 'wh.json'), encoding='utf-8'))
     tse = market_of()
     uni, uday = universe()

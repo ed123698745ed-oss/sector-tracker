@@ -343,6 +343,9 @@ def main():
                         base = lo = hi = avg or close
                     if base:
                         p.lots = [[r['prev'], base, lo, hi, 1]]
+                    else:   # 完全查無價格：期初庫存成本未知，不能讓「期初 ≤35%」檢查因無期初批次而被繞過（檢驗報告次要項目）
+                        p.bad = f'{ds} 期初庫存 {r["prev"]:g} 張成本未知'
+                        p.started = True
                 # 當日沖銷：同日融資買進與融資賣出先互抵（視為當日進出，不進庫存），只有淨買進才以當日均價入庫
                 net = min(r['buy'], r['sell']) if NET_DAYTRADE else 0
                 buy, out = r['buy'] - net, r['sell'] - net + r['repay']

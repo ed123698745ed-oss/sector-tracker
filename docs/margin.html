@@ -241,9 +241,18 @@ fetch('margin.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).the
 // 盤中暫估：族群網站盤中迴圈每 10 分鐘抓全市場普通股成交價（live 分支 wh_intraday.json 的 px）。
 // 融資餘額與成本都用前一交易日官方資料，只換成盤中價格；晚上官方資料公布後改回正式數字。
 const LIVE_URL = 'https://raw.githubusercontent.com/ed123698745ed-oss/sector-tracker/live/wh_intraday.json';
+const tpeNow = () => new Date(Date.now() + 8 * 3600e3).toISOString();   // 台北時間 ISO 字串（YYYY-MM-DDTHH:MM…）
+let lastOfficialCheck = 0;
 function loadLive(){
+  // 盤中暫估開著、台北 21:12 之後：每 10 分鐘看官方 margin.json 是否已更新，更新了就重新載入頁面回到正式數字
+  const t = tpeNow(), today = t.slice(0, 10).replace(/-/g, '');
+  if (LV && t.slice(11, 16) >= '21:12' && Date.now() - lastOfficialCheck > 600e3) {
+    lastOfficialCheck = Date.now();
+    fetch('margin.json?t=' + Date.now(), {cache: 'no-cache'}).then(r => r.json()).then(m => { if (m.date > M.date) location.reload(); }).catch(() => {});
+  }
   fetch(LIVE_URL + '?t=' + Date.now(), {cache: 'no-store'}).then(r => r.ok ? r.json() : null).then(x => {
-    const px = x && x.px && x.px.date > M.date ? x.px : null;
+    // 只採用「今天」的盤中價格：前一晚官方資料更新失敗時，隔天上午不把前一天 13:3x 的價格當盤中暫估
+    const px = x && x.px && x.px.date > M.date && x.px.date === today ? x.px : null;
     const key = px ? px.date + px.time : null;
     if (key === (LV && LV.date + LV.time)) return;
     LV = px; applyLive(); drawAll(); if (D) drawDetail();
@@ -268,7 +277,7 @@ function liveMarket(m){   // 回傳 {maint, cover}：普通股融資市值以盤
 }
 function drawAll(){
   $('#sub').textContent = `只供觀察，不是交易訊號・資料日 ${fd(M.date)}・產生 ${M.generated.slice(0,16).replace('T',' ')}`;
-  $('#srcbar').innerHTML = `<div class="srcrow"><span>${LV ? '盤中約 10 分鐘更新一次（只換股價）' : '官方融資資料每個交易日約 21:00 公布、21:12 起自動更新'}；各區塊標題旁為最後更新時間</span></div>`;
+  $('#srcbar').innerHTML = `<div class="srcrow"><span>${LV ? '盤中約 10 分鐘更新一次（只換股價；當日尚無成交者用最佳買／賣價）' : '官方融資資料每個交易日約 21:00 公布、21:12 起自動更新'}；各區塊標題旁為最後更新時間</span></div>`;
   { // 每個區塊只標一個「最後更新」；混合區塊在括號註明哪些是官方收盤後資料
     const O = `${fds(M.date)} 官方`, Lt = LV ? `${fds(LV.date)} ${LV.time}` : null;
     const set = (id, t) => { const e = $('#' + id); if (e) e.textContent = '最後更新 ' + t; };
