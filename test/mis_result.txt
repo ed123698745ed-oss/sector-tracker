@@ -1600,3 +1600,10 @@ quote_time_range ['09:34:07'] ['10:22:18']
 hits 0 
 count_check returned 610 baseline 610 (20261102)
 
+run_at 2026-11-03 10:34:29
+codes 610 returned 0 priced 0 seconds 188.0
+requests 39 errors 39 last_error HTTP Error 502: Bad Gateway
+quote_time_range [] []
+hits 0 
+skip: quote date None != today（休市或尚無今日報價），不更新 intraday.json
+
