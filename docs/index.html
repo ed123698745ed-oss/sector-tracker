@@ -161,7 +161,7 @@ footer .fine{font-size:12px;margin-top:6px}
 </head>
 <body>
 <div class="wrap">
-  <nav aria-label="分頁" style="display:flex;gap:6px;font-size:14px;margin-bottom:12px"><a href="./" aria-current="page" style="padding:5px 12px;border-radius:999px;background:var(--accent,#3451c7);color:#fff;text-decoration:none">族群追蹤</a><a href="wh.html" style="padding:5px 12px;border-radius:999px;background:rgba(127,127,127,.15);color:inherit;text-decoration:none">權值與高價股</a><a href="margin.html" style="padding:5px 12px;border-radius:999px;background:rgba(127,127,127,.15);color:inherit;text-decoration:none">融資觀察</a></nav>
+  <nav aria-label="分頁" style="display:flex;flex-wrap:wrap;gap:6px;font-size:14px;margin-bottom:12px"><a href="./" aria-current="page" style="white-space:nowrap;padding:5px 12px;border-radius:999px;background:var(--accent,#3451c7);color:#fff;text-decoration:none">族群追蹤</a><a href="wh.html" style="white-space:nowrap;padding:5px 12px;border-radius:999px;background:rgba(127,127,127,.15);color:inherit;text-decoration:none">權值與高價股</a><a href="margin.html" style="white-space:nowrap;padding:5px 12px;border-radius:999px;background:rgba(127,127,127,.15);color:inherit;text-decoration:none">融資觀察</a><a href="cb.html" style="white-space:nowrap;padding:5px 12px;border-radius:999px;background:rgba(127,127,127,.15);color:inherit;text-decoration:none">可轉債追蹤</a></nav>
   <header>
     <div>
       <h1>台股族群追蹤</h1>
@@ -216,7 +216,7 @@ footer .fine{font-size:12px;margin-top:6px}
 
 <script>
 // 加到主畫面的 app 會沿用舊版頁面：開啟或回到前景時比對版本，有新版就重新載入
-const PAGE_VER = '20261102f';
+const PAGE_VER = '20261103cb';
 function checkVer(){
   fetch('index.html?t=' + Date.now(), {cache: 'no-store'}).then(r => r.text()).then(t => {
     const m = t.match(/PAGE_VER = '([^']+)'/); if (m && m[1] !== PAGE_VER) location.replace('index.html?v=' + Date.now() + location.hash);

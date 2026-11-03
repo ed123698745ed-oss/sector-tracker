@@ -1,0 +1,66 @@
+name: 可轉債追蹤每日更新
+# 櫃買 RSta0113 盤後約 15:30～16:00 上檔（2026-11-03 15:5x 已可取得；確切時間待觀察）。
+# 目標日＝最新一份收盤精簡檔（data/quotes）的日期，不用執行當下日期（防錯清單 A1、A3）；休市日沒有收盤檔，自然不會要求。
+# GitHub 排程常漏觸發（事故 14、15）：intraday.yml 晚間由 cron-job.org 觸發時，若本工作當日未完成會補觸發；也可推 test/CB_TRIGGER 立即補跑。
+# 只供觀察，不推 LINE（Ed 2026-11-03 指示）；異常以排程失敗呈現，網頁維持上一份資料並顯示資料日。
+on:
+  schedule:
+    # 台北時間週一至週五 15:42、16:12、16:42、17:42、19:12，週二至週六 07:22（cron 為 UTC）
+    - cron: '42 7 * * 1-5'
+    - cron: '12 8 * * 1-5'
+    - cron: '42 8 * * 1-5'
+    - cron: '42 9 * * 1-5'
+    - cron: '12 11 * * 1-5'
+    - cron: '22 23 * * 1-5'
+  push:
+    paths: ['test/CB_TRIGGER']
+  workflow_dispatch:
+    inputs:
+      date:
+        description: '指定日期 YYYYMMDD（空白＝最新收盤日，並補抓近 15 天缺漏）'
+        required: false
+permissions:
+  contents: write
+concurrency:
+  group: cb-update
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 抓取櫃買可轉債行情
+        id: fetch
+        run: |
+          pip install -q requests
+          D=$(ls data/quotes | grep -E '^[0-9]{8}\.json$' | sort | tail -1 | cut -c1-8)
+          echo "目標交易日 $D"; echo "d=$D" >> "$GITHUB_OUTPUT"
+          RC=0
+          if [ -n "${{ github.event.inputs.date }}" ]; then python3 scripts/cb_fetch.py "${{ github.event.inputs.date }}" || RC=$?
+          else python3 scripts/cb_fetch.py || RC=$?; fi
+          echo "rc=$RC" >> "$GITHUB_OUTPUT"
+          if [ ! -f "archive/raw/tpex_cb/${D:0:4}/$D.csv.gz" ]; then
+            H=$(TZ=Asia/Taipei date +%H); T=$(TZ=Asia/Taipei date +%Y%m%d)
+            if [ "$T" != "$D" ] && [ "$H" -lt 12 ]; then echo "::error::$D 可轉債行情到隔天早上仍未取得"; echo "late=1" >> "$GITHUB_OUTPUT"
+            else echo "$D 可轉債行情尚未取得，等下一次排程"; fi
+          fi
+      - name: 計算分布
+        run: |
+          python3 scripts/cb_build.py
+      - name: 提交
+        run: |
+          git config user.name "sector-tracker-bot"; git config user.email "actions@users.noreply.github.com"
+          git add archive/raw/tpex_cb docs/cb.json docs/cb_list.json
+          if git diff --cached --quiet; then echo "沒有新資料"
+          else
+            git commit -q -m "可轉債追蹤更新 $(TZ=Asia/Taipei date +%Y-%m-%d)"
+            ok=0; for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && { ok=1; break; }; sleep 10; done
+            [ "$ok" = 1 ] || exit 1
+          fi
+      - name: 異常即判為失敗（檔數驟減、內容錯誤、隔天早上仍缺）
+        if: steps.fetch.outputs.rc != '0' || steps.fetch.outputs.late == '1'
+        run: |
+          echo "::error::可轉債抓取異常 rc=${{ steps.fetch.outputs.rc }} late=${{ steps.fetch.outputs.late }}，請看「抓取」步驟 log"; exit 1

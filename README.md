@@ -10,5 +10,6 @@ Ai Bot Team／Emit 維護的市場觀察網站。每個交易日盤後抓取證�
 - 每日排程：`.github/workflows/daily.yml`，台北時間週一至週五 13:52 起分段重試，16:20、18:20 仍會再抓
 - 資料：`data/quotes/YYYYMMDD.json`，每檔個股當日漲跌% 與成交金額（億）
 - 權值高價股「市場狀態」（試行、只供觀察）：規則全文 `docs/wh-market-state-rules.md`；計算 `scripts/wh_extreme.py`；推播 `scripts/wh_notify.py`（狀態改變才推，正式推播未停用）；補證 `python3 scripts/wh_extreme_audit.py`
+- 可轉債追蹤（試行 CB01、只供觀察）：`docs/cb.html`；抓取 `scripts/cb_fetch.py`（櫃買 RSta0113，原始檔 `archive/raw/tpex_cb`）；計算 `scripts/cb_build.py`；排程 `.github/workflows/cb.yml`（台北 15:42 起，不推 LINE）；測試 `python3 tests/test_cb.py`
 
 規則或題材表的修改須經 Ed 確認，並依 Emit 工作手冊第 9 節留下工作紀錄。歷史資料以現行成分股回推，有事後歸類偏差。

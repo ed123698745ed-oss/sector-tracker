@@ -49,6 +49,19 @@ jobs:
             echo "融資更新進行中／排隊：$N"
             if [ "$N" = "0" ]; then gh workflow run margin.yml --ref main && echo "已觸發融資觀察每日更新"; fi
           else echo "非晚間融資時段，略過"; fi
+      - name: 晚上補觸發可轉債追蹤（GitHub 排程常漏觸發；cb.yml 會自行判斷是否已有當日資料）
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          H=$(TZ=Asia/Taipei date +%H%M); W=$(TZ=Asia/Taipei date +%u); T=$(TZ=Asia/Taipei date +%Y%m%d)
+          if [ "$W" -le 5 ] && [ "$H" -ge 2105 ] && [ "$H" -le 2359 ]; then
+            DONE=$(gh api "repos/$GH_REPO/contents/archive/raw/tpex_cb/${T:0:4}/$T.csv.gz" --silent && echo 1 || echo 0)
+            N=$(gh run list -w cb.yml -L 10 --json status --jq "[.[] | select(.status==\"in_progress\" or .status==\"queued\" or .status==\"waiting\" or .status==\"pending\")] | length")
+            echo "可轉債當日已存：$DONE；進行中／排隊：$N"
+            if [ "$DONE" = "0" ] && [ "$N" = "0" ]; then gh workflow run cb.yml --ref main && echo "已觸發可轉債追蹤更新"; fi
+          else echo "非晚間時段，略過"; fi
       - uses: actions/checkout@v4
         if: steps.tw.outputs.go == '1'
       - uses: actions/setup-python@v5
