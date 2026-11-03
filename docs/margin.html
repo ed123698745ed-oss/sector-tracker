@@ -29,8 +29,8 @@ body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 var(--body)}
 .wrap{max-width:860px;margin:0 auto;padding-block:20px 48px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   display:flex;flex-direction:column;gap:22px}
-nav{display:flex;gap:6px;font-size:14px}
-nav a{padding:5px 12px;border-radius:999px;color:var(--muted);text-decoration:none;background:var(--chip)}
+nav{display:flex;flex-wrap:wrap;gap:6px;font-size:14px}
+nav a{white-space:nowrap;padding:5px 12px;border-radius:999px;color:var(--muted);text-decoration:none;background:var(--chip)}
 nav a[aria-current="page"]{background:var(--accent);color:#fff}
 header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px}
 h1{margin:0;font-size:22px}
@@ -89,7 +89,7 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
 </head>
 <body>
 <div class="wrap">
-  <nav aria-label="分頁"><a href="./">族群追蹤</a><a href="wh.html">權值與高價股</a><a href="margin.html" aria-current="page">融資觀察</a></nav>
+  <nav aria-label="分頁"><a href="./">族群追蹤</a><a href="wh.html">權值與高價股</a><a href="margin.html" aria-current="page">融資觀察</a><a href="cb.html">可轉債追蹤</a></nav>
   <header>
     <div>
       <h1>融資觀察</h1>
@@ -170,7 +170,7 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
 <script>
 const $ = s => document.querySelector(s);
 // 加到主畫面的 app 沒有瀏覽器的重新整理鍵，而且會沿用舊版頁面：按鈕強制抓新版；開啟或回到前景時自動比對版本
-const PAGE_VER = '20261102f';
+const PAGE_VER = '20261103cb';
 document.addEventListener('DOMContentLoaded', () => { const b = document.querySelector('#reload'); if (b) b.onclick = () => { location.replace('margin.html?v=' + Date.now() + location.hash); }; });
 function checkVer(){
   fetch('margin.html?t=' + Date.now(), {cache: 'no-store'}).then(r => r.text()).then(t => {
