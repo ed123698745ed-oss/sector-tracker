@@ -11,7 +11,8 @@ OUT = os.path.join(ROOT, 'archive', 'raw', 'twse_qfiis')
 def main():
     os.makedirs(OUT, exist_ok=True)
     got = 0
-    for ds in json.load(open(sys.argv[1])):
+    want = json.load(open(sys.argv[1]))
+    for ds in want:
         f = os.path.join(OUT, ds + '.json.gz')
         if os.path.exists(f): continue
         u = f'https://www.twse.com.tw/rwd/zh/fund/MI_QFIIS?date={ds}&selectType=ALLBUT0999&response=json'
@@ -29,7 +30,10 @@ def main():
             subprocess.run('git add archive/raw/twse_qfiis && git commit -qm "MI_QFIIS 進度 [skip ci]" && '
                            'for i in 1 2 3; do git pull --rebase -q && git push -q && break; sleep 5; done', shell=True, cwd=ROOT)
         time.sleep(6)
-    print('done', flush=True)
+    miss = [ds for ds in want if not os.path.exists(os.path.join(OUT, ds + '.json.gz'))]
+    print('done', 'missing', miss, flush=True)
+    if miss:   # 有日子重試後仍抓不到：非零結束，呼叫端（wh_monthly）才知道失敗（檢驗報告第 3 項）
+        raise SystemExit(f'MI_QFIIS 抓取失敗：{miss}')
 
 
 if __name__ == '__main__':

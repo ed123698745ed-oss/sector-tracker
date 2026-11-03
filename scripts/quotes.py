@@ -135,6 +135,11 @@ def parse_tpex(d, prevraw=None, ds='99999999', exref=None):
     return q
 
 
+class FetchError(RuntimeError):
+    """抓取重試後仍失敗。用一般例外而非 SystemExit，呼叫端的 except Exception 才攔得到（2026-11-03 檢驗報告第 4 項）；
+    未攔截時程式仍以非零結束。"""
+
+
 def get_json(url):
     for i in range(4):
         try:
@@ -143,7 +148,7 @@ def get_json(url):
         except Exception as e:  # 連線重置等，退避重試
             print('retry', i, e, flush=True)
             time.sleep(15 * (i + 1))
-    raise SystemExit(f'抓取失敗：{url}')
+    raise FetchError(f'抓取失敗：{url}')
 
 
 def has_tpex_exright(tp):
@@ -220,8 +225,26 @@ def prev_tpex_raw(ds):
     return None
 
 
+def closed_extra():
+    """data/closed.txt：臨時停止交易日（颱風等），每行一個 YYYYMMDD"""
+    cf = os.path.join(ROOT, 'data', 'closed.txt')
+    return set(open(cf).read().split()) if os.path.exists(cf) else set()
+
+
+_HOLIDAYS = {}
+
+
 def is_holiday(day):
-    """依證交所休市日期表判斷是否為公告休市日（含「X月X日至X月X日」區間與補假）。"""
+    """依證交所休市日期表判斷是否為公告休市日（含「X月X日至X月X日」區間與補假），或 data/closed.txt 的臨時休市日。
+    休市表每年只抓一次（同一程序內快取）。"""
+    if day.strftime('%Y%m%d') in closed_extra():
+        return True
+    if day.year not in _HOLIDAYS:
+        _HOLIDAYS[day.year] = _holiday_set(day)
+    return day.isoformat() in _HOLIDAYS[day.year]
+
+
+def _holiday_set(day):
     d = get_json(f'https://www.twse.com.tw/rwd/zh/holidaySchedule/holidaySchedule?date={day.year}0101&response=json')
     days = set()
     for r in d.get('data', []):
@@ -234,7 +257,7 @@ def is_holiday(day):
                 days.add(a.isoformat()); a += datetime.timedelta(days=1)
         for m1, d1 in re.findall(r'於(\d+)月(\d+)日[^補]{0,8}補', note):
             days.add(datetime.date(day.year, int(m1), int(d1)).isoformat())
-    return day.isoformat() in days
+    return days
 
 
 def save(ds, tw, tp, exref=None, prevtp=None, lastclose=None, exall=None, exref_tpex=None):

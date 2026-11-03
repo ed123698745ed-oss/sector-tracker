@@ -25,8 +25,15 @@
      其餘按比例自各批次移出
   4. 期初庫存：起算日已有的融資餘額為一個批次，成本設為起算日前 60 個交易日日均價的平均；同時以這 60 日的
      最低／最高日均價各算一次（成本敏感度）
-  5. 統一股份基準：交易所公布的「前日餘額」與前一日「今日餘額」不同時（減資、面額分割、換發等），
-     視為股數基準改變，比例 r＝前日餘額÷前一日今日餘額，各批次張數 × r、成本 ÷ r；r 不在 1/20～20 之間則判為異常
+  5. 統一股份基準：交易所公布的「前日餘額」與前一日「今日餘額」不同時，先查股數事件（2026-11-03 檢驗報告第 1、2 項）：
+     - 差距 ≤ 2 張或 < 0.5%：不換算（當日終了再與今日餘額對齊）
+     - 同日有股數事件（上市：證交所減資恢復買賣 TWTAUU、變更面額恢復買賣 TWTB8U、除權息／減資參考價表；
+       上櫃：收盤行情「發行股數」較該股前一次出現時變動 ≥ 0.5%）：視為股數基準改變，比例 r＝前日餘額÷前一日今日餘額，
+       各批次張數 × r、成本 ÷ r；r 不在 1/20～20 之間則判為異常
+     - 查無事件、r 在 2/3～1.5 之間：不換算，差額當作當日買進（以當日均價入庫）或償還（按比例移出）
+     - 查無事件、r 超出 2/3～1.5（如換股合併）：判為異常，排除於排行
+     - ETF 等非普通股沒有事件表（上櫃 ETF 發行單位每日變動），沿用依比例換算；不列入排行，只影響官方校準的模型總額
+     觸發的事件與異常寫入 margin.json 的 basis
   6. 官方校準：每日每市場 k＝官方融資金額 ÷ Σ（批次張數 × 1000 × 0.6 × 批次成本），個股成本 × k，
      使模型總額等於官方總額（2026-10-30 驗證：未校準前 k 約 1.01～1.02，代表模型總額已接近官方）
   7. 估算維持率＝收盤價 ÷（0.6 × 校準後平均成本）× 100
@@ -53,6 +60,7 @@ START = '20250102'   # 模型起算日（固定，起算日改變會改寫全部
 MODEL = 'MR01'
 RATIO = 0.6
 MIN_DAYS, MAX_INIT, MAX_SENS, MIN_BAL = 120, 35.0, 10.0, 10
+BASIS_MIN_LOTS, BASIS_MIN_PCT, BASIS_MAX_FLOW = 2, 0.005, 1.5   # 前日餘額不連續：忽略門檻（張、比例）與無事件時可當買賣的最大比例
 NET_DAYTRADE = os.environ.get('MR_NET', '1') == '1'
 TPEX_PX_START = '20070702'   # 上櫃收盤原始檔有內容的第一天（之前的檔案為空）
 RECENT_N = 30   # 近期追價者窗口（交易日）；以三竹 7 檔×13 日校準選定
@@ -152,6 +160,39 @@ def taiex_fmtqik(ds, _c={}):
     return _c[ym].get(ds)
 
 
+def tpex_shares(j):
+    """上櫃收盤行情的發行股數 → {代號: 股數}（上櫃股數事件偵測用）"""
+    out = {}
+    for t in (j or {}).get('tables', []):
+        f = [x.strip() for x in t.get('fields', [])]
+        if '發行股數' in f and '收盤' in f:
+            i = f.index('發行股數')
+            for r in t['data']:
+                v = num(r[i])
+                if v:
+                    out[r[0].strip()] = v
+    return out
+
+
+def twse_basis_events():
+    """上市股數事件 {(代號, 日期)}：減資恢復買賣 TWTAUU、變更面額恢復買賣 TWTB8U（archive/raw/twse_events），
+    加上每日更新的除權息／減資參考價表 data/exright_twse.json（含 TWTAUU）。後者混有除權息，只用來補
+    twse_events 尚未涵蓋的日子（該目錄由 wh_monthly 每月、whext 手動更新）"""
+    ev = set()
+    for fp in glob.glob(os.path.join(RAW, 'twse_events', 'TWTAUU_*.json')) + glob.glob(os.path.join(RAW, 'twse_events', 'TWTB8U_*.json')):
+        for r in json.load(open(fp)).get('data') or []:
+            m = re.match(r'(\d+)\D+(\d+)\D+(\d+)', str(r[0]))
+            if m:
+                ev.add((str(r[1]).strip(), '%d%02d%02d' % (int(m[1]) + 1911, int(m[2]), int(m[3]))))
+    covered = max((d for _, d in ev), default='')
+    fp = os.path.join(ROOT, 'data', 'exright_twse.json')
+    if os.path.exists(fp):
+        for ds, v in json.load(open(fp)).items():
+            if ds > covered:
+                ev.update((c, ds) for c in v)
+    return ev
+
+
 def price_days_before(ds, n):
     """ds 之前 n 個有上市收盤原始檔的日子（期初成本用）"""
     ds_all = sorted(os.path.basename(p)[:8] for p in glob.glob(f'{RAW}/twse/*.json.gz'))
@@ -200,6 +241,9 @@ def main():
     crash = {}     # 日期 → [近期口徑樣本數, <130 家數, <140 家數, <130 個股融資餘額合計張數]
     taiex = {}
     last_px = {}   # 代號 → (日期, 收盤)；以起算前約一年的真實收盤初始化（Eve F2）
+    ev_twse = twse_basis_events()
+    tp_sh = {}      # 上櫃代號 → 最近一次出現的發行股數
+    basis_log = []  # 前日餘額不連續的處理紀錄（起算日後、換算或異常、或差距 ≥ 2%）
     for d in price_days_before(days[0], 250):
         for src, fn in (('twse', prices_twse), ('tpex', prices_tpex)):
             for c, v in fn(load(src, d)).items():
@@ -207,6 +251,7 @@ def main():
     for di, ds in enumerate(days):
         full = ds >= START   # 全體平均（批次法）只在起算日後執行
         px = {}
+        sh_event = set()   # 當日上櫃發行股數變動的代號
         for src, fn in (('twse', prices_twse), ('tpex', prices_tpex)):
             raw = load(src, ds)
             if raw is None:
@@ -222,6 +267,12 @@ def main():
             for c, v in fn(raw).items():
                 px[c] = v
                 last_px[c] = (ds, v[1])
+            if src == 'tpex':
+                sh_event = set()
+                for c, v in tpex_shares(raw).items():
+                    if c in tp_sh and abs(v / tp_sh[c] - 1) >= BASIS_MIN_PCT:
+                        sh_event.add(c)
+                    tp_sh[c] = v
         for mkt, src, parse in (('TWSE', 'twse_margin', margin_twse), ('TPEX', 'tpex_margin', margin_tpex)):
             if mkt == 'TPEX' and (ds < TPEX_PX_START or not (os.path.exists(f'{RAW}/tpex_margin/{ds}.json.gz') and os.path.exists(f'{RAW}/tpex/{ds}.json.gz'))):
                 continue
@@ -237,21 +288,43 @@ def main():
                     p = pos[c] = Pos(mkt, r['name'])
                 p.name, p.mkt = r['name'], mkt   # 市場依當日來源更新（Eve F1：轉上市／轉上櫃）
                 bal = r['bal']
-                # 張數基準係數（Eve F3）：前日餘額與前一日今日餘額不同時累乘，供跨分割比較餘額
-                if p.last_bal and r['prev'] > 0 and abs(r['prev'] - p.last_bal) > 0.5 and 1 / 20 <= r['prev'] / p.last_bal <= 20:
-                    p.fac *= r['prev'] / p.last_bal
-                    p.win = [(q * r['prev'] / p.last_bal, v) for q, v in p.win]
-                # 股數基準：交易所前日餘額與我們記錄的前一日餘額不同（減資、面額分割等）
-                if full and p.last_bal is not None and p.lots and abs(r['prev'] - p.last_bal) > 0.5:
-                    if p.last_bal > 0 and r['prev'] > 0:
-                        k = r['prev'] / p.last_bal
-                        if 1 / 20 <= k <= 20:
-                            for L in p.lots:
-                                L[0] *= k; L[1] /= k; L[2] /= k; L[3] /= k
+                # 前日餘額不連續（說明第 5 點）：有股數事件才換算基準，否則差額當買進／償還，大幅跳動判異常
+                basis, flow_in = None, 0.0
+                if p.last_bal is not None:
+                    diff = r['prev'] - p.last_bal
+                    if abs(diff) > BASIS_MIN_LOTS and abs(diff) >= BASIS_MIN_PCT * p.last_bal:
+                        k = r['prev'] / p.last_bal if p.last_bal > 0 and r['prev'] > 0 else None
+                        # ETF 等非普通股不在事件表、上櫃 ETF 發行單位每日變動：沿用原做法一律依比例換算（不列入排行，只影響校準總額）
+                        has_ev = not COMMON.match(c) or ((c, ds) in ev_twse if mkt == 'TWSE' else c in sh_event)
+                        if k and has_ev:
+                            basis = 'event' if 1 / 20 <= k <= 20 else 'bad'
+                        elif k and not (1 / BASIS_MAX_FLOW <= k <= BASIS_MAX_FLOW):
+                            basis = 'bad'
                         else:
-                            p.bad = f'{ds} 股數基準比例異常 {k:.3f}'
-                    else:
-                        p.bad = f'{ds} 前日餘額不連續'
+                            basis = 'flow'
+                        if basis == 'event':
+                            # 張數基準係數（Eve F3）：供跨分割比較餘額與近期口徑張數
+                            p.fac *= k
+                            p.win = [(q * k, v) for q, v in p.win]
+                        if full and p.lots:
+                            if basis == 'event':
+                                for L in p.lots:
+                                    L[0] *= k; L[1] /= k; L[2] /= k; L[3] /= k
+                            elif basis == 'bad':
+                                p.bad = (f'{ds} 前日餘額 {r["prev"]:g} 張與前一日 {p.last_bal:g} 張不符、比例 {k:.3f}' if k else f'{ds} 前日餘額不連續') + \
+                                        ('，股數基準比例異常' if has_ev else '，查無減資／分割事件（疑合併）')
+                            elif diff < 0:
+                                tot = sum(L[0] for L in p.lots)
+                                if tot > 0:
+                                    for L in p.lots:
+                                        L[0] *= max(r['prev'], 0) / tot
+                            else:
+                                flow_in = diff
+                        elif full and basis == 'flow' and diff > 0 and p.started:   # 起算日當天由期初庫存涵蓋
+                            flow_in = diff
+                        if full and COMMON.match(c) and (basis != 'flow' or (k and abs(k - 1) >= 0.02)):
+                            basis_log.append(dict(date=ds, s=c, m=mkt, last=p.last_bal, prev=r['prev'],
+                                                  k=None if k is None else round(k, 4), act=basis))
                 name_px = px.get(c)
                 avg = name_px[2] if name_px else None
                 close = name_px[1] if name_px else (last_px.get(c) or (None, None))[1]
@@ -280,6 +353,9 @@ def main():
                 p.rdays += 1
                 if full:
                     p.started = True
+                if full and flow_in > 0 and (avg or close):
+                    q = avg or close   # 查無事件的前日餘額增加：視為當日買進
+                    p.lots.append([flow_in, q, q, q, 0])
                 if full and buy > 0 and (avg or close):
                     q = avg or close
                     p.lots.append([buy, q, q, q, 0])
@@ -455,7 +531,7 @@ def main():
     out = dict(date=latest, generated=datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).isoformat(timespec='seconds'),
                model=dict(version=MODEL, start=START, financing_ratio=RATIO, min_days=MIN_DAYS, max_init_pct=MAX_INIT,
                           max_sensitivity=MAX_SENS, min_balance=MIN_BAL, recent_days=RECENT_N),
-               market=market, bal=balmap, stats=stats, rstats=rstats, rows=rows,
+               market=market, bal=balmap, basis=basis_log, stats=stats, rstats=rstats, rows=rows,
                crash=[dict(date=d, n=v[0], b130=v[1], b140=v[2], bal130=round(v[3]), taiex=taiex.get(d)) for d, v in sorted(crash.items())])
     with open(OUT_JSON, 'w') as f:
         json.dump(out, f, ensure_ascii=False, separators=(',', ':'))

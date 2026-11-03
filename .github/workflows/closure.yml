@@ -43,4 +43,10 @@ jobs:
           if git diff --cached --quiet; then echo "沒有新公告"; exit 0; fi
           if ! git diff --cached --quiet -- data/closed.txt; then python3 scripts/build.py && git add docs; fi
           git commit -m "臨時休市自動登錄 $(TZ=Asia/Taipei date +%Y-%m-%d\ %H:%M)"
-          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done
+          for i in 1 2 3 4 5; do git pull --rebase --autostash -q && git push -q && { pushed=1; break; }; sleep 10; done; [ -n "$pushed" ] || { echo "::error::git push 重試後仍失敗"; exit 1; }
+      - name: 失敗通知（LINE）
+        if: failure()
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        run: python3 scripts/notify_failure.py "${{ github.workflow }}" "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true

@@ -30,7 +30,7 @@ jobs:
           # 除權息參考價快取由多個工作同時改寫，提交時會互相衝突導致推送失敗；屬可重抓的快取，不提交
           git checkout -- data/exright_twse.json data/exright_tpex.json 2>/dev/null || true
           git add archive data && git commit -q -m "回補 job ${{ matrix.idx }} [skip ci]" || exit 0
-          for i in 1 2 3 4 5 6; do git pull --rebase -q && git push -q && break; sleep $((RANDOM % 30 + 5)); done
+          for i in 1 2 3 4 5 6; do git pull --rebase --autostash -q && git push -q && { pushed=1; break; }; sleep $((RANDOM % 30 + 5)); done; [ -n "$pushed" ] || { echo "::error::git push 重試後仍失敗"; exit 1; }
   next:
     needs: fetch
     if: always()
@@ -49,5 +49,11 @@ jobs:
           python3 scripts/build.py
           git config user.name "sector-tracker-bot" && git config user.email "actions@users.noreply.github.com"
           git add docs && git commit -q -m "回補後重算網站資料 [skip ci]" || true
-          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done
+          for i in 1 2 3 4 5; do git pull --rebase --autostash -q && git push -q && { pushed=1; break; }; sleep 10; done; [ -n "$pushed" ] || { echo "::error::git push 重試後仍失敗"; exit 1; }
           if [ "$LEFT" -gt 0 ] && [ ! -f backfill/STOP ]; then gh workflow run backfill.yml --ref main; fi
+      - name: 失敗通知（LINE）
+        if: failure()
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        run: python3 scripts/notify_failure.py "${{ github.workflow }}" "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true

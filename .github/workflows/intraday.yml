@@ -67,4 +67,10 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add docs/intraday.json test/mis_result.txt test/mis_alert.txt 2>/dev/null || git add docs/intraday.json test/mis_result.txt
           git commit -m "盤中暫定 $(TZ=Asia/Taipei date +%H:%M)" || exit 0
-          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 5; done
+          for i in 1 2 3 4 5; do git pull --rebase --autostash -q && git push -q && { pushed=1; break; }; sleep 5; done; [ -n "$pushed" ] || { echo "::error::git push 重試後仍失敗"; exit 1; }
+      - name: 失敗通知（LINE）
+        if: failure()
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        run: python3 scripts/notify_failure.py "${{ github.workflow }}" "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true

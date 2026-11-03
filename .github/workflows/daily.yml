@@ -40,6 +40,8 @@ jobs:
         run: |
           D="${{ github.event.inputs.date }}"; [ -z "$D" ] && D=$(TZ=Asia/Taipei date +%Y%m%d) || D=$(echo "$D" | tr -d -)
           if [ -f "data/quotes/$D.json" ] || [ -f "archive/raw/twse/$D.json.gz" ]; then echo "$D 已處理，跳過"; echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          # 臨時休市（颱風等，closure_watch 寫入 data/closed.txt）視同休市，不抓也不報錯（2026-11-03 檢驗報告第 5 項）
+          if [ -f data/closed.txt ] && grep -qx "$D" data/closed.txt; then echo "$D 臨時休市（closed.txt），跳過"; echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0; fi
           python3 scripts/backfill.py run "$D"
           if [ -f "data/quotes/$D.json" ] || [ -f "archive/raw/twse/$D.json.gz" ]; then exit 0; fi
           H=$(TZ=Asia/Taipei date +%H)
@@ -84,7 +86,7 @@ jobs:
           git add data/wh_notify_ledger.json
           if git diff --cached --quiet; then echo "推播紀錄未變"; exit 0; fi
           git commit -q -m "市場狀態推播紀錄 $(TZ=Asia/Taipei date +%Y-%m-%d) [skip ci]"
-          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && exit 0; sleep 10; done
+          for i in 1 2 3 4 5; do git pull --rebase --autostash -q && git push -q && exit 0; sleep 10; done
           echo "::error::推播紀錄 push 失敗，ledger 已上傳 artifact，需人工補提交（見 docs/wh-market-state-rules.md 第 6 節）"
           exit 1
       - name: 推播紀錄 push 失敗時保留 ledger
@@ -112,7 +114,7 @@ jobs:
           if [ -f data/wh_notify_ledger.json ]; then git add data/wh_notify_ledger.json; fi
           if git diff --cached --quiet; then echo "推播紀錄未變"; exit 0; fi
           git commit -m "市場狀態推播重試紀錄 $(TZ=Asia/Taipei date +%Y-%m-%d)"
-          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && exit 0; sleep 10; done
+          for i in 1 2 3 4 5; do git pull --rebase --autostash -q && git push -q && exit 0; sleep 10; done
           echo "::error::推播重試紀錄 push 失敗，ledger 已上傳 artifact，需人工補提交（見 docs/wh-market-state-rules.md 第 6 節）"
           exit 1
       - name: 推播重試紀錄 push 失敗時保留 ledger
@@ -130,4 +132,10 @@ jobs:
           git add archive data docs config/wh_lists.json
           if git diff --cached --quiet; then echo "沒有新資料"; exit 0; fi
           git commit -m "資料更新 $(TZ=Asia/Taipei date +%Y-%m-%d)"
-          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && break; sleep 10; done
+          for i in 1 2 3 4 5; do git pull --rebase --autostash -q && git push -q && { pushed=1; break; }; sleep 10; done; [ -n "$pushed" ] || { echo "::error::git push 重試後仍失敗"; exit 1; }
+      - name: 失敗通知（LINE）
+        if: failure()
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        run: python3 scripts/notify_failure.py "${{ github.workflow }}" "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true
