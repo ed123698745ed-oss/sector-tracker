@@ -14,12 +14,17 @@
   2. 退潮維持，直到 W5 ≥ 30 改判惡化、W5 ≥ 55 洗乾淨、重新達成確認，或 W5 回落到 20 以下（退潮條件消失，回到延續中）。
   3. 確認須當日 W5 < 20（退潮線）。
   4. 每週最後一個交易日收盤，該週即算完整週（與延續性 C02 一致）。
+規則 MP03（Ed 2026-11-04 確認，依 2026-11-03 檢驗報告第 7 項）：
+  5. 延續中退出：最近兩個完整週的主流族群數都 < 10 時，退出延續中（W5 ≥ 20 → 退潮，否則 → 中性）。
+     原程式另有此條但未寫入規則，且用進行中的本週（週一恆為 0）；改為只看完整週。
+  6. 交易日少於 3 天的週（春節、連假等短週）不計入完整週（比照 C02）：確認、退潮與第 5 點都跳過短週，改用再前一週。
 只供觀察，不是交易訊號。
 """
 import datetime
 
 P = dict(washed=55, turn_s=40, turn_w=10, washed_window=40, confirm_main=10, confirm_w=3, fade_w=20, worse=30)
-RULE = 'MP02'
+RULE = 'MP03'
+SHORT_WEEK = 3  # 交易日少於此數的週不計入完整週（MP03 第 6 點，比照 C02）
 PHASE = ['中性', '惡化', '洗乾淨', '轉好起點', '延續中', '退潮', '確認']  # 6＝確認（當日首次成立），之後為 4
 
 
@@ -38,6 +43,8 @@ def compute(days):
             s = k
             while s > 0 and wk[s - 1] == wk[k]:
                 s -= 1
+            if k - s + 1 < SHORT_WEEK:
+                continue   # 短週不計入完整週（MP03 第 6 點）
             main = sum(1 for v in days[k]['w'].values() if v[0] >= 3)
             weeks.append((wk[k], main, sum(W[s:k + 1]) / (k - s + 1), k))
     done_before = {}  # 日 k → 已完整結算的週（不含 k 所在週）
@@ -70,7 +77,7 @@ def compute(days):
             p = 1 if w5 >= P['worse'] else 6 if confirm else 4 if w5 < P['fade_w'] else 5
         elif prev in (4, 6):
             p = 5 if fade else 4
-            if p == 4 and not confirm and cur_main < P['confirm_main'] and last1 and last1[1] < P['confirm_main']:
+            if p == 4 and not confirm and len(dw) >= 2 and dw[-1][1] < P['confirm_main'] and dw[-2][1] < P['confirm_main']:   # MP03 第 5 點：只看完整週
                 p = 5 if w5 >= P['fade_w'] else 0
         elif confirm:
             p = 6
