@@ -1929,3 +1929,10 @@ quote_time_range ['13:06:49'] ['13:21:40']
 hits 10 IP/ASIC(AB) CCL(B) 伺服器組裝(C) 連接器/線材(A) 光通訊/矽光子(B) 太陽能/儲能(ABC) 軟體雲端(AB) 工具機(ABC) 檢測分析(B) 化工(AB)
 count_check returned 610 baseline 610 (20261103)
 
+run_at 2026-11-04 13:32:05
+codes 610 returned 610 priced 610 seconds 64.7
+requests 13 errors 0 last_error 
+quote_time_range ['13:24:58'] ['13:30:00']
+hits 8 IP/ASIC(A) 伺服器組裝(C) 連接器/線材(A) 太陽能/儲能(ABC) 軟體雲端(AB) 工具機(ABC) 檢測分析(B) 化工(AB)
+count_check returned 610 baseline 610 (20261103)
+
