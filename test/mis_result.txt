@@ -1810,3 +1810,10 @@ quote_time_range ['09:55:23'] ['10:32:38']
 hits 4 伺服器組裝(C) 軟體雲端(AB) 工具機(AB) 化工(B)
 count_check returned 610 baseline 610 (20261103)
 
+run_at 2026-11-04 10:43:46
+codes 610 returned 610 priced 605 seconds 170.4
+requests 14 errors 1 last_error <urlopen error timed out>
+quote_time_range ['10:00:34'] ['10:43:19']
+hits 2 伺服器組裝(C) 軟體雲端(A)
+count_check returned 610 baseline 610 (20261103)
+
