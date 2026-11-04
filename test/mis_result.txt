@@ -1852,3 +1852,10 @@ quote_time_range ['10:43:23'] ['11:31:48']
 hits 2 伺服器組裝(C) 軟體雲端(A)
 count_check returned 610 baseline 610 (20261103)
 
+run_at 2026-11-04 11:42:05
+codes 610 returned 610 priced 610 seconds 73.4
+requests 13 errors 0 last_error 
+quote_time_range ['11:22:49'] ['11:41:58']
+hits 0 
+count_check returned 610 baseline 610 (20261103)
+
