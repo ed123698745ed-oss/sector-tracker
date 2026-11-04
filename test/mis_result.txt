@@ -1796,3 +1796,10 @@ quote_time_range ['09:50:51'] ['10:11:51']
 hits 8 半導體材料(B) CCL(AB) 伺服器組裝(C) 散熱(A) 機器人(AB) 軟體雲端(ABC) 工具機(AB) 化工(AB)
 count_check returned 610 baseline 610 (20261103)
 
+run_at 2026-11-04 10:22:32
+codes 610 returned 610 priced 604 seconds 84.4
+requests 13 errors 0 last_error 
+quote_time_range ['09:55:23'] ['10:22:21']
+hits 5 CCL(AB) 伺服器組裝(C) 軟體雲端(ABC) 工具機(AB) 化工(B)
+count_check returned 610 baseline 610 (20261103)
+
