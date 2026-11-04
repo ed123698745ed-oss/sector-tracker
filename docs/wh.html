@@ -99,7 +99,7 @@ td.num{font-size:15px}
   </section>
 
   <section>
-    <h2>市場狀態<small>非常態（瘋狂）判定，2005 起 845／5,366 個交易日（約 15.7%，資料至 2026-11-03）</small><span class="upd" id="u_x"></span></h2>
+    <h2>市場狀態<small id="xshare">非常態（瘋狂）判定</small><span class="upd" id="u_x"></span></h2>
     <div class="panel">
       <div style="margin-bottom:8px"><span class="unverified" title="2026-10-30 起改用價格規則，仍在試行觀察">試行規則 2026-10-30 版</span></div>
       <div id="xstate" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px"></div>
@@ -116,7 +116,7 @@ td.num{font-size:15px}
       <svg id="xchart" viewBox="0 0 420 220" role="img" aria-label="自2005年起的非常態色帶與加權指數，可縮放與拖曳"></svg>
       <div class="legend"><span><i style="background:var(--down)"></i>下跌瘋狂</span><span><i style="background:var(--up)"></i>上漲瘋狂</span><span>黑線＝加權指數（對數）。預設顯示近 3 年；按鈕或＋／－縮放，滑鼠滾輪、雙指捏合可縮放，拖曳圖表或「歷史位置」可平移，最早至 2005 年；右端最晚為上方所選交易日。</span></div>
       <details style="margin-top:10px"><summary class="sub" style="cursor:pointer">歷次非常態期間</summary><div class="tblwrap" style="margin-top:8px"><table id="xtbl"></table></div></details>
-      <div class="note" style="margin-top:8px">下跌瘋狂：加權指數收盤比近 15 日最高收盤低 9% 以上時進入，從期間最低收盤反彈 6% 時解除。上漲瘋狂：收盤比近 40 日最低收盤高 20% 以上時進入，從期間最高收盤回落 5% 時解除。解除當日為常態。「波段起點」為進入時窗口內的最高（下跌）或最低（上漲）收盤日；「極值」為期間最低或最高收盤。窗口只用 2005-01-01 起至當日的收盤，不讀未來。資金集中分數（前 5 大成交值個股排除台積電的占比百分位）只供參考，不參與判定。只供觀察，不是交易訊號。規則全文見 <a href="wh-market-state-rules.md">市場狀態規則</a>。</div>
+      <div class="note" style="margin-top:8px"><span id="xrule">下跌瘋狂：加權指數收盤比近 15 日最高收盤低 9% 以上時進入，從期間最低收盤反彈 6% 時解除。上漲瘋狂：收盤比近 40 日最低收盤高 20% 以上時進入，從期間最高收盤回落 5% 時解除。</span>解除當日為常態。「波段起點」為進入時窗口內的最高（下跌）或最低（上漲）收盤日；「極值」為期間最低或最高收盤。窗口只用 2005-01-01 起至當日的收盤，不讀未來。資金集中分數（前 5 大成交值個股排除台積電的占比百分位）只供參考，不參與判定。只供觀察，不是交易訊號。規則全文見 <a href="wh-market-state-rules.md">市場狀態規則</a>。</div>
     </div>
   </section>
 
@@ -135,7 +135,7 @@ td.num{font-size:15px}
   </section>
 
   <section>
-    <h2>離高點分布<small>收盤離近 250 日最高價</small><span class="upd" id="u_dd"></span></h2>
+    <h2>離高點分布<small>收盤離近 250 日盤中最高價（還原）</small><span class="upd" id="u_dd"></span></h2>
     <div class="tabs" id="gtabs"></div>
     <div class="tabs" id="rtabs"></div>
     <div class="panel">
@@ -192,6 +192,7 @@ const fd = s => s.slice(0,4) + '/' + s.slice(4,6) + '/' + s.slice(6);
 
 fetch('wh.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).then(w => {
   W = w; idx = w.dates.length - 1;
+  xRuleText();
   const sel = $('#day');
   for (let i = w.dates.length - 1; i >= Math.max(0, w.dates.length - 260); i--) sel.add(new Option(fd(w.dates[i]), i));
   sel.onchange = () => { idx = +sel.value; XV.end = idx; draw(); };
@@ -324,6 +325,16 @@ function xInit(){
   svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
   window.addEventListener('resize', () => W && renderX());
 }
+// 門檻、窗口與非常態占比都從 wh.json 讀，規則改了網頁說明自動同步（2026-11-03 檢驗報告：原本寫死）
+function xRuleText(){
+  const x_ = W.ext; if (!x_ || !x_.th || !x_.win) return;
+  const p = v => +(v * 100).toFixed(1) + '%', th = x_.th, wn = x_.win;
+  $('#xrule').textContent = `下跌瘋狂：加權指數收盤比近 ${wn.down} 日最高收盤低 ${p(th.down[0])} 以上時進入，從期間最低收盤反彈 ${p(th.down[1])} 時解除。` +
+    `上漲瘋狂：收盤比近 ${wn.up} 日最低收盤高 ${p(th.up[0])} 以上時進入，從期間最高收盤回落 ${p(th.up[1])} 時解除。`;
+  let n = 0, k = 0;
+  W.dates.forEach((d, i) => { if (d >= '20050101' && x_.state[i] != null) { n++; k += x_.state[i] !== 0; } });
+  if (n) $('#xshare').textContent = `非常態（瘋狂）判定，2005 起 ${k.toLocaleString('zh-TW')}／${n.toLocaleString('zh-TW')} 個交易日（約 ${(k / n * 100).toFixed(1)}%，資料至 ${fd(W.dates[W.dates.length - 1])}）`;
+}
 function drawX(){
   const x_ = W.ext; if (!x_) return;
   const k = x_.state[idx], [lab, col] = XS[String(k)];
@@ -372,7 +383,7 @@ function renderX(){
   svg.innerHTML = g;
   const sc = v => v == null ? '—' : (v * 100).toFixed(0);
   const pz = z => z == null ? '—' : (z > 0 ? '+' : '') + (z * 100).toFixed(1) + '%';
-  hover('#xhit', s, e, x, i => `${fd(W.dates[i])}<br>${XS[String(x_.state[i])][0]}<br>加權 ${W.taiex[i] ? Math.round(W.taiex[i]).toLocaleString('zh-TW') : '—'}<br>距 15 日高 ${pz(x_.dd ? x_.dd[i] : null)}／距 40 日低 ${pz(x_.ru ? x_.ru[i] : null)}`);
+  hover('#xhit', s, e, x, i => `${fd(W.dates[i])}<br>${XS[String(x_.state[i])][0]}<br>加權 ${W.taiex[i] ? Math.round(W.taiex[i]).toLocaleString('zh-TW') : '—'}<br>距 ${(x_.win || {}).down || 15} 日高 ${pz(x_.dd ? x_.dd[i] : null)}／距 ${(x_.win || {}).up || 40} 日低 ${pz(x_.ru ? x_.ru[i] : null)}`);
   const lo0 = xStart() + XV.span; $('#xrange').value = idx <= lo0 ? 1000 : Math.round((XV.end - lo0) / (idx - lo0) * 1000);
   $('#xwin').textContent = `${fd(W.dates[s])}～${fd(W.dates[e])}（${e - s + 1} 個交易日）`;
   const y = W.dates[Math.round((s + e) / 2)].slice(0, 4); if ($('#xyear').value !== y) $('#xyear').value = y;

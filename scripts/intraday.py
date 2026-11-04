@@ -15,23 +15,37 @@ TPE = datetime.timezone(datetime.timedelta(hours=8))
 BATCH = 50
 
 
+RECENT_N = 60   # 查詢範圍：近 60 個交易日有成交者（原本 5 日，停牌 ≥5 日的股票復牌當天不會被查詢，2026-11-03 檢驗報告）
+
+
 def recent_codes():
-    """最近 5 個交易日有成交的代號（排除已下市、轉投控前舊代號，不再對其發查詢）"""
-    s = set()
-    for f in sorted(glob.glob(f'{ROOT}/data/quotes/*.json'))[-5:]:
-        s |= set(json.load(open(f))['q'])
-    return s
+    """回傳 (近 RECENT_N 個交易日有成交的代號, 新上市前五日的代號)。
+    前者排除已下市、轉投控前舊代號；後者與收盤規則一致（build.py NEW_LISTING_DAYS）不計入盤中：
+    今天是第 k 個交易日、首次出現於近 4 份收盤檔者即仍在前五日（今天第 1 日的新股本來就不在查詢範圍）"""
+    fs = sorted(glob.glob(f'{ROOT}/data/quotes/*.json'))[-RECENT_N:]
+    from build import NEW_LISTING_DAYS
+    k = NEW_LISTING_DAYS - 1
+    old, new = set(), set()
+    for f in fs[:-k] if len(fs) > k else []:
+        old |= set(json.load(open(f))['q'])
+    for f in fs[-k:]:
+        new |= set(json.load(open(f))['q'])
+    fresh = new - old if len(fs) >= RECENT_N else set()   # 資料不足 60 日時不判斷，避免誤排除
+    return old | new, fresh
 
 
 def members():
     from build import load_periods
     per, today = load_periods(), datetime.datetime.now(TPE).strftime('%Y%m%d')
-    th, names, live = {}, {}, recent_codes()
+    th, names = {}, {}
+    live, fresh = recent_codes()
     for r in list(csv.reader(open(f'{ROOT}/config/themes.csv', encoding='utf-8')))[1:]:
         a, b = per.get(r[0], ('', ''))
         if (a and today < a) or (b and today > b):  # 已過有效期間的題材不判斷
             continue
         if live and r[1] not in live:
+            continue
+        if r[1] in fresh:   # 新上市前五日無漲跌幅限制，不計入（與收盤一致）
             continue
         th.setdefault(r[0], []).append(r[1])
         names[r[1]] = r[2] if len(r) > 2 else r[1]
