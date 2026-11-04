@@ -22,6 +22,7 @@ on:
 
 permissions:
   contents: write
+  actions: write   # 補觸發可轉債追蹤 cb.yml
 
 concurrency:
   group: daily-update
@@ -31,6 +32,19 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
+      - name: 補觸發可轉債追蹤（cb.yml 的 GitHub 排程常漏觸發；本工作由 cron-job.org 準時觸發，16:00、16:30、18:00 會補）
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          H=$(TZ=Asia/Taipei date +%H%M); W=$(TZ=Asia/Taipei date +%u); T=$(TZ=Asia/Taipei date +%Y%m%d)
+          if [ "$W" -le 5 ] && [ "$H" -ge 1530 ] && [ "$H" -le 2059 ]; then
+            DONE=$(gh api "repos/$GH_REPO/contents/archive/raw/tpex_cb/${T:0:4}/$T.csv.gz" --silent && echo 1 || echo 0)
+            N=$(gh run list -w cb.yml -L 10 --json status --jq "[.[] | select(.status==\"in_progress\" or .status==\"queued\" or .status==\"waiting\" or .status==\"pending\")] | length")
+            echo "可轉債當日已存：$DONE；進行中／排隊：$N"
+            if [ "$DONE" = "0" ] && [ "$N" = "0" ]; then gh workflow run cb.yml --ref main && echo "已觸發可轉債追蹤更新"; fi
+          else echo "非 15:30～20:59，略過"; fi
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
