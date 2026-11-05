@@ -24,6 +24,7 @@
   出場與償還按比例扣減，新買進以當日價格加入，舊部位隨換手淡出。以金額記帳，分割減資不需換算。
   自最早原始檔起算；2026/7 七檔（020 策略包三竹截圖）與雍智 2026/10～11 共 8 檔 100 點，與三竹 App 逐點相同。
   融資資料滿 30 個交易日、餘額 ≥ 10 張、當日有成交才列入。不經官方校準（三竹不校準）。
+  濾網（Ed 2026-11-05）：無融資限額（停資或不得融資）不列入排行與崩跌家數；成交冷清、成本久未更新造成的極低數值照列（Ed 接受）。
 
 個股全體平均（模型 MR01，起算日 START）
   1. 逐日重播融資庫存（批次法）：每日淨融資買進為一個批次，成本＝當日均價
@@ -209,7 +210,7 @@ def price_days_before(ds, n):
 
 class Pos:
     __slots__ = ('mkt', 'name', 'inv', 'cost', 'cost_lo', 'cost_hi', 'init', 'days', 'bad', 'last_bal', 'hist',
-                 'last_close', 'stale', 'lots', 'rl', 'rdays', 'fac', 'bh', 'started')
+                 'last_close', 'stale', 'lots', 'rl', 'rdays', 'fac', 'bh', 'started', 'rlim')
 
     def __init__(self, mkt, name):
         self.mkt, self.name = mkt, name
@@ -222,12 +223,20 @@ class Pos:
         self.hist = []
         self.last_close = None
         self.stale = False
+        self.rlim = None # 最新融資限額
         self.rl = None   # 近期口徑（三竹算法）融資金額模型值（元）；以金額記，分割減資不需換算
         self.rdays = 0
         self.fac = 1.0   # 累積張數基準係數
         self.bh = {}     # 日期 → (今日餘額, 當時基準係數)，含零餘額日
         self.started = False   # 全體平均模型是否已起算
         self.lots = []   # 批次 [張數, 成本, 期初低成本, 期初高成本, 是否期初]
+
+
+def rwhy(p, bal):
+    """近期口徑不列入的原因（濾網）；None＝列入"""
+    if not p.rlim:
+        return '無融資限額（停資或不得融資）'
+    return None
 
 
 def main():
@@ -357,6 +366,7 @@ def main():
                 buy, out = r['buy'] - net, r['sell'] - net + r['repay']
                 # 近期口徑（三竹算法，Ed 2026-11-05）：融資賣出＋現金償還按比例扣減融資金額，
                 # 當日融資買進（含當沖，不互抵）以收盤價 × 60% 加入；與三竹 App 8 檔 100 點逐點相同
+                p.rlim = r['limit']
                 if close:
                     if p.rl is None:
                         p.rl = r['prev'] * 1000 * close * RATIO
@@ -436,7 +446,7 @@ def main():
                     usage = bal / r['limit'] * 100 if r['limit'] else None
                     todo.append((p, close, bal, bal - r['prev'], usage))
                 if COMMON.match(c) and bal > 0 and close:
-                    if p.rdays >= RECENT_N and bal >= MIN_BAL and not p.stale:
+                    if p.rdays >= RECENT_N and bal >= MIN_BAL and not p.stale and rwhy(p, bal) is None:
                         if p.rl:
                             rmp = bal * 1000 * close / p.rl * 100
                             cr = crash.setdefault(ds, [0, 0, 0, 0])
@@ -486,7 +496,8 @@ def main():
         last20 = [adj(d) for d in days[max(0, li - 19):li + 1]]
         last20 = [v for v in last20 if v is not None]
         hi20 = max(last20) if last20 else None
-        rok = bool(rmp is not None and rlong and not stale and bal >= MIN_BAL)
+        rw = rwhy(p, bal)
+        rok = bool(rmp is not None and rlong and not stale and bal >= MIN_BAL and rw is None)
         sens = abs((mp_lo or mp) - (mp_hi or mp))
         b5 = adj(days[li - 5]) if li >= 5 else None   # 精確 T−5，換算到今日張數基準；查無當日列＝N/A
         reason = None
@@ -508,7 +519,7 @@ def main():
                          u=None if usage is None else round(usage, 2), b=bal, ch=chg, raw=round(mp_raw, 2),
                          c5=None if b5 is None else round(bal - b5), d=p.days, i=round(init_pct, 1),
                          sens=round(sens, 1), ok=reason is None, why=reason,
-                         rc=None if rc is None else round(rc, 2), rmp=None if rmp is None else round(rmp, 2), rok=rok,
+                         rc=None if rc is None else round(rc, 2), rmp=None if rmp is None else round(rmp, 2), rok=rok, rwhy=rw,
                          dd20=round((bal / hi20 - 1) * 100, 1) if hi20 else None))
     for fn in os.listdir(OUT_DIR):
         if fn.endswith('.csv') and fn not in keep_files:
