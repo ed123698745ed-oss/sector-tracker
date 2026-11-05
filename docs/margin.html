@@ -113,14 +113,14 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
   </section>
 
   <section>
-    <h2>崩跌觀察<small>近 30 日融資追價者，估算維持率低於 130% 的家數</small><span class="upd" id="u_c"></span></h2>
+    <h2>崩跌觀察<small>近期口徑（三竹算法），估算維持率低於 130% 的家數</small><span class="upd" id="u_c"></span></h2>
     <div class="panel">
       <div class="idx" id="ccard"></div>
       <div class="xtools"><span class="sub">期間</span><div class="tabs seg" id="cspan" style="margin:0"></div></div>
-      <svg id="cchart" viewBox="0 0 420 210" role="img" aria-label="近期追價者估算維持率低於130%家數占比與加權指數"></svg>
+      <svg id="cchart" viewBox="0 0 420 210" role="img" aria-label="近期口徑估算維持率低於130%家數占比與加權指數"></svg>
       <div class="legend"><span><i style="background:var(--down)"></i>低於 130% 家數占比（左軸）</span><span><i style="background:var(--d3)"></i>低於 140%</span><span><i style="background:var(--fg)"></i>加權指數（右軸）</span></div>
       <details style="margin-top:10px" id="cdet"><summary class="sub" style="cursor:pointer" id="clsum">今日低於 130% 的個股</summary><div class="tblwrap" style="margin-top:8px"><table id="ctbl"></table></div></details>
-      <div class="note">追繳壓力主要落在最近進場的融資戶，所以這裡用「近 30 個交易日淨融資買進（扣當日沖銷）的加權均價」當成本：估算維持率＝收盤 ÷（60% × 近期成本）。近 30 日幾乎沒有融資買進的股票不列入。家數占比衝高常出現在急跌段，可對照融資餘額是否同時大減（清算）；這是觀察，不是驗證過的底部訊號。距 20 日高＝融資餘額相對近 20 個交易日最高餘額的減幅；5 日增減與距 20 日高都先把過去的張數換算到今日基準（分割、減資），查無 5 個交易日前資料時顯示「—」。</div>
+      <div class="note">追繳壓力主要落在最近進場的融資戶，所以這裡用三竹 App 的算法：每天融資賣出與現金償還按比例扣減融資金額，當日融資買進以收盤價加入，舊部位隨換手淡出、新部位以當日價格計入。估算維持率＝融資餘額 × 收盤 ÷ 融資金額模型值。融資資料未滿 30 個交易日的股票不列入。家數占比衝高常出現在急跌段，可對照融資餘額是否同時大減（清算）；這是觀察，不是驗證過的底部訊號。距 20 日高＝融資餘額相對近 20 個交易日最高餘額的減幅；5 日增減與距 20 日高都先把過去的張數換算到今日基準（分割、減資），查無 5 個交易日前資料時顯示「—」。</div>
     </div>
   </section>
 
@@ -156,10 +156,10 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
       <div class="xtools" style="margin:0 0 6px"><span class="sub">期間</span><div class="tabs seg" id="dspan" style="margin:0"></div></div>
       <div class="sub">股價、估算成本與融資餘額</div>
       <svg id="dchart1" viewBox="0 0 420 220" role="img" aria-label="股價、估算融資成本與融資餘額歷史"></svg>
-      <div class="legend"><span><i style="background:var(--fg)"></i>收盤（左軸）</span><span><i style="background:var(--down)"></i>近 30 日追價成本（左軸）</span><span><i style="background:var(--d4)"></i>全體平均成本（虛線）</span><span><i style="background:var(--d3)"></i>融資餘額張數（右軸）</span><span><i style="background:var(--up)"></i>每日融資增</span><span><i style="background:var(--down)"></i>減</span></div>
+      <div class="legend"><span><i style="background:var(--fg)"></i>收盤（左軸）</span><span><i style="background:var(--down)"></i>近期成本（三竹算法，左軸）</span><span><i style="background:var(--d4)"></i>全體平均成本（虛線）</span><span><i style="background:var(--d3)"></i>融資餘額張數（右軸）</span><span><i style="background:var(--up)"></i>每日融資增</span><span><i style="background:var(--down)"></i>減</span></div>
       <div class="sub" style="margin-top:12px">估算維持率與融資使用率</div>
       <svg id="dchart2" viewBox="0 0 420 200" role="img" aria-label="估算融資維持率與融資使用率歷史"></svg>
-      <div class="legend"><span><i style="background:var(--down)"></i>近期追價者維持率（左軸）</span><span><i style="background:var(--accent)"></i>全體平均（虛線）</span><span><i style="background:var(--d4)"></i>融資使用率（右軸）</span><span>虛線＝130／140／150%，只供風險觀察</span></div>
+      <div class="legend"><span><i style="background:var(--down)"></i>近期維持率（三竹算法，左軸）</span><span><i style="background:var(--accent)"></i>全體平均（虛線）</span><span><i style="background:var(--d4)"></i>融資使用率（右軸）</span><span>虛線＝130／140／150%，只供風險觀察</span></div>
       <div class="note" id="dnote"></div>
     </div>
   </section>
@@ -226,7 +226,7 @@ fetch('margin.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).the
   tabs('#fu', {0:'不限', 5:'≥5%', 10:'≥10%', 20:'≥20%', 30:'≥30%'}, () => F.u, v => { F.u = v; page = 0; drawTable(); });
   tabs('#fs', {mp:'維持率低→高', u:'使用率高→低', c5:'5 日融資增', c5d:'5 日融資減'}, () => F.s, v => { F.s = v; page = 0; drawTable(); });
   tabs('#cspan', {60:'60 日', 120:'120 日', 250:'1 年', 1250:'5 年', 99999:'全部'}, () => cspan, v => { cspan = v; drawCrash(); });
-  tabs('#basis', {r:'近 30 日追價者（預設）', a:'全體平均'}, () => B, v => { B = v; page = 0; drawDist(); drawTable(); });
+  tabs('#basis', {r:'近期（三竹算法，預設）', a:'全體平均'}, () => B, v => { B = v; page = 0; drawDist(); drawTable(); });
   tabs('#dspan', {60:'60 日', 120:'120 日', 250:'250 日', 99999:'全部'}, () => dspan, v => { dspan = v; drawDetail(); });
   $('#q').oninput = () => { page = 0; drawTable(); };
   $('#showx').onchange = () => { page = 0; drawTable(); };
@@ -282,7 +282,7 @@ function drawAll(){
     const O = `${fds(M.date)} 官方`, Lt = LV ? `${fds(LV.date)} ${LV.time}` : null;
     const set = (id, t) => { const e = $('#' + id); if (e) e.textContent = '最後更新 ' + t; };
     set('u_m', Lt ? `${Lt}（融資金額、含 ETF 口徑、歷史走勢為 ${O}）` : O);
-    set('u_c', Lt ? `${Lt}（追價成本、歷史走勢為 ${O}）` : O);
+    set('u_c', Lt ? `${Lt}（近期成本、歷史走勢為 ${O}）` : O);
     set('u_d', Lt ? `${Lt}（成本為 ${O}）` : O);
     set('u_r', Lt ? `${Lt}（成本、使用率、融資餘額、5 日增減為 ${O}）` : O);
   }
@@ -381,7 +381,7 @@ function drawDist(){
   const ok = M.rows.filter(OK).map(r => ({...r, mp: MP(r)})), st0 = B === 'r' ? M.rstats : M.stats;
   const cntB = a => ({130: a.filter(r => r.mp < 130).length, 140: a.filter(r => r.mp < 140).length, 150: a.filter(r => r.mp < 150).length});
   const st = {raw: st0.raw, valid: ok.length, below: cntB(ok), by_market: Object.fromEntries(['TWSE', 'TPEX'].map(m => { const a = ok.filter(r => r.m === m); return [m, {valid: a.length, below: cntB(a)}]; }))};
-  $('#dsub').innerHTML = `${B === 'r' ? '近 30 日追價者' : '全體平均'}，有效 ${st.valid}／原始 ${st.raw} 檔`;
+  $('#dsub').innerHTML = `${B === 'r' ? '近期（三竹算法）' : '全體平均'}，有效 ${st.valid}／原始 ${st.raw} 檔`;
   const card = (title, o, n) => `<div class="card"><h3>${title}</h3>${[130,140,150].map(t => `<div class="k">低於 ${t}%<b>${o[t]} 家<span class="sub" style="font-weight:400"> ${n ? (o[t] / n * 100).toFixed(1) : '—'}%</span></b></div>`).join('')}<div class="k">有效樣本<b>${n}</b></div></div>`;
   $('#bcards').innerHTML = card('全部', st.below, st.valid) + card('上市', st.by_market.TWSE.below, st.by_market.TWSE.valid) + card('上櫃', st.by_market.TPEX.below, st.by_market.TPEX.valid);
   const cnt = BINS.map(([a, b]) => ok.filter(r => r.mp >= a && r.mp < b).length);
@@ -395,7 +395,7 @@ function drawDist(){
   s += `<text x="${W - r}" y="${b + 28}" text-anchor="end">估算維持率（%）</text>`;
   svg.innerHTML = s;
   const ex = M.stats.excluded;
-  $('#hnote').textContent = B === 'r' ? `近 30 日追價者：成本＝近 30 個交易日淨融資買進的加權均價；近 30 日淨買進不足 ${M.model.min_balance} 張、出現在融資資料未滿 30 個交易日、融資餘額過小或當日無成交者不列入。分布與家數只算這一批樣本（與排行榜一致）。低於 130% 不代表已發生追繳。` : `分布與家數只算通過檢查的同一批樣本（與排行榜一致）。排除：有效歷史未滿 ${M.model.min_days} 日 ${ex.insufficient}、期初庫存占比過高 ${ex.pending}、成本敏感度過大 ${ex.sensitive}、其他（餘額過小、當日無成交、股數基準異常）${ex.other}。低於 130% 不代表已發生追繳。`;
+  $('#hnote').textContent = B === 'r' ? `近期（三竹算法）：出場與償還按比例扣減融資金額、當日買進以收盤價加入；出現在融資資料未滿 ${M.model.recent_days} 個交易日、融資餘額低於 ${M.model.min_balance} 張或當日無成交者不列入。分布與家數只算這一批樣本（與排行榜一致）。低於 130% 不代表已發生追繳。` : `分布與家數只算通過檢查的同一批樣本（與排行榜一致）。排除：有效歷史未滿 ${M.model.min_days} 日 ${ex.insufficient}、期初庫存占比過高 ${ex.pending}、成本敏感度過大 ${ex.sensitive}、其他（餘額過小、當日無成交、股數基準異常）${ex.other}。低於 130% 不代表已發生追繳。`;
 }
 
 function filtered(){
@@ -449,7 +449,7 @@ function drawDetail(){
     g += `<path d="${path(xs, a.map(x => x.c), sp)}" fill="none" stroke="var(--fg)" stroke-width="1.6"/>` + xl(220);
     g += `<line class="cur" y1="${t}" y2="${b}" stroke="var(--muted)" stroke-dasharray="3 3" style="display:none"/>`;
     svg.innerHTML = g;
-    hover(svg, xs, k => { const x = a[k]; return `<b>${fd(x.d)}</b><br>收盤 ${f2(x.c)}<br>近 30 日追價成本 ${f2(x.rc)}<br>全體平均成本 ${f2(x.cost)}<br>融資餘額 ${x.b.toLocaleString()} 張<br>當日增減 <span class="${cls(x.ch)}">${sg(x.ch, 0)}</span> 張`; });
+    hover(svg, xs, k => { const x = a[k]; return `<b>${fd(x.d)}</b><br>收盤 ${f2(x.c)}<br>近期成本 ${f2(x.rc)}<br>全體平均成本 ${f2(x.cost)}<br>融資餘額 ${x.b.toLocaleString()} 張<br>當日增減 <span class="${cls(x.ch)}">${sg(x.ch, 0)}</span> 張`; });
   }
   // 圖二：維持率（左）、使用率（右）
   { const svg = $('#dchart2'), b = 178;
@@ -464,9 +464,9 @@ function drawDetail(){
     g += `<path d="${path(xs, a.map(x => x.rmp), sm)}" fill="none" stroke="var(--down)" stroke-width="2"/>` + xl(200);
     g += `<line class="cur" y1="${t}" y2="${b}" stroke="var(--muted)" stroke-dasharray="3 3" style="display:none"/>`;
     svg.innerHTML = g;
-    hover(svg, xs, k => { const x = a[k]; return `<b>${fd(x.d)}</b><br>近期追價者 ${x.rmp == null ? '—' : f2(x.rmp) + '%'}<br>全體平均 ${f2(x.mp)}%<br>融資使用率 ${x.u == null ? '—' : f2(x.u) + '%'}`; });
+    hover(svg, xs, k => { const x = a[k]; return `<b>${fd(x.d)}</b><br>近期維持率 ${x.rmp == null ? '—' : f2(x.rmp) + '%'}<br>全體平均 ${f2(x.mp)}%<br>融資使用率 ${x.u == null ? '—' : f2(x.u) + '%'}`; });
   }
-  $('#dnote').innerHTML = r ? (r.ok ? `已通過檢查：有效歷史 ${r.d} 日、期初庫存占 ${r.i}%、成本敏感度 ${r.sens} 個百分點。` : `<b>未通過檢查：${r.why}</b>，數字僅供參考。`) + ' 近 30 日追價成本＝最近 30 個交易日淨融資買進的加權均價；全體平均成本＝逐日重播全部融資庫存的平均成本。兩者都不是個別投資人的實際成本。'
+  $('#dnote').innerHTML = r ? (r.ok ? `已通過檢查：有效歷史 ${r.d} 日、期初庫存占 ${r.i}%、成本敏感度 ${r.sens} 個百分點。` : `<b>未通過檢查：${r.why}</b>，數字僅供參考。`) + ' 近期成本＝三竹算法的融資金額模型值 ÷（60% × 股數）；全體平均成本＝逐日重播全部融資庫存的平均成本。兩者都不是個別投資人的實際成本。'
     : '此股今日已無融資餘額或不在排行中。';
 }
 
@@ -474,7 +474,7 @@ function drawMethod(){
   const m = M.model;
   $('#method').innerHTML = `<b>計算方式（模型 ${m.version}，起算 ${fd(m.start)}）</b><br>
   大盤：上市、上櫃分開，Σ（普通股融資餘額張數 × 1000 × 當日收盤）÷ 該市場官方融資金額餘額，不是個股平均；依 Ed 指定對齊財經M平方（2019～2025 年 14 個對照日中 7 個差距在 ±1.5 個百分點內；2022/9～10 差約 10 個百分點，原因不明），另列含 ETF 口徑。<br>
-  個股（預設）：近 30 日追價者——成本＝最近 30 個交易日淨融資買進（同日融資買進與賣出先互抵）的加權均價（成交金額 ÷ 成交股數），估算維持率＝收盤 ÷（${m.financing_ratio * 100}% × 近期成本）。用意是看最可能被追繳的最近進場者；與三竹 App 2026/7 的 7 檔×13 日數字比，平均誤差約 15 個百分點。<br>
+  個股（預設）：近期口徑，採三竹 App 算法——每日融資金額模型值 ×（1 − 當日融資賣出與現金償還 ÷ 前日餘額），再加上當日融資買進（含當沖，不互抵）× 收盤 × ${m.financing_ratio * 100}%；估算維持率＝融資餘額 × 收盤 ÷ 模型值，近期成本＝模型值 ÷（${m.financing_ratio * 100}% × 股數）。出場與償還會讓舊部位淡出、新買進以當日價格計入，用意是看最近進場者的壓力。與三竹 App 2026/7 七檔及雍智 2026/10～11 共 100 個數據點逐點相同；三竹本身也是估算，不是券商整戶擔保維持率。<br>
   個股（全體平均，對照用）：逐日重播融資庫存（批次法）——每日淨融資買進為一批，成本＝當日均價（成交金額 ÷ 成交股數）；同日融資買進與賣出先互抵（當日沖銷）；淨賣出與現金償還先從估算維持率已低於 130% 的批次移出（追繳優先，成本高者先），其餘按比例移出。起算日已有的期初庫存以前 60 個交易日均價為成本，另用最低／最高日均價計算敏感度。交易所「前日餘額」與前一日餘額不同時，只有同日有減資、面額變更等股數事件（上市依證交所公告、上櫃依發行股數變動）才依比例換算張數與成本；查無事件時差額當作當日買進或償還，大幅跳動（如換股合併）判為異常、不列入排行。每日再以官方融資金額校準（個股成本 × 官方總額 ÷ 模型總額）。估算維持率＝收盤 ÷（${m.financing_ratio * 100}% × 估算成本）。融資使用率＝融資餘額 ÷ 融資限額。<br>
   排行與統計只收普通股（4 碼、首碼非 0，排除 91 開頭的存託憑證 TDR），且有效歷史 ≥ ${m.min_days} 日、期初庫存占目前餘額 ≤ ${m.max_init_pct}%、成本敏感度 ≤ ${m.max_sensitivity} 個百分點、融資餘額 ≥ ${m.min_balance} 張、當日有成交。<br>
   限制：批次、當日沖銷與追繳優先都是假設；整戶擔保下個股估算維持率可能長期低於 100%。所有個股一律以 ${m.financing_ratio * 100}% 融資成數估算，實際成數可能因股票或券商而不同；本站是簡化觀察指標，不是券商整戶擔保維持率：未含融券、保證金與抵繳品，未做除權息前六個營業日的擔保品市值調整，無收盤價時一律沿用最近收盤（法規另有報價與開盤基準等計價規則）；現金股利不調整成本、配股未加計擔保品。個股與大盤均為公開資料模型估算，並非券商實際整戶擔保維持率；130% 為常見整戶追繳基準，低於 130% 不代表已追繳。<br>
