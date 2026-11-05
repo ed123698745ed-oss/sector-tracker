@@ -1943,3 +1943,10 @@ quote_time_range ['13:30:00'] ['13:33:00']
 hits 8 IP/ASIC(A) 伺服器組裝(C) 連接器/線材(A) 太陽能/儲能(ABC) 軟體雲端(AB) 工具機(ABC) 檢測分析(B) 化工(AB)
 count_check returned 610 baseline 610 (20261103)
 
+run_at 2026-11-05 09:02:28
+codes 611 returned 611 priced 368 seconds 78.9
+requests 13 errors 0 last_error 
+quote_time_range ['08:52:36'] ['09:02:18']
+hits 2 太陽能/儲能(B) 航空(B)
+count_check returned 611 baseline 610 (20261104)
+
