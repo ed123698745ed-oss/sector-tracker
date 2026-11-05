@@ -11,6 +11,7 @@
   --bg:#f4f6f9; --panel:#ffffff; --fg:#151a22; --muted:#5d6676; --line:#dfe3ea;
   --accent:#3451c7; --accent-soft:#dbe2fb; --up:#cf3434; --down:#16804a; --flat:#7a8190; --chip:#eef1f6;
   --d0:#1f3f8f; --d1:#3a6fc4; --d2:#86a9db; --d3:#f0c27a; --d4:#e07a45; --d5:#b8332b;
+  --z1:#d64545; --z2:#f0a63a; --z3:#7fb0e6; --z4:#2d5fb8; --mkt:#7b5cf0; --mrg:#e0524f; --zt:#ffffff;
   --num:"Barlow Condensed","Arial Narrow",ui-sans-serif,system-ui,sans-serif;
   --body:system-ui,-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
 }
@@ -18,11 +19,13 @@
   --bg:#11141a; --panel:#191d25; --fg:#e9ecf1; --muted:#9aa3b2; --line:#2a303b;
   --accent:#7d93f0; --accent-soft:#27304d; --up:#f06c6c; --down:#3fbf78; --flat:#8a92a1; --chip:#232834;
   --d0:#5f86e0; --d1:#4c74c4; --d2:#3b5683; --d3:#9a7a43; --d4:#b4603a; --d5:#d0483f;
+  --z1:#e8574f; --z2:#e9a23b; --z3:#5f93d6; --z4:#3a64c9; --mkt:#9a82ff; --mrg:#f06a62; --zt:#ffffff;
   color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#11141a; --panel:#191d25; --fg:#e9ecf1; --muted:#9aa3b2; --line:#2a303b;
   --accent:#7d93f0; --accent-soft:#27304d; --up:#f06c6c; --down:#3fbf78; --flat:#8a92a1; --chip:#232834;
   --d0:#5f86e0; --d1:#4c74c4; --d2:#3b5683; --d3:#9a7a43; --d4:#b4603a; --d5:#d0483f;
+  --z1:#e8574f; --z2:#e9a23b; --z3:#5f93d6; --z4:#3a64c9; --mkt:#9a82ff; --mrg:#f06a62; --zt:#ffffff;
   color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 var(--body)}
@@ -45,8 +48,11 @@ h2 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
 .up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--flat)}
 .idx{display:flex;flex-wrap:wrap;gap:8px 28px;align-items:baseline}
 .idx .big{font-family:var(--num);font-weight:700;font-size:44px;line-height:1}
-.gh{font-size:14px;margin:16px 0 6px}.gh small{font-weight:400;color:var(--muted);margin-left:6px;font-size:12px}
-.gbr{display:grid;grid-template-columns:78px 1fr 64px;gap:2px 8px;align-items:center;font-size:12px;margin:6px 0}.gbr .bar{height:7px;border-radius:2px}.gbr .rt{text-align:right;font-family:var(--num);font-size:16px;font-weight:700}
+.gh{font-size:15px;font-weight:700;margin:22px 0 8px;padding-left:9px;border-left:3px solid var(--accent);line-height:1.3}.gh small{display:block;font-weight:400;color:var(--muted);font-size:12px;margin-top:2px}
+.gz{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;color:var(--zt);margin-right:6px}
+#gthermo text,#gheat text{font-family:var(--body)}#gthermo .n,#gheat .n{font-family:var(--num);font-weight:600}
+.glg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-top:6px}.glg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.gbr{display:grid;grid-template-columns:82px 1fr 66px;gap:2px 10px;align-items:center;font-size:12.5px;padding:7px 0;border-bottom:1px solid var(--line)}.gbr:last-child{border-bottom:0}.gbr .d{font-family:var(--num);font-size:15px;font-weight:600}.gbr .bar{height:9px;border-radius:5px;margin:2px 0}.gbr .v{font-family:var(--num);font-size:12.5px;color:var(--muted)}.gbr .rt{text-align:right;font-family:var(--num);font-size:20px;font-weight:700}.gbr.now{background:color-mix(in srgb,var(--z2) 12%,transparent);border-radius:8px;padding-inline:6px}
 .idx .chg{font-family:var(--num);font-size:22px}
 .bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--chip)}
 .bar span{display:block;height:100%}
@@ -130,18 +136,18 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
     <h2>融資洗盤觀察<small>上市大盤跌幅 vs 融資金額減幅（差距＝大盤跌幅 − 融資減幅）</small><span class="upd" id="u_g"></span></h2>
     <div class="panel">
       <div class="idx" id="gcard"></div>
-      <h3 class="gh">差距溫度計<small>黑點＝近 10 次見底日，灰點＝更早的見底日，橘圈＝現在</small></h3>
-      <svg id="gthermo" viewBox="0 0 420 170" role="img" aria-label="歷次見底日差距溫度計"></svg>
+      <h3 class="gh">差距溫度計<small>彩點＝近 10 次見底日（顏色依差距分區），灰點＝更早的見底日，橘圈＝現在</small></h3>
+      <svg id="gthermo" viewBox="0 0 420 196" role="img" aria-label="歷次見底日差距溫度計"></svg>
       <h3 class="gh">見底前 25 天到後 5 天的差距<small id="ghsub"></small></h3>
       <div class="xtools"><span class="sub">顯示</span><div class="tabs seg" id="gshow" style="margin:0"></div></div>
       <svg id="gheat" viewBox="0 0 420 200" role="img" aria-label="歷次大跌見底前後差距熱度圖"></svg>
-      <div class="legend"><span><i style="background:var(--d5)"></i>&gt;2 還沒洗</span><span><i style="background:var(--d3)"></i>0～2 快洗完</span><span><i style="background:var(--d2)"></i>0～−5 融資退得比大盤多</span><span><i style="background:var(--d0)"></i>&lt;−5 斷頭潮</span></div>
+      <div class="glg"><span><i style="background:var(--z1)"></i>&gt;2 還沒洗</span><span><i style="background:var(--z2)"></i>0～2 快洗完</span><span><i style="background:var(--z3)"></i>0～−5 融資退得比大盤多</span><span><i style="background:var(--z4)"></i>&lt;−5 斷頭潮</span></div>
       <h3 class="gh">見底日大盤跌幅與融資退幅<small>退幅比＝融資退幅 ÷ 大盤跌幅</small></h3>
       <div id="gbars"></div>
       <details style="margin-top:10px"><summary class="sub" style="cursor:pointer">差距走勢圖</summary>
         <div class="xtools"><span class="sub">期間</span><div class="tabs seg" id="gspan" style="margin:0"></div></div>
         <svg id="gchart" viewBox="0 0 420 210" role="img" aria-label="差距走勢與加權指數"></svg>
-        <div class="legend"><span><i style="background:var(--d4)"></i>差距（左軸）</span><span><i style="background:var(--fg)"></i>加權指數（右軸）</span></div>
+        <div class="legend"><span><i style="background:var(--z2)"></i>差距（左軸）</span><span><i style="background:var(--fg)"></i>加權指數（右軸）</span></div>
       </details>
       <div class="note">大盤跌幅＝加權指數收盤相對近 60 個交易日最高收盤；融資退幅＝上市融資金額（官方）相對近 60 個交易日最高。差距為正＝大盤跌得比融資退得多，融資戶大多還抱著；為負＝融資退得比大盤多，被洗出來了。退幅比＝融資退幅 ÷ 大盤跌幅（大盤跌幅不足 3% 時不算）。大跌與見底日：以加權指數收盤找波段（反彈或回檔達 6% 才換方向），波段高點到低點跌幅 ≥ 8% 的低點為見底日；2020 年起與金玉峰投顧圖上的 10 次大跌同一批（日期可能差 1～2 天），資料自 2004 年起。見底日要事後才能確認，不能當事前訊號；最後一段若仍在下跌，只列「現在」。參考金玉峰「差距溫度計」概念自行計算，大盤跌幅的起算高點與該圖不同，數值不會完全一樣。只供觀察，未經回測驗證。</div>
     </div>
@@ -433,42 +439,44 @@ function gapSeries(){
   if (!up) { const dd = out[tr].taiex / out[pk].taiex - 1; if (dd <= -GDROP) cur = {i: tr, wave: dd * 100}; }
   return GS = {out, eps, cur};
 }
-const gzone = g => g > 2 ? ['還沒洗', 'var(--d5)'] : g >= 0 ? ['快洗完', 'var(--d3)'] : g >= -5 ? ['融資退得比大盤多', 'var(--d2)'] : ['斷頭潮', 'var(--d0)'];
+const gzone = g => g > 2 ? ['還沒洗', 'var(--z1)'] : g >= 0 ? ['快洗完', 'var(--z2)'] : g >= -5 ? ['融資退得比大盤多', 'var(--z3)'] : ['斷頭潮', 'var(--z4)'];
 const ym = d => d.slice(0,4) + '/' + d.slice(4,6);
 function drawGap(){
   const {out, eps, cur} = gapSeries(); if (!out.length) return;
   const L = out[out.length - 1], z = gzone(L.gap);
-  $('#gcard').innerHTML = `<div><div class="sub">現在差距（${fds(L.date)}）</div><div class="big num" style="color:${z[1] === 'var(--d3)' ? 'var(--d4)' : z[1]}">${sg(L.gap, 1)}</div><div class="sub">${z[0]}｜大盤 ${sg(L.dt, 1)}%、融資 ${sg(L.dm, 1)}%</div></div>
-    <div><div class="sub">退幅比（融資 ÷ 大盤）</div><div class="num" style="font-size:26px;font-weight:700">${L.ratio == null ? '—' : L.ratio.toFixed(2) + ' 倍'}</div><div class="sub">${L.ratio == null ? '大盤跌幅不足 3%' : L.ratio >= 1 ? '融資退得比大盤多' : '融資退得比大盤少'}</div></div>`;
+  $('#gcard').innerHTML = `<div><div class="sub">現在差距（${fds(L.date)}）</div><div class="big num" style="color:${z[1]}">${sg(L.gap, 1)}</div><div class="sub" style="margin-top:6px"><span class="gz" style="background:${z[1]}">${z[0]}</span>大盤 ${sg(L.dt, 1)}%・融資 ${sg(L.dm, 1)}%</div></div>
+    <div><div class="sub">退幅比（融資 ÷ 大盤）</div><div class="num" style="font-size:34px;font-weight:700;color:${L.ratio == null ? 'var(--muted)' : L.ratio >= 1 ? 'var(--z4)' : 'var(--z2)'}">${L.ratio == null ? '—' : L.ratio.toFixed(2) + ' 倍'}</div><div class="sub">${L.ratio == null ? '大盤跌幅不足 3%' : L.ratio >= 1 ? '融資退得比大盤多' : '融資退得比大盤少'}</div></div>`;
   const recent = eps.slice(-10), show = gshow === 'all' ? eps : recent;
   // 1. 溫度計
-  { const W = 420, l = 14, r = 14, ay = 130, G0 = -12, G1 = 6, sx = v => l + (Math.max(G0, Math.min(G1, v)) - G0) / (G1 - G0) * (W - l - r);
+  { const W = 420, l = 14, r = 14, ay = 128, G0 = -12, G1 = 6, sx = v => l + (Math.max(G0, Math.min(G1, v)) - G0) / (G1 - G0) * (W - l - r);
     let g = '';
-    [[G0, -5, 'var(--d0)', '斷頭潮'], [-5, 0, 'var(--d2)', '退得比大盤多'], [0, 2, 'var(--d3)', '快洗完'], [2, G1, 'var(--d5)', '還沒洗']].forEach(([a, b, c, t]) => {
-      g += `<rect x="${sx(a)}" y="${ay}" width="${sx(b) - sx(a) - 1}" height="12" fill="${c}"/><text x="${(sx(a) + sx(b)) / 2}" y="${ay + 9.5}" text-anchor="middle" fill="#fff" font-size="8">${t}</text>`; });
-    for (let v = G0; v <= G1; v += 2) g += `<text x="${sx(v)}" y="${ay + 24}" text-anchor="middle" font-size="9">${v > 0 ? '+' : ''}${v}</text>`;
-    eps.filter(e => !recent.includes(e)).forEach(e => g += `<circle cx="${sx(e.gap)}" cy="${ay - 4}" r="2.5" fill="var(--muted)" opacity=".5"><title>${fd(e.date)} ${sg(e.gap, 1)}</title></circle>`);
+    g += `<defs><clipPath id="gtc"><rect x="${l}" y="${ay}" width="${W - l - r}" height="16" rx="8"/></clipPath></defs><g clip-path="url(#gtc)">`;
+    [[G0, -5, 'var(--z4)', '斷頭潮'], [-5, 0, 'var(--z3)', '退得比大盤多'], [0, 2, 'var(--z2)', '快洗完'], [2, G1, 'var(--z1)', '還沒洗']].forEach(([a, b, c, t]) => {
+      g += `<rect x="${sx(a)}" y="${ay}" width="${sx(b) - sx(a) - (b === G1 ? 0 : 1.5)}" height="16" fill="${c}"/><text x="${(sx(a) + sx(b)) / 2}" y="${ay + 11.5}" text-anchor="middle" fill="var(--zt)" font-size="9.5" font-weight="700">${t}</text>`; });
+    g += `</g>`;
+    for (let v = G0; v <= G1; v += 2) g += `<text class="n" x="${sx(v)}" y="${ay + 30}" text-anchor="middle" font-size="11" fill="var(--muted)">${v > 0 ? '+' : ''}${v}</text>`;
+    eps.filter(e => !recent.includes(e)).forEach(e => g += `<circle cx="${sx(e.gap)}" cy="${ay - 5}" r="2.6" fill="var(--muted)" opacity=".45"><title>${fd(e.date)} ${sg(e.gap, 1)}</title></circle>`);
     const rows = []; [...recent].sort((a, b) => a.gap - b.gap).forEach(e => {
-      const x = sx(e.gap); let k = 0; while (rows[k] != null && x - rows[k] < 58) k++; rows[k] = x; const y = ay - 14 - k * 12, rt = x > W - 64;
-      g += `<line x1="${x}" x2="${x}" y1="${y}" y2="${ay}" stroke="var(--fg)" stroke-width=".7"/><circle cx="${x}" cy="${y}" r="3" fill="var(--fg)"/><text x="${rt ? x - 4 : x + 4}" y="${y + 3}" font-size="9" ${rt ? 'text-anchor="end"' : ''}>${e.date.slice(2,4)}/${e.date.slice(4,6)} ${sg(e.gap, 1)}</text>`; });
-    const cx = sx(L.gap); g += `<circle cx="${cx}" cy="${ay - 4}" r="5" fill="none" stroke="var(--d4)" stroke-width="2.2"/><text x="${cx}" y="${ay - 12}" text-anchor="middle" font-size="9" fill="var(--d4)" font-weight="700">現在</text>`;
-    g += `<text x="${l}" y="${ay + 36}" font-size="9" fill="var(--muted)">← 越負：洗得越乾淨</text><text x="${W - r}" y="${ay + 36}" font-size="9" fill="var(--muted)" text-anchor="end">越正：賣壓還沒出來 →</text>`;
+      const x = sx(e.gap); let k = 0; while (rows[k] != null && x - rows[k] < 64) k++; rows[k] = x; const y = ay - 16 - k * 14, rt = x > W - 64;
+      g += `<line x1="${x}" x2="${x}" y1="${y}" y2="${ay}" stroke="var(--muted)" stroke-width=".8" opacity=".7"/><circle cx="${x}" cy="${y}" r="3.4" fill="${gzone(e.gap)[1]}" stroke="var(--panel)" stroke-width="1.2"/><text class="n" x="${rt ? x - 6 : x + 6}" y="${y + 4}" font-size="11" ${rt ? 'text-anchor="end"' : ''}>${e.date.slice(2,4)}/${e.date.slice(4,6)} <tspan fill="${gzone(e.gap)[1]}">${sg(e.gap, 1)}</tspan></text>`; });
+    const cx = sx(L.gap); g += `<circle cx="${cx}" cy="${ay + 8}" r="10" fill="var(--z2)" opacity=".25"/><circle cx="${cx}" cy="${ay + 8}" r="6" fill="var(--panel)" stroke="var(--z2)" stroke-width="3"/><text x="${Math.min(cx, W - r - 30)}" y="${ay + 46}" text-anchor="middle" font-size="11" fill="var(--z2)" font-weight="700">▲ 現在 ${sg(L.gap, 1)}</text>`;
+    g += `<text x="${l}" y="${ay + 64}" font-size="10" fill="var(--muted)">← 越負：洗得越乾淨</text><text x="${W - r}" y="${ay + 64}" font-size="10" fill="var(--muted)" text-anchor="end">越正：賣壓還沒出來 →</text>`;
     $('#gthermo').innerHTML = g; }
   // 2. 熱度圖：每列一次大跌，-25～+5 日
-  { const B = -25, A = 5, lw = 76, rw = 34, W = 420, rh = 13, top = 4;
+  { const B = -25, A = 5, lw = 82, rw = 38, W = 420, rh = 15, top = 4;
     const list = show.map(e => ({e, label: `${e.date.slice(2,4)}/${e.date.slice(4,6)} 跌${Math.round(-e.wave)}%`, i: e.i}));
     const cI = cur ? out.length - 1 : null;
     if (cur) list.push({e: L, label: `現在（${fds(L.date)}）`, i: cI, now: true});
-    const cw = (W - lw - rw) / (A - B + 1), H = top + list.length * rh + 20;
+    const cw = (W - lw - rw) / (A - B + 1), H = top + list.length * rh + 22;
     const svg = $('#gheat'); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     let g = '';
     list.forEach((o, k) => { const y = top + k * rh;
-      g += `<text x="${lw - 4}" y="${y + rh - 3.5}" text-anchor="end" font-size="8.5" ${o.now ? 'fill="var(--d4)" font-weight="700"' : ''}>${o.label}</text>`;
+      g += `<text x="${lw - 6}" y="${y + rh - 4}" text-anchor="end" font-size="10" ${o.now ? 'fill="var(--z2)" font-weight="700"' : 'fill="var(--fg)"'}>${o.label}</text>`;
       for (let d = B; d <= A; d++) { const j = o.i + d, x = lw + (d - B) * cw; const v = j >= 0 && j < out.length && !(o.now && d > 0) ? out[j] : null;
-        g += `<rect x="${x + .5}" y="${y + .5}" width="${cw - 1}" height="${rh - 1}" fill="${v ? gzone(v.gap)[1] : 'var(--chip)'}" ${d === 0 ? 'stroke="var(--fg)" stroke-width="1.2"' : ''}>${v ? `<title>${fd(v.date)}（${d === 0 ? '見底' : d > 0 ? '後' + d : '前' + -d}）差距 ${sg(v.gap, 1)}</title>` : ''}</rect>`; }
-      const v0 = out[o.i]; g += `<text x="${W - 2}" y="${y + rh - 3.5}" text-anchor="end" font-size="9" font-weight="700">${sg(v0.gap, 1)}</text>`; });
-    const yb = top + list.length * rh + 12;
-    [[-25, '前25天'], [-20, '前20'], [-15, '前15'], [-10, '前10'], [-5, '前5'], [0, '見底'], [5, '後5']].forEach(([d, t]) => g += `<text x="${lw + (d - B + .5) * cw}" y="${yb}" text-anchor="middle" font-size="8.5">${t}</text>`);
+        g += `<rect x="${x + .8}" y="${y + .8}" width="${cw - 1.6}" height="${rh - 1.6}" rx="2" fill="${v ? gzone(v.gap)[1] : 'var(--chip)'}" ${d === 0 ? 'stroke="var(--fg)" stroke-width="1.4"' : ''}>${v ? `<title>${fd(v.date)}（${d === 0 ? '見底' : d > 0 ? '後' + d : '前' + -d}）差距 ${sg(v.gap, 1)}</title>` : ''}</rect>`; }
+      const v0 = out[o.i]; g += `<text class="n" x="${W - 2}" y="${y + rh - 3.5}" text-anchor="end" font-size="12" fill="${gzone(v0.gap)[1]}">${sg(v0.gap, 1)}</text>`; });
+    const yb = top + list.length * rh + 14;
+    [[-25, '前25天'], [-20, '前20'], [-15, '前15'], [-10, '前10'], [-5, '前5'], [0, '見底'], [5, '後5']].forEach(([d, t]) => g += `<text x="${lw + (d - B + .5) * cw}" y="${yb}" text-anchor="middle" font-size="10" fill="${d === 0 ? 'var(--fg)' : 'var(--muted)'}" ${d === 0 ? 'font-weight="700"' : ''}>${t}</text>`);
     svg.innerHTML = g;
     const pre = e => { let n = 0; for (let d = -5; d <= 0; d++) if (out[e.i + d] && out[e.i + d].gap <= 2) n++; return n >= 3; };
     const done = show.filter(pre).length;
@@ -477,8 +485,8 @@ function drawGap(){
   { const list = [...show.map(e => ({e, t: fd(e.date)})), ...(cur ? [{e: L, t: '現在 ' + fds(L.date), now: true}] : [])];
     const mx = Math.max(...list.map(o => Math.max(-o.e.dt, -o.e.dm)), 1);
     const n135 = show.filter(e => e.ratio >= 1.35).length, n1 = show.filter(e => e.ratio < 1).length;
-    $('#gbars').innerHTML = `<div class="sub">${show.length} 次見底：${n135} 次退幅比 ≥ 1.35 倍，${n1} 次不到 1 倍</div>` + list.map(o => { const e = o.e, rc = e.ratio == null ? 'var(--muted)' : e.ratio >= 1 ? 'var(--d1)' : 'var(--d4)';
-      return `<div class="gbr"><div ${o.now ? 'style="color:var(--d4);font-weight:700"' : ''}>${o.t}</div><div><div class="bar" style="width:${-e.dt / mx * 100}%;background:var(--accent)" title="大盤 ${sg(e.dt, 1)}%"></div><div class="sub" style="font-size:10px">大盤 ${sg(e.dt, 1)}%・融資 ${sg(e.dm, 1)}%</div><div class="bar" style="width:${Math.max(0, -e.dm) / mx * 100}%;background:var(--up)" title="融資 ${sg(e.dm, 1)}%"></div></div><div class="rt" style="color:${rc}">${e.ratio == null ? '—' : e.ratio.toFixed(2) + '倍'}</div></div>`; }).join('');
+    $('#gbars').innerHTML = `<div class="sub" style="margin-bottom:4px">${show.length} 次見底：<b style="color:var(--z4)">${n135} 次</b>退幅比 ≥ 1.35 倍，<b style="color:var(--z2)">${n1} 次</b>不到 1 倍</div>` + list.map(o => { const e = o.e, rc = e.ratio == null ? 'var(--muted)' : e.ratio >= 1 ? 'var(--z4)' : 'var(--z2)';
+      return `<div class="gbr${o.now ? ' now' : ''}"><div class="d" ${o.now ? 'style="color:var(--z2)"' : ''}>${o.t}</div><div><div class="bar" style="width:${-e.dt / mx * 100}%;background:var(--mkt)" title="大盤 ${sg(e.dt, 1)}%"></div><div class="bar" style="width:${Math.max(0, -e.dm) / mx * 100}%;background:var(--mrg)" title="融資 ${sg(e.dm, 1)}%"></div><div class="v"><span style="color:var(--mkt)">大盤 ${sg(e.dt, 1)}%</span>　<span style="color:var(--mrg)">融資 ${sg(e.dm, 1)}%</span></div></div><div class="rt" style="color:${rc}">${e.ratio == null ? '—' : e.ratio.toFixed(2) + '倍'}</div></div>`; }).join('');
   }
   // 4. 走勢圖（收合）
   { const a = out.slice(-Math.min(+gspan, out.length));
@@ -487,10 +495,10 @@ function drawGap(){
     const [g0, g1] = ext(a.map(x => x.gap).concat([-6, 3])), sy = v => b - (v - g0) / (g1 - g0) * (b - t);
     const [i0, i1] = ext(a.map(x => x.taiex)), si = v => b - (v - i0) / (i1 - i0) * (b - t);
     const band = (hi, lo, c, op) => { const y1 = sy(Math.min(hi, g1)), y2 = sy(Math.max(lo, g0)); return y2 > y1 ? `<rect x="${l}" y="${y1}" width="${W - l - r}" height="${y2 - y1}" fill="${c}" opacity="${op}"/>` : ''; };
-    let g = band(1e9, 2, 'var(--d5)', .12) + band(2, 0, 'var(--d3)', .2) + band(0, -5, 'var(--d2)', .22) + band(-5, -1e9, 'var(--d0)', .15);
+    let g = band(1e9, 2, 'var(--z1)', .12) + band(2, 0, 'var(--z2)', .14) + band(0, -5, 'var(--z3)', .14) + band(-5, -1e9, 'var(--z4)', .14);
     for (const v of ticks(g0, g1)) g += `<line x1="${l}" x2="${W - r}" y1="${sy(v)}" y2="${sy(v)}" stroke="var(--line)"/><text x="${l - 4}" y="${sy(v) + 4}" text-anchor="end">${v}</text>`;
     for (const v of ticks(i0, i1, 3)) g += `<text x="${W - r + 4}" y="${si(v) + 4}">${Math.round(v).toLocaleString()}</text>`;
-    g += `<path d="${path(xs, a.map(x => x.taiex), si)}" fill="none" stroke="var(--fg)" stroke-width="1.2" opacity=".6"/><path d="${path(xs, a.map(x => x.gap), sy)}" fill="none" stroke="var(--d4)" stroke-width="1.6"/>`;
+    g += `<path d="${path(xs, a.map(x => x.taiex), si)}" fill="none" stroke="var(--fg)" stroke-width="1.2" opacity=".6"/><path d="${path(xs, a.map(x => x.gap), sy)}" fill="none" stroke="var(--z2)" stroke-width="1.8"/>`;
     const idx = new Map(a.map((x, i) => [x.date, i]));
     eps.forEach(e => { const i = idx.get(e.date); if (i != null) g += `<circle cx="${xs[i]}" cy="${sy(e.gap)}" r="3" fill="var(--fg)"/>`; });
     const step = Math.max(1, Math.ceil(a.length / 6));
