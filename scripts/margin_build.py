@@ -15,10 +15,17 @@
   分母：上市「信用交易統計」融資金額(仟元)今日餘額；上櫃表尾「融資金(仟元)」資餘額欄
   當日無收盤價者用最近一次收盤（fallback 清單一併輸出）
 
-期間：大盤與近 30 日追價者崩跌家數自最早原始檔起算（上市 2004-02、上櫃 2007-07）；
+期間：大盤與近期口徑崩跌家數自最早原始檔起算（上市 2004-02、上櫃 2007-07）；
       全體平均批次模型與個股歷史 CSV 自 START 起算（Ed 2026-11-01 同意延伸大盤與崩跌觀察）
 
-個股估算（模型 MR01，起算日 START）
+個股近期口徑（預設，三竹算法；Ed 2026-11-05 指定，取代近 30 日淨買進均價）
+  每日：融資金額模型值 ×（1 − 當日融資賣出與現金償還 ÷ 前日餘額），再加上當日融資買進張數（含當沖，不互抵）× 1000 × 收盤 × 60%；
+  近期成本＝模型值 ÷（60% × 今日餘額股數），估算維持率＝今日餘額 × 1000 × 收盤 ÷ 模型值 × 100。
+  出場與償還按比例扣減，新買進以當日價格加入，舊部位隨換手淡出。以金額記帳，分割減資不需換算。
+  自最早原始檔起算；2026/7 七檔（020 策略包三竹截圖）與雍智 2026/10～11 共 8 檔 100 點，與三竹 App 逐點相同。
+  融資資料滿 30 個交易日、餘額 ≥ 10 張、當日有成交才列入。不經官方校準（三竹不校準）。
+
+個股全體平均（模型 MR01，起算日 START）
   1. 逐日重播融資庫存（批次法）：每日淨融資買進為一個批次，成本＝當日均價
   2. 當日沖銷：同日融資買進與融資賣出先互抵，視為當日進出、不進庫存
   3. 出場順序（追繳優先）：當日淨賣出＋現金償還，先從估算維持率已低於 130% 的批次移出（成本高者先），
@@ -63,7 +70,7 @@ MIN_DAYS, MAX_INIT, MAX_SENS, MIN_BAL = 120, 35.0, 10.0, 10
 BASIS_MIN_LOTS, BASIS_MIN_PCT, BASIS_MAX_FLOW = 2, 0.005, 1.5   # 前日餘額不連續：忽略門檻（張、比例）與無事件時可當買賣的最大比例
 NET_DAYTRADE = os.environ.get('MR_NET', '1') == '1'
 TPEX_PX_START = '20070702'   # 上櫃收盤原始檔有內容的第一天（之前的檔案為空）
-RECENT_N = 30   # 近期追價者窗口（交易日）；以三竹 7 檔×13 日校準選定
+RECENT_N = 30   # 近期口徑（三竹算法）至少要有幾個交易日的融資資料才列入
 FORCED_FIRST, CALL = os.environ.get('MR_FORCED', '1') == '1', 130.0
 ORDER = os.environ.get('MR_ORDER', 'prop')   # 其餘出場順序：prop 按比例、fifo 舊先、lifo 新先
 COMMON = re.compile(r'^(?!91)[1-9]\d{3}$')   # 普通股：4 碼、首碼非 0，排除 91 開頭的存託憑證（TDR）；與 wh_prices.py 同口徑
@@ -202,7 +209,7 @@ def price_days_before(ds, n):
 
 class Pos:
     __slots__ = ('mkt', 'name', 'inv', 'cost', 'cost_lo', 'cost_hi', 'init', 'days', 'bad', 'last_bal', 'hist',
-                 'last_close', 'stale', 'lots', 'win', 'rdays', 'fac', 'bh', 'started')
+                 'last_close', 'stale', 'lots', 'rl', 'rdays', 'fac', 'bh', 'started')
 
     def __init__(self, mkt, name):
         self.mkt, self.name = mkt, name
@@ -215,7 +222,7 @@ class Pos:
         self.hist = []
         self.last_close = None
         self.stale = False
-        self.win = []    # 近期淨融資買進 [(張數, 金額)]，最多 RECENT_N 日
+        self.rl = None   # 近期口徑（三竹算法）融資金額模型值（元）；以金額記，分割減資不需換算
         self.rdays = 0
         self.fac = 1.0   # 累積張數基準係數
         self.bh = {}     # 日期 → (今日餘額, 當時基準係數)，含零餘額日
@@ -305,7 +312,6 @@ def main():
                         if basis == 'event':
                             # 張數基準係數（Eve F3）：供跨分割比較餘額與近期口徑張數
                             p.fac *= k
-                            p.win = [(q * k, v) for q, v in p.win]
                         if full and p.lots:
                             if basis == 'event':
                                 for L in p.lots:
@@ -349,10 +355,16 @@ def main():
                 # 當日沖銷：同日融資買進與融資賣出先互抵（視為當日進出，不進庫存），只有淨買進才以當日均價入庫
                 net = min(r['buy'], r['sell']) if NET_DAYTRADE else 0
                 buy, out = r['buy'] - net, r['sell'] - net + r['repay']
-                # 近期追價者：最近 RECENT_N 個交易日淨融資買進（扣當日沖銷）的加權均價
-                p.win.append((buy, buy * avg) if buy > 0 and avg else (0.0, 0.0))
-                if len(p.win) > RECENT_N:
-                    p.win.pop(0)
+                # 近期口徑（三竹算法，Ed 2026-11-05）：融資賣出＋現金償還按比例扣減融資金額，
+                # 當日融資買進（含當沖，不互抵）以收盤價 × 60% 加入；與三竹 App 8 檔 100 點逐點相同
+                if close:
+                    if p.rl is None:
+                        p.rl = r['prev'] * 1000 * close * RATIO
+                    if r['prev'] > 0:
+                        p.rl *= max(0.0, 1 - (r['sell'] + r['repay']) / r['prev'])
+                    else:
+                        p.rl = 0.0
+                    p.rl += r['buy'] * 1000 * close * RATIO
                 p.rdays += 1
                 if full:
                     p.started = True
@@ -425,16 +437,14 @@ def main():
                     todo.append((p, close, bal, bal - r['prev'], usage))
                 if COMMON.match(c) and bal > 0 and close:
                     if p.rdays >= RECENT_N and bal >= MIN_BAL and not p.stale:
-                        q = sum(x[0] for x in p.win)
-                        if q >= MIN_BAL:
-                            rmp = close / (RATIO * sum(x[1] for x in p.win) / q) * 100
+                        if p.rl:
+                            rmp = bal * 1000 * close / p.rl * 100
                             cr = crash.setdefault(ds, [0, 0, 0, 0])
                             cr[0] += 1; cr[1] += rmp < 130; cr[2] += rmp < 140; cr[3] += bal if rmp < 130 else 0
             # 官方校準：成本 × k，k＝官方融資金額 ÷ 模型融資金額合計（同市場同日），使模型總額等於官方總額
             k = loan / est_loan if full and loan and est_loan else None
             for p, close, bal, chg, usage in todo:
-                q = sum(x[0] for x in p.win)
-                rc = sum(x[1] for x in p.win) / q if q >= MIN_BAL else None
+                rc = p.rl / (RATIO * bal * 1000) if p.rl and bal > 0 else None   # 近期成本＝融資金額模型值 ÷（60% × 股數）
                 cost = p.cost * (k or 1.0)
                 p.hist.append((ds, close, cost, bal, chg, close / (RATIO * cost) * 100, usage,
                                p.init / bal * 100 if bal else 0,
@@ -533,7 +543,7 @@ def main():
     balmap = {c: [p.mkt[1], p.last_bal] for c, p in pos.items() if COMMON.match(c) and p.last_bal and p.bh.get(latest)}
     out = dict(date=latest, generated=datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).isoformat(timespec='seconds'),
                model=dict(version=MODEL, start=START, financing_ratio=RATIO, min_days=MIN_DAYS, max_init_pct=MAX_INIT,
-                          max_sensitivity=MAX_SENS, min_balance=MIN_BAL, recent_days=RECENT_N),
+                          max_sensitivity=MAX_SENS, min_balance=MIN_BAL, recent_days=RECENT_N, recent_method='mitake'),
                market=market, bal=balmap, basis=basis_log, stats=stats, rstats=rstats, rows=rows,
                crash=[dict(date=d, n=v[0], b130=v[1], b140=v[2], bal130=round(v[3]), taiex=taiex.get(d)) for d, v in sorted(crash.items())])
     with open(OUT_JSON, 'w') as f:
