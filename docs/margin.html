@@ -395,7 +395,7 @@ function drawDist(){
   s += `<text x="${W - r}" y="${b + 28}" text-anchor="end">估算維持率（%）</text>`;
   svg.innerHTML = s;
   const ex = M.stats.excluded;
-  $('#hnote').textContent = B === 'r' ? `近期（三竹算法）：出場與償還按比例扣減融資金額、當日買進以收盤價加入；出現在融資資料未滿 ${M.model.recent_days} 個交易日、融資餘額低於 ${M.model.min_balance} 張或當日無成交者不列入。分布與家數只算這一批樣本（與排行榜一致）。低於 130% 不代表已發生追繳。` : `分布與家數只算通過檢查的同一批樣本（與排行榜一致）。排除：有效歷史未滿 ${M.model.min_days} 日 ${ex.insufficient}、期初庫存占比過高 ${ex.pending}、成本敏感度過大 ${ex.sensitive}、其他（餘額過小、當日無成交、股數基準異常）${ex.other}。低於 130% 不代表已發生追繳。`;
+  $('#hnote').textContent = B === 'r' ? `近期（三竹算法）：出場與償還按比例扣減融資金額、當日買進以收盤價加入；出現在融資資料未滿 ${M.model.recent_days} 個交易日、無融資限額（停資）、融資餘額低於 ${M.model.min_balance} 張或當日無成交者不列入；成交冷清的股票成本更新慢，可能出現極低數值，照列。分布與家數只算這一批樣本（與排行榜一致）。低於 130% 不代表已發生追繳。` : `分布與家數只算通過檢查的同一批樣本（與排行榜一致）。排除：有效歷史未滿 ${M.model.min_days} 日 ${ex.insufficient}、期初庫存占比過高 ${ex.pending}、成本敏感度過大 ${ex.sensitive}、其他（餘額過小、當日無成交、股數基準異常）${ex.other}。低於 130% 不代表已發生追繳。`;
 }
 
 function filtered(){
@@ -412,7 +412,7 @@ function drawTable(){
   const rows = a.slice(page * PER, (page + 1) * PER);
   const rv = B === 'r';
   $('#tbl').innerHTML = `<tr><th>#</th><th>股票</th><th>市場</th><th>${liveOn() ? "股價" : "收盤"}</th><th>${rv ? '近期成本' : '估算成本'}</th><th>${rv ? '近期維持率' : '估算維持率'}</th><th>${rv ? '全體平均' : '近期'}</th><th>使用率</th><th>融資餘額</th><th>5 日增減</th></tr>` +
-    rows.map((r, i) => `<tr style="cursor:pointer" data-s="${r.s}"><td>${page * PER + i + 1}</td><td>${r.s} ${r.n}${OK(r) ? '' : `<span class="tag" title="${rv ? '近期口徑未列入' : r.why}">未通過</span>`}</td><td>${MK[r.m]}</td>
+    rows.map((r, i) => `<tr style="cursor:pointer" data-s="${r.s}"><td>${page * PER + i + 1}</td><td>${r.s} ${r.n}${OK(r) ? '' : `<span class="tag" title="${rv ? (r.rwhy || '近期口徑未列入') : r.why}">未通過</span>`}</td><td>${MK[r.m]}</td>
       <td class="num">${f2(r.c)}</td><td class="num">${f2(rv ? r.rc : r.cost)}</td><td class="num ${MP(r) < 130 ? 'down' : ''}"><b>${f2(MP(r))}%</b></td><td class="num">${(rv ? r.mp : r.rmp) == null ? '—' : f2(rv ? r.mp : r.rmp) + '%'}</td><td class="num">${r.u == null ? '—' : f2(r.u) + '%'}</td>
       <td class="num">${r.b.toLocaleString()}</td><td class="num ${cls(r.c5)}">${r.c5 == null ? '—' : sg(r.c5, 0)}</td></tr>`).join('') +
     (rows.length ? '' : '<tr><td colspan="10" style="text-align:center">沒有符合目前條件的股票</td></tr>');
