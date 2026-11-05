@@ -45,6 +45,8 @@ h2 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
 .up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--flat)}
 .idx{display:flex;flex-wrap:wrap;gap:8px 28px;align-items:baseline}
 .idx .big{font-family:var(--num);font-weight:700;font-size:44px;line-height:1}
+.gh{font-size:14px;margin:16px 0 6px}.gh small{font-weight:400;color:var(--muted);margin-left:6px;font-size:12px}
+.gbr{display:grid;grid-template-columns:78px 1fr 64px;gap:2px 8px;align-items:center;font-size:12px;margin:6px 0}.gbr .bar{height:7px;border-radius:2px}.gbr .rt{text-align:right;font-family:var(--num);font-size:16px;font-weight:700}
 .idx .chg{font-family:var(--num);font-size:22px}
 .bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--chip)}
 .bar span{display:block;height:100%}
@@ -128,11 +130,20 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
     <h2>融資洗盤觀察<small>上市大盤跌幅 vs 融資金額減幅（差距＝大盤跌幅 − 融資減幅）</small><span class="upd" id="u_g"></span></h2>
     <div class="panel">
       <div class="idx" id="gcard"></div>
-      <div class="xtools"><span class="sub">期間</span><div class="tabs seg" id="gspan" style="margin:0"></div></div>
-      <svg id="gchart" viewBox="0 0 420 210" role="img" aria-label="上市大盤跌幅與融資減幅差距及加權指數"></svg>
-      <div class="legend"><span><i style="background:var(--d4)"></i>差距（左軸）</span><span><i style="background:var(--fg)"></i>加權指數（右軸）</span><span><i style="background:var(--d5);opacity:.25"></i>&gt;2 還沒洗</span><span><i style="background:var(--d3);opacity:.35"></i>0～2 快洗完</span><span><i style="background:var(--d2);opacity:.45"></i>0～−5 融資退得比大盤多</span><span><i style="background:var(--d0);opacity:.35"></i>&lt;−5 斷頭潮</span></div>
-      <details style="margin-top:10px" id="gdet"><summary class="sub" style="cursor:pointer" id="gsum">歷次大跌見底日</summary><div class="tblwrap" style="margin-top:8px"><table id="gtbl"></table></div></details>
-      <div class="note">大盤跌幅＝加權指數收盤相對近 60 個交易日最高收盤；融資減幅＝上市融資金額（官方）相對近 60 個交易日最高。差距為正＝大盤跌得比融資退得多，融資戶大多還抱著；為負＝融資退得比大盤多，被洗出來了。退幅比＝融資減幅 ÷ 大盤跌幅（大盤跌幅不足 3% 時不算）。大跌段＝大盤跌幅連續 ≤ −5% 且期間曾 ≤ −8%，見底日＝段內最低收盤，事後才能確認，不能當事前訊號；最後一段若仍在進行中，只列「目前最低」。參考金玉峰投顧「差距溫度計」概念自行計算，大盤跌幅的起算高點與見底日判定與該圖不同，數值不會完全一樣。只供觀察，未經回測驗證。</div>
+      <h3 class="gh">差距溫度計<small>黑點＝近 10 次見底日，灰點＝更早的見底日，橘圈＝現在</small></h3>
+      <svg id="gthermo" viewBox="0 0 420 170" role="img" aria-label="歷次見底日差距溫度計"></svg>
+      <h3 class="gh">見底前 25 天到後 5 天的差距<small id="ghsub"></small></h3>
+      <div class="xtools"><span class="sub">顯示</span><div class="tabs seg" id="gshow" style="margin:0"></div></div>
+      <svg id="gheat" viewBox="0 0 420 200" role="img" aria-label="歷次大跌見底前後差距熱度圖"></svg>
+      <div class="legend"><span><i style="background:var(--d5)"></i>&gt;2 還沒洗</span><span><i style="background:var(--d3)"></i>0～2 快洗完</span><span><i style="background:var(--d2)"></i>0～−5 融資退得比大盤多</span><span><i style="background:var(--d0)"></i>&lt;−5 斷頭潮</span></div>
+      <h3 class="gh">見底日大盤跌幅與融資退幅<small>退幅比＝融資退幅 ÷ 大盤跌幅</small></h3>
+      <div id="gbars"></div>
+      <details style="margin-top:10px"><summary class="sub" style="cursor:pointer">差距走勢圖</summary>
+        <div class="xtools"><span class="sub">期間</span><div class="tabs seg" id="gspan" style="margin:0"></div></div>
+        <svg id="gchart" viewBox="0 0 420 210" role="img" aria-label="差距走勢與加權指數"></svg>
+        <div class="legend"><span><i style="background:var(--d4)"></i>差距（左軸）</span><span><i style="background:var(--fg)"></i>加權指數（右軸）</span></div>
+      </details>
+      <div class="note">大盤跌幅＝加權指數收盤相對近 60 個交易日最高收盤；融資退幅＝上市融資金額（官方）相對近 60 個交易日最高。差距為正＝大盤跌得比融資退得多，融資戶大多還抱著；為負＝融資退得比大盤多，被洗出來了。退幅比＝融資退幅 ÷ 大盤跌幅（大盤跌幅不足 3% 時不算）。大跌與見底日：以加權指數收盤找波段（反彈或回檔達 6% 才換方向），波段高點到低點跌幅 ≥ 8% 的低點為見底日；2020 年起與金玉峰投顧圖上的 10 次大跌同一批（日期可能差 1～2 天），資料自 2004 年起。見底日要事後才能確認，不能當事前訊號；最後一段若仍在下跌，只列「現在」。參考金玉峰「差距溫度計」概念自行計算，大盤跌幅的起算高點與該圖不同，數值不會完全一樣。只供觀察，未經回測驗證。</div>
     </div>
   </section>
 
@@ -199,7 +210,7 @@ const sg = (v, d=2) => v == null ? '—' : (v > 0 ? '+' : '') + (+v).toFixed(d);
 const cls = v => v > 0 ? 'up' : v < 0 ? 'down' : 'flat';
 const MK = {TWSE:'上市', TPEX:'上櫃'};
 let LV = null, ROWS0 = null; // 盤中暫估
-let M, mk = 'TWSE', mspan = '60', cspan = '250', gspan = '250', B = 'r', F = {m:'all', t:'all', u:'0', s:'mp'}, page = 0, PER = 20, D = null, dspan = '250';
+let M, mk = 'TWSE', mspan = '60', cspan = '250', gspan = '250', gshow = '10', B = 'r', F = {m:'all', t:'all', u:'0', s:'mp'}, page = 0, PER = 20, D = null, dspan = '250';
 
 function tabs(sel, opts, get, set){
   const el = $(sel); el.innerHTML = '';
@@ -239,6 +250,7 @@ fetch('margin.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).the
   tabs('#fs', {mp:'維持率低→高', u:'使用率高→低', c5:'5 日融資增', c5d:'5 日融資減'}, () => F.s, v => { F.s = v; page = 0; drawTable(); });
   tabs('#cspan', {60:'60 日', 120:'120 日', 250:'1 年', 1250:'5 年', 99999:'全部'}, () => cspan, v => { cspan = v; drawCrash(); });
   tabs('#gspan', {120:'120 日', 250:'1 年', 1250:'5 年', 99999:'全部'}, () => gspan, v => { gspan = v; drawGap(); });
+  tabs('#gshow', {10:'近 10 次', all:'2004 年起全部'}, () => gshow, v => { gshow = v; drawGap(); });
   tabs('#basis', {r:'近期（三竹算法，預設）', a:'全體平均'}, () => B, v => { B = v; page = 0; drawDist(); drawTable(); });
   tabs('#dspan', {60:'60 日', 120:'120 日', 250:'250 日', 99999:'全部'}, () => dspan, v => { dspan = v; drawDetail(); });
   $('#q').oninput = () => { page = 0; drawTable(); };
@@ -391,7 +403,7 @@ function drawCrash(){
   [...$('#ctbl').querySelectorAll('tr[data-s]')].forEach(tr => tr.onclick = () => openStock(tr.dataset.s));
 }
 // 融資洗盤觀察：上市大盤跌幅（近 60 日高）vs 上市融資金額減幅（近 60 日高）
-const GN = 60;
+const GN = 60, GREV = 0.06, GDROP = 0.08;
 let GS = null;
 function gapSeries(){
   if (GS) return GS;
@@ -404,45 +416,88 @@ function gapSeries(){
     const dt = (T[x.date] / th - 1) * 100, dm = (x.loan / lh - 1) * 100;
     out.push({date: x.date, taiex: T[x.date], dt, dm, gap: dm - dt, ratio: dt <= -3 ? dm / dt : null});
   });
-  // 大跌段：dt 連續 ≤ −5% 且段內最低 ≤ −8%；見底＝段內最低收盤
-  const eps = []; let seg = null;
+  // 波段：反彈／回檔達 GREV 才換方向；高點到低點跌幅 ≥ GDROP 的低點＝見底日
+  const eps = []; let up = true, pk = 0, tr = 0;
   out.forEach((x, i) => {
-    if (x.dt <= -5) { if (!seg) seg = {s: i, e: i}; else seg.e = i; }
-    if ((x.dt > -5 || i === out.length - 1) && seg) {
-      const part = out.slice(seg.s, seg.e + 1), lo = part.reduce((m, y) => y.taiex < m.taiex ? y : m, part[0]);
-      if (Math.min(...part.map(y => y.dt)) <= -8) eps.push({...lo, live: seg.e === out.length - 1 && x.dt <= -5});
-      seg = null;
+    if (up) { if (x.taiex > out[pk].taiex) pk = i; else if (x.taiex <= out[pk].taiex * (1 - GREV)) { up = false; tr = i; } }
+    else {
+      if (x.taiex < out[tr].taiex) tr = i;
+      else if (x.taiex >= out[tr].taiex * (1 + GREV)) {
+        const dd = out[tr].taiex / out[pk].taiex - 1;
+        if (dd <= -GDROP) eps.push({...out[tr], i: tr, wave: dd * 100});
+        up = true; pk = i;
+      }
     }
   });
-  return GS = {out, eps};
+  let cur = null;   // 進行中的下跌段（尚未反彈 GREV）
+  if (!up) { const dd = out[tr].taiex / out[pk].taiex - 1; if (dd <= -GDROP) cur = {i: tr, wave: dd * 100}; }
+  return GS = {out, eps, cur};
 }
-const gzone = g => g > 2 ? ['還沒洗', 'var(--d5)'] : g >= 0 ? ['快洗完', 'var(--d4)'] : g >= -5 ? ['融資退得比大盤多', 'var(--d1)'] : ['斷頭潮', 'var(--d0)'];
+const gzone = g => g > 2 ? ['還沒洗', 'var(--d5)'] : g >= 0 ? ['快洗完', 'var(--d3)'] : g >= -5 ? ['融資退得比大盤多', 'var(--d2)'] : ['斷頭潮', 'var(--d0)'];
+const ym = d => d.slice(0,4) + '/' + d.slice(4,6);
 function drawGap(){
-  const {out, eps} = gapSeries(); if (!out.length) return;
-  const a = out.slice(-Math.min(+gspan, out.length)), L = out[out.length - 1], z = gzone(L.gap);
-  $('#gcard').innerHTML = `<div><div class="sub">差距（${fds(L.date)}）</div><div class="big num" style="color:${z[1]}">${sg(L.gap, 1)}</div><div class="sub">${z[0]}｜大盤 ${sg(L.dt, 1)}%、融資 ${sg(L.dm, 1)}%</div></div>
+  const {out, eps, cur} = gapSeries(); if (!out.length) return;
+  const L = out[out.length - 1], z = gzone(L.gap);
+  $('#gcard').innerHTML = `<div><div class="sub">現在差距（${fds(L.date)}）</div><div class="big num" style="color:${z[1] === 'var(--d3)' ? 'var(--d4)' : z[1]}">${sg(L.gap, 1)}</div><div class="sub">${z[0]}｜大盤 ${sg(L.dt, 1)}%、融資 ${sg(L.dm, 1)}%</div></div>
     <div><div class="sub">退幅比（融資 ÷ 大盤）</div><div class="num" style="font-size:26px;font-weight:700">${L.ratio == null ? '—' : L.ratio.toFixed(2) + ' 倍'}</div><div class="sub">${L.ratio == null ? '大盤跌幅不足 3%' : L.ratio >= 1 ? '融資退得比大盤多' : '融資退得比大盤少'}</div></div>`;
-  const svg = $('#gchart'), W = 420, H = 210, l = 34, r = 46, t = 10, b = 186;
-  const xs = a.map((_, i) => l + (a.length > 1 ? i / (a.length - 1) : .5) * (W - l - r));
-  let [g0, g1] = ext(a.map(x => x.gap).concat([-6, 3])); const sy = v => b - (v - g0) / (g1 - g0) * (b - t);
-  const [i0, i1] = ext(a.map(x => x.taiex)), si = v => b - (v - i0) / (i1 - i0) * (b - t);
-  const band = (hi, lo, c, op) => { const y1 = sy(Math.min(hi, g1)), y2 = sy(Math.max(lo, g0)); return y2 > y1 ? `<rect x="${l}" y="${y1}" width="${W - l - r}" height="${y2 - y1}" fill="${c}" opacity="${op}"/>` : ''; };
-  let g = band(1e9, 2, 'var(--d5)', .12) + band(2, 0, 'var(--d3)', .2) + band(0, -5, 'var(--d2)', .22) + band(-5, -1e9, 'var(--d0)', .15);
-  for (const v of ticks(g0, g1)) g += `<line x1="${l}" x2="${W - r}" y1="${sy(v)}" y2="${sy(v)}" stroke="var(--line)"/><text x="${l - 4}" y="${sy(v) + 4}" text-anchor="end">${v}</text>`;
-  for (const v of ticks(i0, i1, 3)) g += `<text x="${W - r + 4}" y="${si(v) + 4}">${Math.round(v).toLocaleString()}</text>`;
-  g += `<path d="${path(xs, a.map(x => x.taiex), si)}" fill="none" stroke="var(--fg)" stroke-width="1.2" opacity=".6"/>`;
-  g += `<path d="${path(xs, a.map(x => x.gap), sy)}" fill="none" stroke="var(--d4)" stroke-width="1.6"/>`;
-  const idx = new Map(a.map((x, i) => [x.date, i]));
-  eps.forEach(e => { const i = idx.get(e.date); if (i != null) g += `<circle cx="${xs[i]}" cy="${sy(e.gap)}" r="3" fill="${e.live ? 'none' : 'var(--fg)'}" stroke="var(--fg)"/>`; });
-  const step = Math.max(1, Math.ceil(a.length / 6));
-  a.forEach((x, i) => { if (i % step === 0 || i === a.length - 1) g += `<text x="${xs[i]}" y="${H - 4}" text-anchor="middle">${a.length > 260 ? (a.length > 1300 ? x.date.slice(0,4) : x.date.slice(2,4) + '/' + +x.date.slice(4,6)) : fds(x.date)}</text>`; });
-  g += `<line class="cur" y1="${t}" y2="${b}" stroke="var(--muted)" stroke-dasharray="3 3" style="display:none"/>`;
-  svg.innerHTML = g;
-  hover(svg, xs, k => { const x = a[k]; return `<b>${fd(x.date)}</b><br>差距 ${sg(x.gap, 1)}（${gzone(x.gap)[0]}）<br>大盤 ${sg(x.dt, 1)}%、融資 ${sg(x.dm, 1)}%<br>退幅比 ${x.ratio == null ? '—' : x.ratio.toFixed(2) + ' 倍'}<br>加權指數 ${x.taiex.toLocaleString()}`; });
-  const done = eps.filter(e => !e.live), nPos = done.filter(e => e.gap > 0).length, nR = done.filter(e => e.ratio >= 1).length;
-  $('#gsum').innerHTML = `歷次大跌見底日（${fd(out[0].date).slice(0,4)} 年起 ${done.length} 次；見底日差距 ≤0 有 ${done.length - nPos} 次、退幅比 ≥1 有 ${nR} 次）`;
-  $('#gtbl').innerHTML = `<tr><th>見底日</th><th>大盤跌幅</th><th>融資減幅</th><th>差距</th><th>退幅比</th><th>狀態</th></tr>` +
-    [...eps].reverse().map(e => `<tr><td>${fd(e.date)}${e.live ? '（進行中，目前最低）' : ''}</td><td class="num">${sg(e.dt, 1)}%</td><td class="num">${sg(e.dm, 1)}%</td><td class="num" style="color:${gzone(e.gap)[1]}"><b>${sg(e.gap, 1)}</b></td><td class="num">${e.ratio == null ? '—' : e.ratio.toFixed(2)}</td><td>${gzone(e.gap)[0]}</td></tr>`).join('');
+  const recent = eps.slice(-10), show = gshow === 'all' ? eps : recent;
+  // 1. 溫度計
+  { const W = 420, l = 14, r = 14, ay = 130, G0 = -12, G1 = 6, sx = v => l + (Math.max(G0, Math.min(G1, v)) - G0) / (G1 - G0) * (W - l - r);
+    let g = '';
+    [[G0, -5, 'var(--d0)', '斷頭潮'], [-5, 0, 'var(--d2)', '退得比大盤多'], [0, 2, 'var(--d3)', '快洗完'], [2, G1, 'var(--d5)', '還沒洗']].forEach(([a, b, c, t]) => {
+      g += `<rect x="${sx(a)}" y="${ay}" width="${sx(b) - sx(a) - 1}" height="12" fill="${c}"/><text x="${(sx(a) + sx(b)) / 2}" y="${ay + 9.5}" text-anchor="middle" fill="#fff" font-size="8">${t}</text>`; });
+    for (let v = G0; v <= G1; v += 2) g += `<text x="${sx(v)}" y="${ay + 24}" text-anchor="middle" font-size="9">${v > 0 ? '+' : ''}${v}</text>`;
+    eps.filter(e => !recent.includes(e)).forEach(e => g += `<circle cx="${sx(e.gap)}" cy="${ay - 4}" r="2.5" fill="var(--muted)" opacity=".5"><title>${fd(e.date)} ${sg(e.gap, 1)}</title></circle>`);
+    const rows = []; [...recent].sort((a, b) => a.gap - b.gap).forEach(e => {
+      const x = sx(e.gap); let k = 0; while (rows[k] != null && x - rows[k] < 58) k++; rows[k] = x; const y = ay - 14 - k * 12, rt = x > W - 64;
+      g += `<line x1="${x}" x2="${x}" y1="${y}" y2="${ay}" stroke="var(--fg)" stroke-width=".7"/><circle cx="${x}" cy="${y}" r="3" fill="var(--fg)"/><text x="${rt ? x - 4 : x + 4}" y="${y + 3}" font-size="9" ${rt ? 'text-anchor="end"' : ''}>${e.date.slice(2,4)}/${e.date.slice(4,6)} ${sg(e.gap, 1)}</text>`; });
+    const cx = sx(L.gap); g += `<circle cx="${cx}" cy="${ay - 4}" r="5" fill="none" stroke="var(--d4)" stroke-width="2.2"/><text x="${cx}" y="${ay - 12}" text-anchor="middle" font-size="9" fill="var(--d4)" font-weight="700">現在</text>`;
+    g += `<text x="${l}" y="${ay + 36}" font-size="9" fill="var(--muted)">← 越負：洗得越乾淨</text><text x="${W - r}" y="${ay + 36}" font-size="9" fill="var(--muted)" text-anchor="end">越正：賣壓還沒出來 →</text>`;
+    $('#gthermo').innerHTML = g; }
+  // 2. 熱度圖：每列一次大跌，-25～+5 日
+  { const B = -25, A = 5, lw = 76, rw = 34, W = 420, rh = 13, top = 4;
+    const list = show.map(e => ({e, label: `${e.date.slice(2,4)}/${e.date.slice(4,6)} 跌${Math.round(-e.wave)}%`, i: e.i}));
+    const cI = cur ? out.length - 1 : null;
+    if (cur) list.push({e: L, label: `現在（${fds(L.date)}）`, i: cI, now: true});
+    const cw = (W - lw - rw) / (A - B + 1), H = top + list.length * rh + 20;
+    const svg = $('#gheat'); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    let g = '';
+    list.forEach((o, k) => { const y = top + k * rh;
+      g += `<text x="${lw - 4}" y="${y + rh - 3.5}" text-anchor="end" font-size="8.5" ${o.now ? 'fill="var(--d4)" font-weight="700"' : ''}>${o.label}</text>`;
+      for (let d = B; d <= A; d++) { const j = o.i + d, x = lw + (d - B) * cw; const v = j >= 0 && j < out.length && !(o.now && d > 0) ? out[j] : null;
+        g += `<rect x="${x + .5}" y="${y + .5}" width="${cw - 1}" height="${rh - 1}" fill="${v ? gzone(v.gap)[1] : 'var(--chip)'}" ${d === 0 ? 'stroke="var(--fg)" stroke-width="1.2"' : ''}>${v ? `<title>${fd(v.date)}（${d === 0 ? '見底' : d > 0 ? '後' + d : '前' + -d}）差距 ${sg(v.gap, 1)}</title>` : ''}</rect>`; }
+      const v0 = out[o.i]; g += `<text x="${W - 2}" y="${y + rh - 3.5}" text-anchor="end" font-size="9" font-weight="700">${sg(v0.gap, 1)}</text>`; });
+    const yb = top + list.length * rh + 12;
+    [[-25, '前25天'], [-20, '前20'], [-15, '前15'], [-10, '前10'], [-5, '前5'], [0, '見底'], [5, '後5']].forEach(([d, t]) => g += `<text x="${lw + (d - B + .5) * cw}" y="${yb}" text-anchor="middle" font-size="8.5">${t}</text>`);
+    svg.innerHTML = g;
+    const pre = e => { let n = 0; for (let d = -5; d <= 0; d++) if (out[e.i + d] && out[e.i + d].gap <= 2) n++; return n >= 3; };
+    const done = show.filter(pre).length;
+    $('#ghsub').textContent = `${show.length} 次見底中，${done} 次在見底前 5 天已有過半天數差距 ≤ 2（快洗完以下）${cur ? '；最後一列是最新一天，不是低點' : ''}`; }
+  // 3. 見底日大盤跌幅 vs 融資退幅
+  { const list = [...show.map(e => ({e, t: fd(e.date)})), ...(cur ? [{e: L, t: '現在 ' + fds(L.date), now: true}] : [])];
+    const mx = Math.max(...list.map(o => Math.max(-o.e.dt, -o.e.dm)), 1);
+    const n135 = show.filter(e => e.ratio >= 1.35).length, n1 = show.filter(e => e.ratio < 1).length;
+    $('#gbars').innerHTML = `<div class="sub">${show.length} 次見底：${n135} 次退幅比 ≥ 1.35 倍，${n1} 次不到 1 倍</div>` + list.map(o => { const e = o.e, rc = e.ratio == null ? 'var(--muted)' : e.ratio >= 1 ? 'var(--d1)' : 'var(--d4)';
+      return `<div class="gbr"><div ${o.now ? 'style="color:var(--d4);font-weight:700"' : ''}>${o.t}</div><div><div class="bar" style="width:${-e.dt / mx * 100}%;background:var(--accent)" title="大盤 ${sg(e.dt, 1)}%"></div><div class="sub" style="font-size:10px">大盤 ${sg(e.dt, 1)}%・融資 ${sg(e.dm, 1)}%</div><div class="bar" style="width:${Math.max(0, -e.dm) / mx * 100}%;background:var(--up)" title="融資 ${sg(e.dm, 1)}%"></div></div><div class="rt" style="color:${rc}">${e.ratio == null ? '—' : e.ratio.toFixed(2) + '倍'}</div></div>`; }).join('');
+  }
+  // 4. 走勢圖（收合）
+  { const a = out.slice(-Math.min(+gspan, out.length));
+    const svg = $('#gchart'), W = 420, H = 210, l = 34, r = 46, t = 10, b = 186;
+    const xs = a.map((_, i) => l + (a.length > 1 ? i / (a.length - 1) : .5) * (W - l - r));
+    const [g0, g1] = ext(a.map(x => x.gap).concat([-6, 3])), sy = v => b - (v - g0) / (g1 - g0) * (b - t);
+    const [i0, i1] = ext(a.map(x => x.taiex)), si = v => b - (v - i0) / (i1 - i0) * (b - t);
+    const band = (hi, lo, c, op) => { const y1 = sy(Math.min(hi, g1)), y2 = sy(Math.max(lo, g0)); return y2 > y1 ? `<rect x="${l}" y="${y1}" width="${W - l - r}" height="${y2 - y1}" fill="${c}" opacity="${op}"/>` : ''; };
+    let g = band(1e9, 2, 'var(--d5)', .12) + band(2, 0, 'var(--d3)', .2) + band(0, -5, 'var(--d2)', .22) + band(-5, -1e9, 'var(--d0)', .15);
+    for (const v of ticks(g0, g1)) g += `<line x1="${l}" x2="${W - r}" y1="${sy(v)}" y2="${sy(v)}" stroke="var(--line)"/><text x="${l - 4}" y="${sy(v) + 4}" text-anchor="end">${v}</text>`;
+    for (const v of ticks(i0, i1, 3)) g += `<text x="${W - r + 4}" y="${si(v) + 4}">${Math.round(v).toLocaleString()}</text>`;
+    g += `<path d="${path(xs, a.map(x => x.taiex), si)}" fill="none" stroke="var(--fg)" stroke-width="1.2" opacity=".6"/><path d="${path(xs, a.map(x => x.gap), sy)}" fill="none" stroke="var(--d4)" stroke-width="1.6"/>`;
+    const idx = new Map(a.map((x, i) => [x.date, i]));
+    eps.forEach(e => { const i = idx.get(e.date); if (i != null) g += `<circle cx="${xs[i]}" cy="${sy(e.gap)}" r="3" fill="var(--fg)"/>`; });
+    const step = Math.max(1, Math.ceil(a.length / 6));
+    a.forEach((x, i) => { if (i % step === 0 || i === a.length - 1) g += `<text x="${xs[i]}" y="${H - 4}" text-anchor="middle">${a.length > 260 ? (a.length > 1300 ? x.date.slice(0,4) : x.date.slice(2,4) + '/' + +x.date.slice(4,6)) : fds(x.date)}</text>`; });
+    g += `<line class="cur" y1="${t}" y2="${b}" stroke="var(--muted)" stroke-dasharray="3 3" style="display:none"/>`;
+    svg.innerHTML = g;
+    hover(svg, xs, k => { const x = a[k]; return `<b>${fd(x.date)}</b><br>差距 ${sg(x.gap, 1)}（${gzone(x.gap)[0]}）<br>大盤 ${sg(x.dt, 1)}%、融資 ${sg(x.dm, 1)}%<br>退幅比 ${x.ratio == null ? '—' : x.ratio.toFixed(2) + ' 倍'}<br>加權指數 ${x.taiex.toLocaleString()}`; }); }
 }
 const BINS = [[0,100,'<100'],[100,120,'100–120'],[120,130,'120–130'],[130,140,'130–140'],[140,150,'140–150'],[150,170,'150–170'],[170,200,'170–200'],[200,250,'200–250'],[250,1e9,'≥250']];
 function drawDist(){
