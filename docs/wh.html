@@ -47,6 +47,16 @@ h2 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
 .idx .chg{font-family:var(--num);font-size:22px}
 .idx .vix{flex-basis:100%;border-top:1px dashed var(--line);padding-top:10px}
 .idx .vix .big{font-size:34px}
+.vg-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px}
+.vg-lv{font-size:22px;font-weight:700}
+.vg-q{font-family:var(--num);font-size:30px;font-weight:700}
+.vg-bar{position:relative;height:14px;border-radius:7px;margin:22px 0 4px;background:linear-gradient(90deg,#3a6fc4 0%,#86a9db 12.5%,var(--chip) 12.5%,var(--chip) 50%,#f0c27a 50%,#d99a1e 66.7%,#e07a45 75%,#b8332b 95%,#b8332b 100%)}
+.vg-mk{position:absolute;top:-20px;transform:translateX(-50%);font-family:var(--num);font-size:12px;font-weight:700;white-space:nowrap}
+.vg-mk::after{content:'';position:absolute;left:50%;top:16px;width:2px;height:22px;margin-left:-1px;background:var(--fg)}
+.vg-ticks{position:relative;height:14px;font-family:var(--num);font-size:11px;color:var(--muted)}
+.vg-ticks span{position:absolute;transform:translateX(-50%)}
+.vg-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 14px;margin-top:10px;font-size:13px;color:var(--muted)}
+.vg-facts b{font-family:var(--num);font-size:16px;color:var(--fg)}
 .bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--chip)}
 .bar span{display:block;height:100%}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}
@@ -102,6 +112,7 @@ td.num{font-size:15px}
 
   <section>
     <h2>臺指 VIX<small>臺指選擇權波動率指數</small><span class="upd" id="u_vix"></span></h2>
+    <div class="panel" id="vixgauge"></div>
     <div class="tabs" id="vtabs"></div>
     <div class="panel">
       <svg id="vixchart" viewBox="0 0 420 170" role="img" aria-label="臺指VIX收盤走勢與加權指數"></svg>
@@ -182,7 +193,7 @@ td.num{font-size:15px}
 <div id="tip"></div>
 <script>
 // 加到主畫面的 app 會沿用舊版頁面：開啟或回到前景時比對版本，有新版就重新載入
-const PAGE_VER = '20261106vix2';
+const PAGE_VER = '20261106vix3';
 function checkVer(){
   fetch('wh.html?t=' + Date.now(), {cache: 'no-store'}).then(r => r.text()).then(t => {
     const m = t.match(/PAGE_VER = '([^']+)'/); if (m && m[1] !== PAGE_VER) location.replace('wh.html?v=' + Date.now() + location.hash);
@@ -274,7 +285,7 @@ function vixAt(ds){   // 回傳 {v, p, o, h, l, k}；k＝在 vix.json 的位置�
 }
 function vixPctl(v, k){   // 收盤分位：與 vix.json 中當日以前（含）的收盤比較
   if (!V || v == null) return null;
-  const a = V.c.slice(0, k == null ? V.c.length : k + 1).filter(x => x != null); if (a.length < 20) return null;
+  const a = V.c.slice(0, k == null ? V.c.length : k + 1).filter(x => x != null); if (k == null) a.push(v); if (a.length < 20) return null;   // 盤中：前一日以前收盤＋目前值，與極端程度區塊同口徑
   return {q: a.filter(x => x <= v).length / a.length * 100, n: a.length};
 }
 function vixBox(){
@@ -286,10 +297,43 @@ function vixBox(){
   const ch = r.p ? r.v - r.p : null, cp = ch != null ? ch / r.p * 100 : null, q = vixPctl(r.v, r.k);
   return `<div class="vix"><div class="sub">臺指 VIX</div>
     <div style="display:flex;gap:4px 14px;align-items:baseline;flex-wrap:wrap"><span class="big num">${r.v.toFixed(2)}</span><span class="chg num ${cls(ch)}">${ch == null ? '' : (ch>0?'+':'') + ch.toFixed(2) + '（' + (cp>0?'+':'') + cp.toFixed(1) + '%）'}</span></div>
-    <div class="sub">${r.h != null ? `高 <b class="num">${r.h.toFixed(2)}</b>／低 <b class="num">${r.l.toFixed(2)}</b>　` : ''}${q ? `分位 <b class="num">${q.q.toFixed(q.q >= 99 ? 1 : 0)}</b>（${fds(V.dates[0]).length ? V.dates[0].slice(0,4) : ''} 年起 ${q.n} 日）` : ''}</div>
+    <div class="sub">${r.h != null ? `高 <b class="num">${r.h.toFixed(2)}</b>／低 <b class="num">${r.l.toFixed(2)}</b>　` : ''}${q ? `${(() => { const L = vixLevel(q.q); return `<b style="color:${L[2]}">${L[1]}</b> `; })()}分位 <b class="num">${q.q.toFixed(q.q >= 99 ? 1 : 0)}</b>（${fds(V.dates[0]).length ? V.dates[0].slice(0,4) : ''} 年起 ${q.n} 日）` : ''}</div>
     <div class="sub">最後更新 ${when}</div></div>`;
 }
+// 極端程度：分位 = 所選值在本站自 2016/11 起至當日所有收盤中的百分位（含當日以前，不讀未來）
+const vgPos = q => q <= 80 ? q / 80 * 50 : q <= 95 ? 50 + (q - 80) / 15 * 25 : 75 + (q - 95) / 5 * 25;   // 刻度放大極端區：0～80 占左半、80～95 占 1/4、95～100 占 1/4
+const VLV = [[99, '歷史極端', '#b8332b'], [95, '極端', '#e07a45'], [90, '偏高', '#d99a1e'], [80, '略高', '#c9a23c'], [20, '正常', 'var(--muted)'], [0, '異常低', '#3a6fc4']];
+function vixLevel(q){ return VLV.find(([t]) => q >= t); }
+function drawVixGauge(){
+  const el = $('#vixgauge'); if (!V) return;
+  const lv = vixLive(); let v, k, when, ds;
+  if (lv) { v = lv.last; k = V.c.length - 1; while (k >= 0 && V.dates[k] >= lv.date) k--; when = `盤中 ${fds(lv.date)} ${lv.time.slice(0,5)}`; ds = lv.date; }
+  else { ds = W.dates[idx]; k = V.ix.has(ds) ? V.ix.get(ds) : -1; v = k >= 0 ? V.c[k] : null; when = `${fd(ds)} 收盤`; k = k - 1; }
+  if (v == null) { el.innerHTML = `<div class="sub">${fd(ds)} 沒有臺指 VIX 資料。</div>`; return; }
+  // 比較母體：當日之前（k 以前）的收盤＋當日值本身
+  const hist = []; for (let i = 0; i <= k; i++) if (V.c[i] != null) hist.push([V.dates[i], V.c[i]]);
+  const n = hist.length + 1; if (n < 20) { el.innerHTML = '<div class="sub">歷史資料不足 20 日，暫不判定。</div>'; return; }
+  const below = hist.filter(h => h[1] <= v).length + 1, q = below / n * 100, [, lab, col] = vixLevel(q);
+  const above = hist.filter(h => h[1] > v), mx = hist.reduce((a, h) => h[1] > a[1] ? h : a, hist[0]), mn = hist.reduce((a, h) => h[1] < a[1] ? h : a, hist[0]);
+  const lastAbove = above.length ? above[above.length - 1] : null;
+  const srt = hist.map(h => h[1]).sort((a, b) => a - b), pv = p => srt[Math.min(srt.length - 1, Math.floor(p / 100 * srt.length))];
+  const med = pv(50), y0 = V.dates[0].slice(0, 4);
+  const pos = Math.max(1, Math.min(99, vgPos(q)));
+  el.innerHTML = `<div class="vg-top"><span class="sub">目前 VIX 極端程度</span><span class="vg-lv" style="color:${col}">${lab}</span>
+      <span>第 <span class="vg-q" style="color:${col}">${q >= 99 ? q.toFixed(1) : q.toFixed(0)}</span> 百分位</span>
+      <span class="sub">VIX <b class="num" style="color:var(--fg)">${v.toFixed(2)}</b>（${when}）</span></div>
+    <div class="vg-bar"><div class="vg-mk" style="left:${pos}%">${v.toFixed(2)}</div></div>
+    <div class="vg-ticks">${[[0,'0'],[20,'20'],[50,'50'],[80,'80'],[90,'90'],[95,'95'],[99,'99']].map(([p, t]) => `<span style="left:${vgPos(p)}%">${t}</span>`).join('')}</div>
+    <div class="vg-facts">
+      <div>${y0} 年以來收盤比現在高<br><b>${above.length}</b> 日（占 ${(above.length / n * 100).toFixed(1)}%）</div>
+      <div>上次收盤高於現在<br><b>${lastAbove ? fd(lastAbove[0]) : '從未'}</b>${lastAbove ? `（${lastAbove[1].toFixed(2)}）` : ''}</div>
+      <div>歷史最高收盤<br><b>${mx[1].toFixed(2)}</b>（${fd(mx[0])}）</div>
+      <div>分位參考點<br>中位數 <b>${med.toFixed(1)}</b>／90% <b>${pv(90).toFixed(1)}</b>／95% <b>${pv(95).toFixed(1)}</b>／99% <b>${pv(99).toFixed(1)}</b></div>
+    </div>
+    <div class="note" style="margin-top:8px">分位＝目前值在 ${fd(V.dates[0])} 起到${lv ? '前一交易日' : '所選日前一日'}所有收盤（共 ${hist.length} 日）加上目前值中的百分位，只用當時以前的資料。色條刻度不等距（放大 80 以上）。等級：99 以上歷史極端、95～99 極端、90～95 偏高、80～90 略高、20～80 正常、20 以下異常低（Emit 暫定，可調整）。最低收盤 ${mn[1].toFixed(2)}（${fd(mn[0])}）。只供觀察，不是交易訊號。</div>`;
+}
 function drawVix(){
+  drawVixGauge();
   if (!V) return;
   const ds = W.dates[idx], e0 = V.dates.filter(d => d <= ds).length - 1;
   if (e0 < 1) { $('#vixchart').innerHTML = ''; $('#vixnote').textContent = `所選交易日 ${fd(ds)} 早於本站臺指 VIX 資料起點 ${V.dates.length ? fd(V.dates[0]) : '—'}。`; return; }
