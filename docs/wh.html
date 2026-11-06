@@ -45,6 +45,8 @@ h2 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
 .idx{display:flex;flex-wrap:wrap;gap:8px 28px;align-items:baseline}
 .idx .big{font-family:var(--num);font-weight:700;font-size:44px;line-height:1}
 .idx .chg{font-family:var(--num);font-size:22px}
+.idx .vix{flex-basis:100%;border-top:1px dashed var(--line);padding-top:10px}
+.idx .vix .big{font-size:34px}
 .bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--chip)}
 .bar span{display:block;height:100%}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}
@@ -96,6 +98,15 @@ td.num{font-size:15px}
 
   <section>
     <div class="panel idx" id="idx"></div>
+  </section>
+
+  <section>
+    <h2>臺指 VIX<small>臺指選擇權波動率指數</small><span class="upd" id="u_vix"></span></h2>
+    <div class="panel">
+      <svg id="vixchart" viewBox="0 0 420 170" role="img" aria-label="臺指VIX收盤走勢與加權指數"></svg>
+      <div class="legend"><span><i style="background:#d99a1e"></i>臺指 VIX 收盤</span><span><i style="background:var(--fg)"></i>加權指數（對數）</span></div>
+      <div class="note" id="vixnote"></div>
+    </div>
   </section>
 
   <section>
@@ -170,7 +181,7 @@ td.num{font-size:15px}
 <div id="tip"></div>
 <script>
 // 加到主畫面的 app 會沿用舊版頁面：開啟或回到前景時比對版本，有新版就重新載入
-const PAGE_VER = '20261103cb';
+const PAGE_VER = '20261106vix';
 function checkVer(){
   fetch('wh.html?t=' + Date.now(), {cache: 'no-store'}).then(r => r.text()).then(t => {
     const m = t.match(/PAGE_VER = '([^']+)'/); if (m && m[1] !== PAGE_VER) location.replace('wh.html?v=' + Date.now() + location.hash);
@@ -183,7 +194,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) chec
 const G = {all:'全市場', twse:'上市市值前50', otc:'上櫃市值前30', hp:'高價股前30'};
 const DIST = ['≤-9','-9~-5','-5~-3','-3~-1','-1~0','0','0~1','1~3','3~5','5~9','≥9'];
 const DDL = ['<5%','5–10%','10–20%','20–30%','30–50%','≥50%'];
-let LIVE = null, W, idx, ddG = 'all', ddR = 750, stG = 'twse', sortK = 'cap', sortD = -1;
+let LIVE = null, V = null, W, idx, ddG = 'all', ddR = 750, stG = 'twse', sortK = 'cap', sortD = -1;
 const $ = s => document.querySelector(s);
 const fmt = (v, d=1) => v == null ? '—' : v.toFixed(d);
 const pctS = (a, b) => b ? (a / b * 100) : null;
@@ -202,6 +213,7 @@ fetch('wh.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).then(w 
   tabs('#stabs', {twse:G.twse, otc:G.otc, hp:G.hp}, () => stG, v => { stG = v; sortK = v === 'hp' ? 'px' : 'cap'; sortD = -1; drawTable(); });
   draw();
   loadLive(); setInterval(loadLive, 120000);
+  fetch('vix.json?t=' + Date.now(), {cache:'no-cache'}).then(r => r.json()).then(v => { V = v; V.ix = new Map(v.dates.map((d, i) => [d, i])); drawIdx(); drawVix(); drawUpd(); }).catch(() => { $('#vixnote').textContent = '臺指 VIX 資料讀取失敗'; });
 }).catch(e => { $('#sub').textContent = '資料讀取失敗：' + e; });
 
 // 盤中暫定：live 分支的 wh_intraday.json（約每 5 分鐘更新）。只在比最新收盤日新、且以最新收盤為基準時採用
@@ -231,7 +243,7 @@ function tabs(sel, opts, get, set){
 function draw(){
   const ds = W.dates[idx];
   $('#sub').textContent = liveOn() ? '盤中約 5～10 分鐘更新一次；各區塊標題旁為最後更新時間' : `資料日 ${fd(ds)}`;
-  drawIdx(); drawX(); drawDist(); drawCards(); drawDD(); drawTrend(); drawTable(); drawUpd();
+  drawIdx(); drawVix(); drawX(); drawDist(); drawCards(); drawDD(); drawTrend(); drawTable(); drawUpd();
 }
 function drawUpd(){   // 每個區塊只標一個「最後更新」；混合區塊另註哪些欄位是收盤資料
   const C = `${fds(W.dates[idx])} 收盤`, Lt = liveOn() ? `${fds(LIVE.date)} ${LIVE.time}` : null, A = liveOn() && LIVE.all;
@@ -240,6 +252,7 @@ function drawUpd(){   // 每個區塊只標一個「最後更新」；混合區�
   set('u_dist', A ? `${fds(LIVE.date)} ${A.time}` : C);
   set('u_cards', Lt ? `${Lt}（均線、新高低、今年報酬為 ${C}）` : C);
   set('u_dd', C); set('u_trend', C);
+  const lv = vixLive(); set('u_vix', lv ? `${fds(lv.date)} ${lv.time.slice(0,5)}（走勢圖為收盤）` : C);
   const latest = idx === W.dates.length - 1;
   set('u_tbl', Lt && latest ? `${Lt}（今年%、近20日%、距高點%、均線、創高為 ${fds(W.stock_date)} 收盤）` : `${fds(W.stock_date)} 收盤`);
 }
@@ -248,7 +261,54 @@ function drawIdx(){
   if (liveOn()) { t = LIVE.taiex; p = LIVE.taiex_y; }
   const ch = t && p ? t - p : null, cp = ch != null ? ch / p * 100 : null;
   $('#idx').innerHTML = `<div><div class="sub">${lab}</div><div class="big num">${t ? t.toLocaleString('zh-TW',{maximumFractionDigits:2}) : '—'}</div><div class="sub">最後更新 ${liveOn() ? `${fds(LIVE.date)} ${LIVE.time}（報價至 ${LIVE.quote_time || '—'}）` : fds(W.dates[idx]) + ' 收盤'}</div></div>
-    <div class="chg num ${cls(ch)}">${ch == null ? '' : (ch>0?'+':'') + ch.toFixed(2) + '（' + (cp>0?'+':'') + cp.toFixed(2) + '%）'}</div>`;
+    <div class="chg num ${cls(ch)}">${ch == null ? '' : (ch>0?'+':'') + ch.toFixed(2) + '（' + (cp>0?'+':'') + cp.toFixed(2) + '%）'}</div>` + vixBox();
+}
+// 臺指 VIX：盤中用 live 的 vix（期交所即時），否則用 vix.json 該交易日收盤；前一日以 vix.json 前一筆為準
+const vixLive = () => liveOn() && LIVE.vix && LIVE.vix.date === LIVE.date ? LIVE.vix : null;
+function vixAt(ds){   // 回傳 {v, p, o, h, l, k}；k＝在 vix.json 的位置（盤中為 null）
+  if (!V) return null;
+  const k = V.ix.get(ds); if (k == null) return null;
+  return {v: V.c[k], p: k > 0 ? V.c[k-1] : null, o: V.o[k], h: V.h[k], l: V.l[k], k};
+}
+function vixPctl(v, k){   // 收盤分位：與 vix.json 中當日以前（含）的收盤比較
+  if (!V || v == null) return null;
+  const a = V.c.slice(0, k == null ? V.c.length : k + 1).filter(x => x != null); if (a.length < 20) return null;
+  return {q: a.filter(x => x <= v).length / a.length * 100, n: a.length};
+}
+function vixBox(){
+  const lv = vixLive(); let r, when;
+  if (lv) { r = {v: lv.last, p: lv.ref, o: lv.open, h: lv.high, l: lv.low, k: null}; when = `${fds(lv.date)} ${lv.time.slice(0,5)}（報價至 ${lv.time}）`; }
+  else { r = vixAt(W.dates[idx]); when = fds(W.dates[idx]) + ' 收盤'; }
+  if (!V && !lv) return `<div class="vix"><div class="sub">臺指 VIX</div><div class="sub">讀取中…</div></div>`;
+  if (!r || r.v == null) return `<div class="vix"><div class="sub">臺指 VIX</div><div class="big num">—</div><div class="sub">${fd(W.dates[idx])} 無資料（本站自 ${V && V.dates.length ? fd(V.dates[0]) : '—'} 起）</div></div>`;
+  const ch = r.p ? r.v - r.p : null, cp = ch != null ? ch / r.p * 100 : null, q = vixPctl(r.v, r.k);
+  return `<div class="vix"><div class="sub">臺指 VIX</div>
+    <div style="display:flex;gap:4px 14px;align-items:baseline;flex-wrap:wrap"><span class="big num">${r.v.toFixed(2)}</span><span class="chg num ${cls(ch)}">${ch == null ? '' : (ch>0?'+':'') + ch.toFixed(2) + '（' + (cp>0?'+':'') + cp.toFixed(1) + '%）'}</span></div>
+    <div class="sub">${r.h != null ? `高 <b class="num">${r.h.toFixed(2)}</b>／低 <b class="num">${r.l.toFixed(2)}</b>　` : ''}${q ? `分位 <b class="num">${q.q.toFixed(0)}</b>（近 ${q.n} 日）` : ''}</div>
+    <div class="sub">最後更新 ${when}</div></div>`;
+}
+function drawVix(){
+  if (!V) return;
+  const ds = W.dates[idx], e0 = V.dates.filter(d => d <= ds).length - 1;
+  if (e0 < 1) { $('#vixchart').innerHTML = ''; $('#vixnote').textContent = `所選交易日 ${fd(ds)} 早於本站臺指 VIX 資料起點 ${V.dates.length ? fd(V.dates[0]) : '—'}。`; return; }
+  const s = 0, e = e0, Wd = 420, H = 170, x = i => (i - s) / Math.max(1, e - s) * Wd;
+  const cs = V.c.slice(s, e+1).filter(v => v != null), lo = Math.floor(Math.min(...cs) / 5) * 5, hi = Math.ceil(Math.max(...cs) / 5) * 5;
+  const y = v => 22 + (1 - (v - lo) / (hi - lo || 1)) * (H - 32);
+  const wi = d => { let a = 0, b = W.dates.length - 1; while (a < b) { const m = (a + b + 1) >> 1; if (W.dates[m] <= d) a = m; else b = m - 1; } return W.dates[a] === d ? a : -1; };
+  const tv = [], tp = []; for (let i = s; i <= e; i++) { const j = wi(V.dates[i]); tv.push(j >= 0 && W.taiex[j] ? W.taiex[j] : null); }
+  const tl = tv.filter(v => v).map(Math.log), tmin = Math.min(...tl), tmax = Math.max(...tl), ty = v => 22 + (1 - (Math.log(v) - tmin) / (tmax - tmin || 1)) * (H - 32);
+  let g = '', lastM = '';
+  for (let i = s; i <= e; i++) { const m = V.dates[i].slice(4,6); if (m !== lastM) { if (lastM) g += `<line x1="${x(i)}" x2="${x(i)}" y1="0" y2="100%" stroke="var(--line)"/>`; g += `<text x="${x(i)+2}" y="11">${+m}月</text>`; lastM = m; } }
+  for (const v of [lo, (lo + hi) / 2, hi]) g += `<line x1="0" x2="${Wd}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-dasharray="3 3"/><text x="${Wd-2}" y="${y(v)+11}" text-anchor="end">${v}</text>`;
+  let pt = '', pv = '';
+  for (let i = s; i <= e; i++) { if (tv[i-s]) pt += (pt ? 'L' : 'M') + x(i).toFixed(1) + ' ' + ty(tv[i-s]).toFixed(1); if (V.c[i] != null) pv += (pv ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(V.c[i]).toFixed(1); }
+  g += `<path d="${pt}" fill="none" stroke="var(--fg)" stroke-width="1" opacity=".35"/><path d="${pv}" fill="none" stroke="#d99a1e" stroke-width="1.8"/>`;
+  g += `<rect x="0" y="0" width="${Wd}" height="${H}" fill="transparent" id="vixhit"/>`;
+  $('#vixchart').innerHTML = g;
+  hover('#vixhit', s, e, x, i => `${fd(V.dates[i])}<br>臺指 VIX ${V.c[i] != null ? V.c[i].toFixed(2) : '—'}${V.h[i] != null ? `（高 ${V.h[i].toFixed(2)}／低 ${V.l[i].toFixed(2)}）` : ''}<br>加權 ${tv[i-s] ? tv[i-s].toFixed(0) : '—'}`);
+  $('#vixnote').textContent = `臺指 VIX＝期交所以臺指選擇權報價推算的未來 30 天預期年化波動率（CBOE VIX 公式），俗稱恐慌指標，越高代表市場預期波動越大；例如 VIX 30 約等於未來 30 天加權指數一個標準差約 ±8.7%。` +
+    `本站資料自 ${fd(V.dates[0])} 起共 ${V.dates.length} 個交易日：期交所免費下載只提供最近約 4 個月，更早的歷史尚未取得，之後逐日累積；分位數只和本站已有的收盤比，樣本短時參考性低（少於 20 日不顯示）。` +
+    `收盤取期交所每月下載檔（13:45 收盤值），盤中取期交所行情資訊網、約 5 分鐘更新；當日高低取自盤後即時報價，較早日期沒有。只供觀察，不是交易訊號。資料來源：臺灣期貨交易所。`;
 }
 const XS = {'-1': ['下跌瘋狂', 'var(--down)'], '1': ['上漲瘋狂', 'var(--up)'], '2': ['資金集中炒作', '#d99a1e'], '0': ['常態', 'var(--flat)']};
 function xEpisodes(){
