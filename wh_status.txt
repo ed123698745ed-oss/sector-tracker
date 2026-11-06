@@ -1,0 +1,2 @@
+run_at 2026-11-06 13:35:00 codes 1967 returned 1967 seconds 127.0 requests 21 errors 0 
+ok full date 20261106 taiex 39690.74 (-4.53%) priced 1949/1967 all 13:35 n 1949 up 120 down 1806 lu 15 ld 56 base 20261105
