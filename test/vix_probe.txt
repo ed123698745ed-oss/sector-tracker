@@ -1,181 +1,85 @@
-== PAGE cht/7/vixMinNew links:
-href="/cht/../file/taifex/CHINESE/12/LEI.pdf"
-href="/cht/../file/taifex/CHINESE/7/trade_volume.ods"
-href="/cht/../file/taifex/CHINESE/9/期交所各部門對外窗口名單.pdf"
-href="/cht/../file/taifex/CHINESE/9/臺灣期貨交易所金融市場基本架構資訊揭露報告.pdf"
-href="/cht/../file/taifex/eng/eng9/Eligible Foreign Exchanges and Contracts Granted by the SFB.ods"
-href="/cht/5/qDFilesCht"
-href="/cht/7/vixDaily3MNew"
-href="/cht/7/vixMin3MNew"
-href="/cht/7/vixMinNew"
-href="/cht/7/vixQA"
-href="/cht/8/spanRiskParameterFile"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/QCCP/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/csr/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/eLearnPlatform/index_eLearn.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/fut_anti_fraud/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/investmentRisk/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/newrule2026q2/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/sGold/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/stc_weekly/index.html"
-href="https://learn.taifex.com.tw/CompanyProfile"
-href="https://www.facebook.com/sharer/sharer.php?u=https://www.taifex.com.tw/cht/7/vixMinNew"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/11/attach/20250319_應集中新聞稿.pdf"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/WBS-Cht.pdf"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/bim.pdf"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/pimp.pdf"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/工作場所性騷擾防治措施、申訴及懲處辦法.pdf"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/工作場所性騷擾防治措施辦法.pdf"
-href="https://www.taifex.com.tw/file/taifex/event/cht/FX_Hedging/index.html"
-href="https://www.taifex.com.tw/file/taifex/event/cht/anti_fraud/index.html"
-onClick="window.open('getVixData?filesname=20261102')"
-onClick="window.open('getVixData?filesname=20261103')"
-onClick="window.open('getVixData?filesname=20261104')"
-onClick="window.open('getVixData?filesname=20261105')"
-== PAGE cht/7/vixMin3MNew links:
-href="/cht/../file/taifex/CHINESE/12/LEI.pdf"
-href="/cht/../file/taifex/CHINESE/7/trade_volume.ods"
-href="/cht/../file/taifex/CHINESE/9/期交所各部門對外窗口名單.pdf"
-href="/cht/../file/taifex/CHINESE/9/臺灣期貨交易所金融市場基本架構資訊揭露報告.pdf"
-href="/cht/../file/taifex/eng/eng9/Eligible Foreign Exchanges and Contracts Granted by the SFB.ods"
-href="/cht/5/qDFilesCht"
-href="/cht/7/vixDaily3MNew"
-href="/cht/7/vixMin3MNew"
-href="/cht/7/vixMinNew"
-href="/cht/7/vixQA"
-href="/cht/8/spanRiskParameterFile"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/QCCP/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/csr/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/eLearnPlatform/index_eLearn.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/fut_anti_fraud/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/investmentRisk/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/newrule2026q2/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/sGold/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/stc_weekly/index.html"
-href="https://learn.taifex.com.tw/CompanyProfile"
-href="https://www.facebook.com/sharer/sharer.php?u=https://www.taifex.com.tw/cht/7/vixMin3MNew"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/11/attach/20250319_應集中新聞稿.pdf"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/WBS-Cht.pdf"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/bim.pdf"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/pimp.pdf"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/工作場所性騷擾防治措施、申訴及懲處辦法.pdf"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/工作場所性騷擾防治措施辦法.pdf"
-href="https://www.taifex.com.tw/file/taifex/event/cht/FX_Hedging/index.html"
-href="https://www.taifex.com.tw/file/taifex/event/cht/anti_fraud/index.html"
-onClick="window.open('https://www.taifex.com.tw/file/taifex/Dailydownload/vix/logdata/202608歷史紀錄波動率指數_新VIX.zip')"
-onClick="window.open('https://www.taifex.com.tw/file/taifex/Dailydownload/vix/logdata/202609歷史紀錄波動率指數_新VIX.zip')"
-onClick="window.open('https://www.taifex.com.tw/file/taifex/Dailydownload/vix/logdata/202610歷史紀錄波動率指數_新VIX.zip')"
-"202608歷史紀錄波動率指數_新VIX.zip"
-"202609歷史紀錄波動率指數_新VIX.zip"
-"202610歷史紀錄波動率指數_新VIX.zip"
-'https://www.taifex.com.tw/file/taifex/Dailydownload/vix/logdata/202608歷史紀錄波動率指數_新VIX.zip'
-'https://www.taifex.com.tw/file/taifex/Dailydownload/vix/logdata/202609歷史紀錄波動率指數_新VIX.zip'
-'https://www.taifex.com.tw/file/taifex/Dailydownload/vix/logdata/202610歷史紀錄波動率指數_新VIX.zip'
-Dailydownload/vix/logdata/202608歷史紀錄波動率指數_新VIX.zip
-Dailydownload/vix/logdata/202609歷史紀錄波動率指數_新VIX.zip
-Dailydownload/vix/logdata/202610歷史紀錄波動率指數_新VIX.zip
-== PAGE cht/7/vixDaily3MNew links:
-href="/cht/../file/taifex/CHINESE/12/LEI.pdf"
-href="/cht/../file/taifex/CHINESE/7/trade_volume.ods"
-href="/cht/../file/taifex/CHINESE/9/期交所各部門對外窗口名單.pdf"
-href="/cht/../file/taifex/CHINESE/9/臺灣期貨交易所金融市場基本架構資訊揭露報告.pdf"
-href="/cht/../file/taifex/eng/eng9/Eligible Foreign Exchanges and Contracts Granted by the SFB.ods"
-href="/cht/5/qDFilesCht"
-href="/cht/7/vixDaily3MNew"
-href="/cht/7/vixMin3MNew"
-href="/cht/7/vixMinNew"
-href="/cht/7/vixQA"
-href="/cht/8/spanRiskParameterFile"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/QCCP/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/csr/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/eLearnPlatform/index_eLearn.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/fut_anti_fraud/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/investmentRisk/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/newrule2026q2/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/sGold/index.html"
-href="https://activity.taifex.com.tw/file/taifex/event/cht/stc_weekly/index.html"
-href="https://learn.taifex.com.tw/CompanyProfile"
-href="https://www.facebook.com/sharer/sharer.php?u=https://www.taifex.com.tw/cht/7/vixDaily3MNew"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/11/attach/20250319_應集中新聞稿.pdf"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/WBS-Cht.pdf"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/bim.pdf"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/pimp.pdf"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/工作場所性騷擾防治措施、申訴及懲處辦法.pdf"
-href="https://www.taifex.com.tw/file/taifex/CHINESE/工作場所性騷擾防治措施辦法.pdf"
-href="https://www.taifex.com.tw/file/taifex/event/cht/FX_Hedging/index.html"
-href="https://www.taifex.com.tw/file/taifex/event/cht/anti_fraud/index.html"
-onClick="window.open('https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/202608new.txt')"
-onClick="window.open('https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/202609new.txt')"
-onClick="window.open('https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/202610new.txt')"
-onClick="window.open('https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/202611new.txt')"
-'https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/202608new.txt'
-'https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/202609new.txt'
-'https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/202610new.txt'
-'https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/202611new.txt'
-Dailydownload/vix/log2data/202608new.txt
-Dailydownload/vix/log2data/202609new.txt
-Dailydownload/vix/log2data/202610new.txt
-Dailydownload/vix/log2data/202611new.txt
-== PAGE cht/7/vixDailyNew links:
-== https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/202610new.txt -> 200 text/plain bytes=788 
+== -X POST -H Content-Type: application/json -d {} https://mis.taifex.com.tw/futures/api/getQuoteListVIX -> 200 application/json bytes=320 
+{"RtCode":"0","RtMsg":"","RtData":{"QuoteList":[{"DispCName":"臺指選擇權波動率指數","DispEName":"TAIWAN VIX","SymbolID":"TAIWANVIX","CLastPrice":"46.52","COpenPrice":"35.30","CHighPrice":"59.08","CLowPrice":"35.30","CRefPrice":"39.92","CDate":"20261106","CTime":"134500","CDiff":"6.60","CDiffRate":"0.1653"}]}}
+== https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/202608new.txt -> 200 text/plain bytes=856 
 交易日期	時間(時/分/秒/毫秒)	臺指選擇權波動率指數	收盤前1分鐘平均指數
 --------	-------------------	--------------------	-------------------
-20261001	13450000			22.43		22.45
-20261002	13450000			21.89		21.90
-20261005	13450000			23.45		23.46
-20261006	13450000			23.53		23.53
-20261007	13450000			23.29		23.29
-20261008	13450000			24.55		24.55
-20261012	13450000			25.15		25.16
-20261013	13450000			26.72		26.72
-20261014	13450000			26.08		26.08
-20261015	13450000			30.61		30.61
-20261016	13450000			26.37		26.33
-20261019	13450000			29.69		29.70
-20261020	13450000			30.79		30.82
-20261021	13450000			28.40		28.37
-20261022	13450000			30.31		30.35
-20261027	13450000			29.86		29.86
-20261028	13450000			27.41		27.42
-20261029	13450000			28.25		28.26
-20261030	13450000			30.95		30.88
+20260803	13450000			39.46		39.47
+20260804	13450000			38.90		38.91
+20260805	13450000			35.36		35.37
+20260806	13450000			36.07		36.07
+20260807	13450000			35.46		35.47
+20260810	13450000			35.19		35.18
+20260811	13450000			33.55		33.55
+20260812	13450000			31.88		31.88
+20260813	13450000			31.09		31.08
+20260814	13450000			30.22		30.23
+20260817	13450000			29.07		29.08
+20260818	13450000			30.45		30.46
+20260819	13450000			30.84		30.83
+20260820	13450000			30.03		30.02
+20260821	13450000			29.21		29.23
+20260824	13450000			29.83		29.86
+20260825	13450000			29.51		29.50
+20260826	13450000			28.67		28.68
+20260827	13450000			27.09		27.10
+20260828	13450000			24.99		25.00
+20260831	13450000			24.45		24.46
 
-== https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/20261105new.txt -> 302  bytes=0 
+== https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/202607new.txt -> 302  bytes=0 
 
-== https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/202610.txt -> 302  bytes=0 
-
-== https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/200612new.txt -> 302  bytes=0 
-
-== https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/201001new.txt -> 302  bytes=0 
-
-== https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/202001new.txt -> 302  bytes=0 
-
-== https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/202510new.txt -> 302  bytes=0 
-
-== https://www.taifex.com.tw/file/taifex/Dailydownload/vix/log2data/ -> 302  bytes=0 
-
-== -X POST -H Content-Type: application/json -d {} https://mis.taifex.com.tw/futures/api/getQuoteListVIX -> 200 application/json bytes=320 
-{"RtCode":"0","RtMsg":"","RtData":{"QuoteList":[{"DispCName":"
-== -X POST -H Content-Type: application/json -d {"SymbolID":["TAIWANVIX-S"]} https://mis.taifex.com.tw/futures/api/getQuoteDetail -> 200 application/json bytes=928 
-{"RtCode":"0","RtMsg":"","RtData":{"QuoteList":[{"Status":"","SymbolID":"","SpotID":"","DispCName":"","DispEName":"","COpenPrice":"","CHighPrice":"","CLowPrice":"","CLastPrice":"","CSingleVolume":"","CTestPrice":"","CTestVolume":"","CTestTime":"","CTotalVolume":"","OpenInterest":"","CRefPrice":"","CCeilPrice":"","CFloorPrice":"","CBidCount":"","CAskCount":"","CBidUnit":"","CAskUnit":"","CDate":"","CTime":"","CBidPrice1":"","CBidPrice2":"","CBidPrice3":"","CBidPrice4":"","CBidPrice5":"","CAskPrice1":"","CAskPrice2":"","CAskPrice3":"","CAskPrice4":"","CAskPrice5":"","CBidSize1":"","CBidSize2":"","CBidSize3":"","CBidSize4":"","CBidSize5":"","CAskSize1":"","CAskSize2":"","CAskSize3":"","CAskSize4":"","CAskSize5":"","CExtBidPrice":"","CExtAskPrice":"","CExtBidSize":"","CExtAskSize":"","CTermHighPrice":"","CTermLowPrice":"","CBestBidPrice":"","CBestAskPrice":"","CBestBidSize":"","CBestAskSize"
-== -X POST -H Content-Type: application/json -d {"MarketType":"0","SymbolType":"F","KindID":"1","CID":"TXF","ExpireMonth":"","RowSize":"全部","PageNo":"","SortColumn":"","AscDesc":"A"} https://mis.taifex.com.tw/futures/api/getQuoteList -> 200 application/json bytes=4503 
-{"RtCode":"0","RtMsg":"","RtData":{"QuoteList":[{"SymbolID":"TXF-S","SpotID":"","DispCName":"
-== MIS page bytes=4443
-src="/futures/assets/lib/jquery/jquery.min.js"
-src="/futures/assets/lib/bootstrap/bootstrap.bundle.min.js"
-src="/futures/assets/lib/bootstrap/bootstrap-submenu.js"
-src="/futures/assets/lib/jquery/jquery.marquee.min.js"
-src="/futures/assets/lib/highchart/highstock.js"
-src="/futures/assets/lib/xlsx-style/jszip.js"
-src="/futures/assets/lib/xlsx-style/xlsx.js"
-src="/futures/assets/js/charts.js"
-src="/futures/assets/js/dictionary.js"
-src="/futures/_nuxt/9f5ce3f.js"
--- https://mis.taifex.com.tw/futures/assets/lib/jquery/jquery.min.js
--- https://mis.taifex.com.tw/futures/assets/lib/bootstrap/bootstrap.bundle.min.js
--- https://mis.taifex.com.tw/futures/assets/lib/bootstrap/bootstrap-submenu.js
--- https://mis.taifex.com.tw/futures/assets/lib/jquery/jquery.marquee.min.js
--- https://mis.taifex.com.tw/futures/assets/lib/highchart/highstock.js
--- https://mis.taifex.com.tw/futures/assets/lib/xlsx-style/jszip.js
--- https://mis.taifex.com.tw/futures/assets/lib/xlsx-style/xlsx.js
--- https://mis.taifex.com.tw/futures/assets/js/charts.js
+== https://www.taifex.com.tw/cht/7/getVixData?filesname=20261105 -> 200 application/octet-stream;charset=UTF-8 bytes=30701 
+交易日期	時間(時/分/秒/毫秒)	臺指選擇權波動率指數
+--------	-------------------	--------------------
+20261105	9000000			36.74
+20261105	9001500			36.65
+20261105	9003000			36.68
+20261105	9004500			36.68
+20261105	9010000			36.51
+20261105	9011500			36.69
+20261105	9013000			36.72
+20261105	9014500			36.53
+20261105	9020000			36.63
+20261105	9021500			36.61
+20261105	9023000			36.56
+20261105	9024500			36.46
+20261105	9030000			36.45
+20261105	9031500			36.47
+20261105	9033000			36.33
+20261105	9034500			36.32
+20261105	9040000			36.51
+20261105	9041500			36.47
+20261105	9043000			36.46
+20261105	9044500			36.49
+20261105	9050000			36.46
+20261105	9051500			36.43
+20261105	9053000			36.45
+20261105	9054500			36.36
+20261105	9060000			36.32
+20261105	9061500			36.32
+20261105	9063000			36.45
+20261105	9064500			36.48
+20261105	9070000			36.52
+20261105	9071500			36.50
+20261105	9073000			36.53
+20261105	9074500			36.52
+20261105	9080000			36.50
+20261105	9081500			36.52
+20261105	9083000			36.55
+20261105	9084500			36.58
+20261105	9090000			36.57
+20261105	9091500			36.63
+20261105	9093000			36.61
+20261105	9094500			36.62
+20261105	9100000			36.75
+20261105	9101500			36.78
+20261105	9103000			36.78
+20261105	9104500			36.82
+20261105	9110000			36.90
+20261105	9111500			36.89
+20261105	9113000			36.89
+20261105	9114500			37.00
+20261105	9120000			37.05
+20261105	9121500			37.17
+20261105	9123000			37.24
+20261105	9124500			37.31
+20261105	9130000			37.38
