@@ -2286,3 +2286,10 @@ quote_time_range ['11:47:03'] ['12:12:01']
 hits 0 
 count_check returned 611 baseline 610 (20261105)
 
+run_at 2026-11-06 12:22:40
+codes 611 returned 611 priced 610 seconds 91.2
+requests 13 errors 0 last_error 
+quote_time_range ['11:47:43'] ['12:22:22']
+hits 1 軟體雲端(C)
+count_check returned 611 baseline 610 (20261105)
+
