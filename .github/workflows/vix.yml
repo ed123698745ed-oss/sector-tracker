@@ -1,0 +1,41 @@
+name: 臺指VIX手動更新
+
+# 平日由 daily.yml「臺指 VIX」步驟更新；本工作供首次回補與手動補跑（改 test/VIX_TRIGGER 即觸發）
+on:
+  workflow_dispatch:
+  push:
+    paths: ['test/VIX_TRIGGER']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-update
+  cancel-in-progress: false
+
+jobs:
+  vix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 抓取並產出
+        run: |
+          python3 tests/test_vix.py
+          python3 scripts/vix.py daily
+      - name: 提交
+        run: |
+          git config user.name "sector-tracker-bot"; git config user.email "actions@users.noreply.github.com"
+          git add archive/raw/taifex_vix data/vix_daily.json docs/vix.json
+          git diff --cached --quiet && { echo "無變更"; exit 0; }
+          git commit -qm "臺指VIX更新 $(TZ=Asia/Taipei date +%Y-%m-%d)"
+          for i in 1 2 3; do git pull --rebase --autostash -q && git push -q && { pushed=1; break; }; sleep 5; done; [ -n "$pushed" ] || { echo "::error::git push 重試後仍失敗"; exit 1; }
+      - name: 失敗通知（LINE）
+        if: failure()
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        run: python3 scripts/notify_failure.py "${{ github.workflow }}" "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true

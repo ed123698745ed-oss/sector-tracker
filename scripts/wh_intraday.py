@@ -2,7 +2,7 @@
 
 從證交所「基本市況報導」（mis.twse.com.tw，涵蓋上市與上櫃）查加權指數、全市場上市櫃普通股（約 1,950 檔，
 每次 100 檔一批、約 20 次查詢、2～3 分鐘；每 10 分鐘一次，其餘 5 分鐘只查指數與個股表）的最新成交，算全市場漲跌家數、漲跌停與分布，並保留個股表各檔價格，
-寫成 wh_intraday.json（另含全市場普通股最新成交價 px，供融資觀察盤中暫估，每 10 分鐘更新），強制推到 repo 的 live 分支（單一 commit，不進 main、不觸發 Pages 重建）。
+寫成 wh_intraday.json（另含全市場普通股最新成交價 px，供融資觀察盤中暫估，每 10 分鐘更新；另含期交所臺指 VIX，每 5 分鐘），強制推到 repo 的 live 分支（單一 commit，不進 main、不觸發 Pages 重建）。
 網頁由 raw.githubusercontent.com 讀取；收盤正式資料（wh.json）日期追上後網頁自動改回收盤資料。
 
 只供觀察，不是交易訊號。
@@ -30,6 +30,7 @@ import glob  # noqa: E402
 import intraday  # noqa: E402
 from intraday import fetch, price, pct, at_limit_up, market_of, alert_once, TPE, ROOT  # noqa: E402
 from wh_prices import is_common  # noqa: E402
+import vix  # noqa: E402
 
 intraday.BATCH = 100  # 2026-10-30 實測：100 檔一批正常回傳，200 檔回傳 0 筆、400 檔 URI 過長
 
@@ -133,6 +134,13 @@ def snapshot(w, tse, uni, now=None, full=True, prev_all=None, prev_px=None):
            'source': '臺灣證券交易所 基本市況報導（mis.twse.com.tw）', 'all': allg, 'stocks': stocks,
            'px': ({'date': qdate, 'time': now.strftime('%H:%M'), 'p': pall} if full else
                   (prev_px if prev_px and prev_px.get('date') == qdate else None))}
+    try:   # 臺指 VIX（期交所行情資訊網）；失敗或日期不是今日就不帶，不影響其他盤中資料
+        v = vix.fetch_live()
+        out['vix'] = v if v['date'] == qdate else None
+        lines.append(f"vix {v['date']} {v['time']} {v['last']}" + ('' if out['vix'] else ' (date≠today, 不帶)'))
+    except Exception as e:
+        out['vix'] = None
+        lines.append(f'vix 失敗：{str(e)[:120]}')
     a = allg or {}
     lines.append(f"ok {'full' if full else 'light'} date {qdate} taiex {tx} ({(tx / ty - 1) * 100:+.2f}%) priced {priced}/{len(codes)} "
                  f"all {a.get('time')} n {a.get('n')} up {a.get('up')} down {a.get('down')} lu {a.get('lu')} ld {a.get('ld')} base {w['dates'][-1]}")
