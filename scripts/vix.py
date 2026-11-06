@@ -13,6 +13,7 @@
   - archive/raw/taifex_vix/YYYYMMnew.txt  每月檔原始內容（每次覆蓋為最新版）
   - data/vix_daily.json  {日期: {c 收盤, c1m 收盤前1分鐘平均, o/h/l 當日開高低（取自盤後即時報價，可能缺）}}
     已存在的日期不刪除：期交所下架舊月份後，網站仍保有本站抓過的歷史。
+    2026/08 以前的歷史由 scripts/vix_import_mm.py 自財經M平方併入（src='mm'），本程式不覆蓋、不刪除。
   - docs/vix.json  網頁用
 
 防錯（對照《00_Emit事故檢討與建置防錯清單》）：
@@ -41,7 +42,7 @@ RAW_DIR = os.path.join(ROOT, 'archive', 'raw', 'taifex_vix')
 DAILY = os.path.join(ROOT, 'data', 'vix_daily.json')
 OUT = os.path.join(ROOT, 'docs', 'vix.json')
 UA = 'Mozilla/5.0 (sector-tracker; Ai Bot Team Emit)'
-SOURCE = '臺灣期貨交易所 臺指選擇權波動率指數（每月下載檔、行情資訊網 mis.taifex.com.tw）'
+SOURCE = '臺灣期貨交易所 臺指選擇權波動率指數（每月下載檔、行情資訊網 mis.taifex.com.tw）；2026/08 以前為財經M平方圖表 46328（scripts/vix_import_mm.py）'
 
 
 def _req(url, data=None, tries=4, timeout=30):
@@ -139,7 +140,8 @@ def build(daily):
     ds = sorted(daily)
     out = {'source': SOURCE, 'updated': datetime.datetime.now(TPE).strftime('%Y-%m-%d %H:%M'),
            'dates': ds, 'c': [daily[d].get('c') for d in ds], 'o': [daily[d].get('o') for d in ds],
-           'h': [daily[d].get('h') for d in ds], 'l': [daily[d].get('l') for d in ds]}
+           'h': [daily[d].get('h') for d in ds], 'l': [daily[d].get('l') for d in ds],
+           'src': [daily[d].get('src') or 'taifex' for d in ds]}
     with open(OUT, 'w', encoding='utf-8') as f:
         json.dump(out, f, ensure_ascii=False, separators=(',', ':'))
     return out
