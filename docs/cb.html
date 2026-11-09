@@ -95,7 +95,7 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
       <h1>可轉債追蹤</h1>
       <div class="sub" id="sub">讀取資料中…</div>
     </div>
-    <div style="display:flex;gap:8px;align-items:center"><span class="unverified" title="Ed 確認前為試行">試行 CB01</span><button id="reload" type="button" aria-label="重新載入頁面">重新整理</button></div>
+    <div style="display:flex;gap:8px;align-items:center"><span class="unverified" title="極端門檻 Ed 2026-11-10 確認（歷史前 10%）">規則 CB02</span><button id="reload" type="button" aria-label="重新載入頁面">重新整理</button></div>
   </header>
 
   <section>
@@ -175,11 +175,11 @@ function tabs(sel, opts, get, set){
 }
 
 function drawToday(){
-  const t = C.today[V], th = C.extreme.le105;
+  const t = C.today[V], th = t.extreme_th;
   const lvl = t.extreme ? `<span style="font-size:20px;font-weight:700;color:var(--d5)">● 歷史極端區</span>`
     : `<span style="font-size:20px;font-weight:700;color:var(--muted)">● 未達極端</span>`;
   $('#state').innerHTML = lvl +
-    `<span class="sub">≤105 占比 <b class="num" style="font-size:20px;color:var(--fg)">${pc(t.le105)}</b>／極端門檻 ≥${th * 100}%（${C.extreme.status}）</span>` +
+    `<span class="sub">≤105 占比 <b class="num" style="font-size:20px;color:var(--fg)">${pc(t.le105)}</b>／極端門檻 ≥${pc(th)}（${C.extreme.status}）</span>` +
     `<span class="sub">樣本 <b class="num">${t.n}</b> 檔</span>`;
   const card = (h, v, p, note) => `<div class="card"><h3>${h}</h3><div class="k">今日<b>${v}</b></div><div class="k">歷史百分位<b>${p}</b></div>${note ? `<div class="k">${note}</div>` : ''}</div>`;
   $('#cards').innerHTML =
@@ -259,7 +259,7 @@ function renderX(){
     g += `<rect x="${a.toFixed(1)}" y="14" width="${Math.max(1, b - a).toFixed(1)}" height="${H - 32}" fill="var(--d4)" opacity=".22"/>`; }
   for (const v of [0, .25, .5, .75, 1]) g += `<line x1="0" x2="${Wd - 30}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${Wd - 2}" y="${y(v) + 4}" text-anchor="end">${v * 100}%</text>`;
   g += xAxis(s, e, Wd, x, H);
-  const th = C.extreme.le105;
+  const th = C.today[V].extreme_th;
   g += `<line x1="0" x2="${Wd - 30}" y1="${y(th)}" y2="${y(th)}" stroke="var(--d5)" stroke-dasharray="4 3"/>`;
   const st = Math.max(1, Math.floor((e - s) / ((Wd - 30) * 1.5)));
   const line = (arr, col) => { let p = '';
@@ -329,7 +329,7 @@ function init(){
 來源：${C.source}，每日一檔，${fd(C.start)} 起。母體為當日檔案內全部代號（含交換公司債），只取等價列、不含議價。<br>
 主口徑價格用「明日參價」：當日有等價成交＝收市價；無成交則沿用前一參考價，可能高於實際可成交價。「只算當日有成交」改用收市價、只計有成交者；「剔除掛牌未滿 60 日」以資料內首見日起算掛牌交易日，2007-01-02 已在市者視為已滿。<br>
 清單的「漲跌」：有成交者為櫃買公布的等價漲跌；無成交者為參價與前一交易日參價的差（標「參價」）。<br>
-歷史極端：≤105 占比 ≥${C.extreme.le105 * 100}%，相隔 ${C.extreme.merge_gap} 個交易日內的段落合併為同一期間；門檻${C.extreme.status}。<br>
+歷史極端：≤105 占比落在歷史前 ${Math.round((1 - C.extreme.q) * 100)}%，即該口徑 ${fd(C.start)} 起全部交易日 ≤105 占比的第 ${Math.round(C.extreme.q * 100)} 百分位（今日主口徑 ${pc(C.extreme.by.all)}、只算有成交 ${pc(C.extreme.by.traded)}、剔除未滿 60 日 ${pc(C.extreme.by.age60)}）；門檻每日隨新資料重算，用的是全部歷史，含當時尚未發生的日子，只供觀察。走勢圖的極端期間依主口徑，相隔 ${C.extreme.merge_gap} 個交易日內的段落合併為同一期間；門檻：${C.extreme.status}。<br>
 未涵蓋：本資料沒有賣回日、剩餘年限、轉換價，無法分辨價格低於 100 是信用風險還是時間價值；沒有 2007 年以前的資料；只有盤後資料，不做盤中更新。`;
 }
 Promise.all([fetch('cb.json?t=' + Date.now(), {cache: 'no-store'}).then(r => r.json()), fetch('cb_list.json?t=' + Date.now(), {cache: 'no-store'}).then(r => r.json())])

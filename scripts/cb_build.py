@@ -1,6 +1,6 @@
 """可轉債追蹤分頁：由 archive/raw/tpex_cb 全部原始檔計算每日分布，輸出 docs/cb.json、docs/cb_list.json。
 
-只供觀察市場，不是交易訊號。口徑依《Elon交接_2026-11-03_可轉債追蹤分頁_給Emit》，規則版本 CB01：
+只供觀察市場，不是交易訊號。口徑依《Elon交接_2026-11-03_可轉債追蹤分頁_給Emit》，規則版本 CB02（CB01 起，極端門檻 2026-11-10 改為歷史前 10%）：
   母體：當日檔案內所有代號（含交換公司債），只取「等價」列，排除議價
   價格：主口徑＝明日參價（當日有等價成交＝收市；無成交沿用前一參考價），只取 >0
   對照口徑：traded＝只算當日有等價成交者、以收市計；age60＝剔除掛牌未滿 60 個交易日的新債
@@ -9,16 +9,18 @@
   百分位：該值在 2007-01-02 至當日（含）全部交易日中的位置＝(≤ 該值的天數) ÷ 總天數
     中位數越低越極端，網頁另以 100−百分位 呈現「低於多少比例的歷史日」
   近 20 日變化：≤105 占比 當日 − 20 個交易日前，同法算百分位
-  歷史極端（暫用 Elon 參考值，待 Ed 確認）：≤105 占比 ≥70%；期間合併相隔 ≤20 個交易日的段落
+  歷史極端（CB02，Ed 2026-11-10 確認）：≤105 占比達歷史前 10%＝該口徑 2007 年起全部交易日 ≤105 占比的第 90 百分位；
+    各口徑各自計算，每日隨新資料重算；期間（主口徑）合併相隔 ≤20 個交易日的段落
 
 用法：python3 scripts/cb_build.py [--expect YYYYMMDD]
 """
-import datetime as dt, json, os, sys
+import datetime as dt, json, math, os, sys
 from bisect import bisect_right
 from cb_common import ROOT, archived_dates, closed_dates, load
 
-RULE = 'CB01'
-EXTREME = 0.70        # ≤105 占比門檻（暫用）
+RULE = 'CB02'
+EXTREME_Q = 0.90      # 歷史前 10%：≤105 占比第 90 百分位為門檻（Ed 2026-11-10）
+STATUS = '歷史前 10%，Ed 2026-11-10 確認；每日依全部歷史重算'
 MERGE_GAP = 20
 AGE_MIN = 60
 TPE = dt.timezone(dt.timedelta(hours=8))
@@ -31,6 +33,12 @@ def stats(prices):
     p = sorted(prices)
     med = p[n // 2] if n % 2 else (p[n // 2 - 1] + p[n // 2]) / 2
     return [n, sum(x < 100 for x in p) / n, sum(x <= 105 for x in p) / n, sum(x <= 110 for x in p) / n, med]
+
+
+def q_threshold(vals, q=EXTREME_Q):
+    """門檻＝排序後第 ceil(q·n) 個值；≥ 門檻者歷史百分位必 ≥ q。"""
+    x = sorted(v for v in vals if v is not None)
+    return x[math.ceil(q * len(x)) - 1] if x else None
 
 
 def pct_rank(hist, v):
@@ -81,10 +89,13 @@ def main():
         chv = [x for x in ch if x is not None]
         t['chg20'] = ch[-1] if ch else None
         t['chg20_pct'] = pct_rank(sorted(chv), t['chg20'])
-        t['extreme'] = t['le105'] is not None and t['le105'] >= EXTREME
+        th = q_threshold(le)
+        t['extreme_th'] = th
+        t['extreme'] = t['le105'] is not None and th is not None and t['le105'] >= th
         today[v] = {k: (round(x, 5) if isinstance(x, float) else x) for k, x in t.items()}
     # 歷史極端期間（主口徑）
     le = series['all']['le105']
+    EXTREME = today['all']['extreme_th']
     runs, s = [], None
     for i, x in enumerate(le + [None]):
         hit = x is not None and x >= EXTREME
@@ -108,7 +119,8 @@ def main():
                          'ongoing': b == len(dates) - 1})
     now = dt.datetime.now(TPE).strftime('%Y-%m-%d %H:%M')
     meta = {'rule': RULE, 'date': D, 'updated': now, 'start': dates[0], 'days': len(dates),
-            'extreme': {'le105': EXTREME, 'merge_gap': MERGE_GAP, 'status': '暫用 Elon 參考值，待 Ed 確認'},
+            'extreme': {'q': EXTREME_Q, 'le105': EXTREME, 'by': {v: today[v]['extreme_th'] for v in today},
+                        'merge_gap': MERGE_GAP, 'status': STATUS},
             'source': '櫃買中心 RSta0113 轉(交)換公司債買賣斷交易行情表（等價）'}
     json.dump({**meta, 'dates': dates, 'series': series, 'today': today, 'episodes': episodes},
               open(os.path.join(ROOT, 'docs', 'cb.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
@@ -124,7 +136,7 @@ def main():
               open(os.path.join(ROOT, 'docs', 'cb_list.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     t = today['all']
     print(f'{D}：{t["n"]} 檔，<100 {t["lt100"]:.1%}（{t["lt100_pct"]:.0%}），≤105 {t["le105"]:.1%}（{t["le105_pct"]:.0%}），'
-          f'≤110 {t["le110"]:.1%}，中位數 {t["med"]:.2f}；20 日變化 {t["chg20"]:+.1%}（{t["chg20_pct"]:.0%}）；極端期間 {len(episodes)} 段')
+          f'≤110 {t["le110"]:.1%}，中位數 {t["med"]:.2f}；20 日變化 {t["chg20"]:+.1%}（{t["chg20_pct"]:.0%}）；門檻 {EXTREME:.1%}（第 {EXTREME_Q:.0%} 百分位）；極端期間 {len(episodes)} 段')
 
 
 if __name__ == '__main__':
