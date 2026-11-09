@@ -2426,3 +2426,10 @@ quote_time_range ['10:17:00'] ['10:41:58']
 hits 56 晶圓代工(ABC) IP/ASIC(ABC) 網通/高速介面IC(ABC) 矽晶圓(ABC) 記憶體(ABC) 記憶體模組(ABC) 功率元件(ABC) 化合物半導體(ABC) 先進封裝設備(ABC) 封測(ABC) 測試介面(ABC) 半導體材料(ABC) 廠務工程(ABC) 載板(AB) CCL(ABC) 玻纖布/銅箔(ABC) PCB/伺服器板(ABC) 伺服器組裝(ABC) 散熱(ABC) 電源供應器(ABC) BBU(ABC) 機殼/滑軌(ABC) 連接器/線材(ABC) 被動元件(ABC) 光通訊/矽光子(ABC) 網通交換器(ABC) 低軌衛星(ABC) 面板(ABC) 光學鏡頭(ABC) PC/筆電(ABC) 機器人(ABC) 重電(ABC) 電線電纜(ABC) 太陽能/儲能(ABC) 國防軍工(ABC) 汽車零組件(AB) 塑化(ABC) 鋼鐵(AB) 散裝航運(AB) 金控(AB) 生技(ABC) 防疫（口罩/疫苗/快篩）(A) 軟體雲端(ABC) 資安(A) 無人機(ABC) 工業電腦(ABC) 工具機(ABC) 驅動IC(AB) 類比/PMIC(ABC) IC通路(AB) 鉸鏈/軸承(ABC) 檢測分析(ABC) 導線架(ABC) MCU(ABC) 化工(ABC) 電動車(AB)
 count_check returned 611 baseline 610 (20261106)
 
+run_at 2026-11-09 10:52:00
+codes 611 returned 611 priced 610 seconds 72.0
+requests 13 errors 0 last_error 
+quote_time_range ['10:23:10'] ['10:51:48']
+hits 55 晶圓代工(ABC) IP/ASIC(ABC) 網通/高速介面IC(ABC) 矽晶圓(ABC) 記憶體(ABC) 記憶體模組(ABC) 功率元件(ABC) 化合物半導體(ABC) 先進封裝設備(ABC) 封測(ABC) 測試介面(ABC) 半導體材料(ABC) 廠務工程(ABC) 載板(AB) CCL(AB) 玻纖布/銅箔(ABC) PCB/伺服器板(ABC) 伺服器組裝(ABC) 散熱(ABC) 電源供應器(ABC) BBU(ABC) 機殼/滑軌(ABC) 連接器/線材(ABC) 被動元件(ABC) 光通訊/矽光子(ABC) 網通交換器(ABC) 低軌衛星(ABC) 面板(ABC) 光學鏡頭(ABC) PC/筆電(ABC) 機器人(ABC) 重電(ABC) 電線電纜(ABC) 太陽能/儲能(ABC) 國防軍工(ABC) 汽車零組件(AB) 塑化(ABC) 鋼鐵(AB) 散裝航運(AB) 金控(AB) 生技(ABC) 軟體雲端(ABC) 資安(A) 無人機(ABC) 工業電腦(ABC) 工具機(ABC) 驅動IC(AB) 類比/PMIC(ABC) IC通路(AB) 鉸鏈/軸承(ABC) 檢測分析(ABC) 導線架(ABC) MCU(ABC) 化工(ABC) 電動車(ABC)
+count_check returned 611 baseline 610 (20261106)
+
