@@ -111,7 +111,7 @@ td.num{font-size:15px}
   </section>
 
   <section>
-    <h2>臺指 VIX<small>臺指選擇權波動率指數</small><span class="upd" id="u_vix"></span></h2>
+    <h2>臺指 VIX<span class="upd" id="u_vix"></span></h2>
     <div class="panel" id="vixgauge"></div>
     <div class="tabs" id="vtabs"></div>
     <div class="panel">
@@ -137,9 +137,9 @@ td.num{font-size:15px}
         <span class="sub num" id="xwin"></span>
       </div>
       <svg id="xchart" viewBox="0 0 420 220" role="img" aria-label="自2005年起的非常態色帶與加權指數，可縮放與拖曳"></svg>
-      <div class="legend"><span><i style="background:var(--down)"></i>下跌瘋狂</span><span><i style="background:var(--up)"></i>上漲瘋狂</span><span>黑線＝加權指數（對數）。預設顯示近 3 年；按鈕或＋／－縮放，滑鼠滾輪、雙指捏合可縮放，拖曳圖表或「歷史位置」可平移，最早至 2005 年；右端最晚為上方所選交易日。</span></div>
+      <div class="legend"><span><i style="background:var(--down)"></i>下跌瘋狂</span><span><i style="background:var(--up)"></i>上漲瘋狂</span><span>黑線＝加權指數（對數）</span></div>
       <details style="margin-top:10px"><summary class="sub" style="cursor:pointer">歷次非常態期間</summary><div class="tblwrap" style="margin-top:8px"><table id="xtbl"></table></div></details>
-      <div class="note" style="margin-top:8px"><span id="xrule">下跌瘋狂：加權指數收盤比近 15 日最高收盤低 9% 以上時進入，從期間最低收盤反彈 6% 時解除。上漲瘋狂：收盤比近 40 日最低收盤高 20% 以上時進入，從期間最高收盤回落 5% 時解除。</span>解除當日為常態。「波段起點」為進入時窗口內的最高（下跌）或最低（上漲）收盤日；「極值」為期間最低或最高收盤。窗口只用 2005-01-01 起至當日的收盤，不讀未來。資金集中分數（前 5 大成交值個股排除台積電的占比百分位）只供參考，不參與判定。只供觀察，不是交易訊號。規則全文見 <a href="wh-market-state-rules.md">市場狀態規則</a>。</div>
+      <div class="note" style="margin-top:8px"><span id="xrule">下跌瘋狂：加權指數收盤比近 15 日最高收盤低 9% 以上時進入，從期間最低收盤反彈 6% 時解除。上漲瘋狂：收盤比近 40 日最低收盤高 20% 以上時進入，從期間最高收盤回落 5% 時解除。</span>資金集中分數只供參考。<a href="wh-market-state-rules.md">規則全文</a></div>
     </div>
   </section>
 
@@ -182,18 +182,15 @@ td.num{font-size:15px}
     <h2>個股表<small id="stockdate"></small><span class="upd" id="u_tbl"></span></h2>
     <div class="tabs" id="stabs"></div>
     <div class="tblwrap"><table id="tbl"></table></div>
-    <div class="note">均線欄依序為 20／60／120／240 日（紅點＝站上）；創高欄為 20／60／250 日（當日最高價突破前 N 日最高價）。距高點＝收盤離近 250 日最高價。均線、創高、距高點都用還原價（交易所每日漲跌%連乘，含除權息），有配息的股票會和看盤軟體的未還原均線略有不同。</div>
+    <div class="note">均線欄依序為 20／60／120／240 日（紅點＝站上）；創高欄為 20／60／250 日。均線、創高、距高點都用還原價。</div>
   </section>
 
-  <div class="note">
-    只供觀察，不是交易訊號。名單每月最後交易日收盤排名、次月使用：上市市值前 50、上櫃市值前 30（市值＝收盤×證交所／櫃買發行股數）、上市櫃普通股收盤價前 30（高價股）。
-    資料期間：上市 2004/02 起、上櫃 2007/07 起（之前上櫃組與全市場只含上市）。歷史名單以當時資料重建；上市股數取自證交所每日發行股數，近期分割、配股、減資尚未反映時以事件倍率補正，現金增資待新股上市後反映；2011 年以前證交所無減資公告表，部分月份上市股數可能延遲反映減資；2004～2014 約 0.2% 股票日（多為前一交易日無成交、部分 2007 年上櫃除權息日）查無參考價，當日漲跌不計。漲跌停依當時升降單位與漲跌幅制度判定（含 2005/03 升降單位新制、2008/10/13～24 跌幅 3.5%）。歷史月份排名第 50 名附近可能有個別誤差。資料來源：證交所、櫃買中心。
-  </div>
+  <div class="note">只供觀察，不是交易訊號。名單每月底依收盤排名、次月使用：上市市值前 50、上櫃市值前 30、上市櫃收盤價前 30。資料上市 2004/02 起、上櫃 2007/07 起，來源：證交所、櫃買中心。</div>
 </div>
 <div id="tip"></div>
 <script>
 // 加到主畫面的 app 會沿用舊版頁面：開啟或回到前景時比對版本，有新版就重新載入
-const PAGE_VER = '20261106vix3';
+const PAGE_VER = '20261110note';
 function checkVer(){
   fetch('wh.html?t=' + Date.now(), {cache: 'no-store'}).then(r => r.text()).then(t => {
     const m = t.match(/PAGE_VER = '([^']+)'/); if (m && m[1] !== PAGE_VER) location.replace('wh.html?v=' + Date.now() + location.hash);
@@ -330,7 +327,7 @@ function drawVixGauge(){
       <div>歷史最高收盤<br><b>${mx[1].toFixed(2)}</b>（${fd(mx[0])}）</div>
       <div>分位參考點<br>中位數 <b>${med.toFixed(1)}</b>／90% <b>${pv(90).toFixed(1)}</b>／95% <b>${pv(95).toFixed(1)}</b>／99% <b>${pv(99).toFixed(1)}</b></div>
     </div>
-    <div class="note" style="margin-top:8px">分位＝目前值在 ${fd(V.dates[0])} 起到${lv ? '前一交易日' : '所選日前一日'}所有收盤（共 ${hist.length} 日）加上目前值中的百分位，只用當時以前的資料。色條刻度不等距（放大 80 以上）。等級：99 以上歷史極端、95～99 極端、90～95 偏高、80～90 略高、20～80 正常、20 以下異常低（Emit 暫定，可調整）。最低收盤 ${mn[1].toFixed(2)}（${fd(mn[0])}）。只供觀察，不是交易訊號。</div>`;
+    <div class="note" style="margin-top:8px">等級：99 以上歷史極端、95～99 極端、90～95 偏高、80～90 略高、20～80 正常、20 以下異常低。</div>`;
 }
 function drawVix(){
   drawVixGauge();
@@ -363,9 +360,7 @@ function drawVix(){
   $('#vixchart').innerHTML = g;
   hover('#vixhit', s, e, x, i => `${fd(V.dates[i])}<br>臺指 VIX ${V.c[i] != null ? V.c[i].toFixed(2) : '—'}${V.h[i] != null ? `（高 ${V.h[i].toFixed(2)}／低 ${V.l[i].toFixed(2)}）` : ''}<br>加權 ${tv[i-s] ? tv[i-s].toFixed(0) : '—'}`);
   const nmm = V.src ? V.src.filter(x => x === 'mm').length : 0;
-  $('#vixnote').textContent = `臺指 VIX＝期交所以臺指選擇權報價推算的未來 30 天預期年化波動率（CBOE VIX 公式），俗稱恐慌指標，越高代表市場預期波動越大；例如 VIX 30 約等於未來 30 天加權指數一個標準差約 ±8.7%。` +
-    `本站資料自 ${fd(V.dates[0])} 起共 ${V.dates.length} 個交易日。2026/08 起取自期交所每月下載檔（13:45 收盤值）；更早取自財經M平方「台灣-台指選擇權波動指數」圖表（2016/11 起，2026/08～11 與期交所 64 日逐日相同），已剔除休市日，2017/01/12 疑似異常值（23.02）剔除，少數日期（2017 年三個補班日、2020/10/13）無資料。` +
-    `分位數＝所選日收盤在本站自 2016/11 起至當日所有收盤中的百分位。盤中取期交所行情資訊網、約 5 分鐘更新；當日高低只有 2026/11/06 起。只供觀察，不是交易訊號。資料來源：臺灣期貨交易所、財經M平方。`;
+  $('#vixnote').textContent = `臺指 VIX：臺指選擇權推算的未來 30 天預期波動率，越高代表市場越恐慌（VIX 30 約等於 30 天內 ±8.7% 的一個標準差）。資料 ${fd(V.dates[0])} 起，來源：期交所、財經M平方。`;
 }
 const XS = {'-1': ['下跌瘋狂', 'var(--down)'], '1': ['上漲瘋狂', 'var(--up)'], '2': ['資金集中炒作', '#d99a1e'], '0': ['常態', 'var(--flat)']};
 function xEpisodes(){
@@ -450,7 +445,7 @@ function xRuleText(){
     `上漲瘋狂：收盤比近 ${wn.up} 日最低收盤高 ${p(th.up[0])} 以上時進入，從期間最高收盤回落 ${p(th.up[1])} 時解除。`;
   let n = 0, k = 0;
   W.dates.forEach((d, i) => { if (d >= '20050101' && x_.state[i] != null) { n++; k += x_.state[i] !== 0; } });
-  if (n) $('#xshare').textContent = `非常態（瘋狂）判定，2005 起 ${k.toLocaleString('zh-TW')}／${n.toLocaleString('zh-TW')} 個交易日（約 ${(k / n * 100).toFixed(1)}%，資料至 ${fd(W.dates[W.dates.length - 1])}）`;
+  if (n) $('#xshare').textContent = `2005 起約 ${(k / n * 100).toFixed(1)}% 交易日為非常態`;
 }
 function drawX(){
   const x_ = W.ext; if (!x_) return;
@@ -538,7 +533,7 @@ function cardUD(g, o){   // 上漲／下跌／漲跌停：盤中有資料就用�
 function drawCards(){
   let h = '';
   const ym = W.dates[idx].slice(0,6), lk = Object.keys(W.lists).filter(k => k < ym).pop();
-  $('#listinfo').textContent = lk ? `${+ym.slice(4)} 月成分股（依 ${fds(W.lists[lk].asof)} 收盤排名，每月換一次）` : '';
+  $('#listinfo').textContent = lk ? `${+ym.slice(4)} 月成分股` : '';
   for (const g of ['all','twse','otc','hp']) {
     const o = W.groups[g]; if (o.n[idx] == null) continue;
     const n = o.n[idx], ma = o.ma[idx], mad = o.mad[idx], hi = o.hi[idx], lo = o.lo[idx], hd = o.hld[idx];
@@ -594,7 +589,7 @@ function drawDD(){
   $('#ddchart').innerHTML = g;
   const d = o.dd[idx], n = d ? d.reduce((a,b)=>a+b,0) : 0;
   $('#ddleg').innerHTML = DDL.map((l, k) => `<span><i style="background:var(${cols[k]})"></i>${l} <b class="num">${d ? fmt(d[k]/n*100,1) : '—'}%</b></span>`).join('');
-  $('#ddnote').textContent = d ? `${G[ddG]}：${fd(W.dates[idx])} 可用歷史滿 250 個交易日者 ${n} 檔，回檔未滿 5% 占 ${fmt(d[0]/n*100)}%，回檔 20% 以上占 ${fmt((d[3]+d[4]+d[5])/n*100)}%。由下往上＝離高點越近→越遠；可用歷史不足 250 個交易日者不列入。` : `${G[ddG]}：本組可用歷史不足 250 個交易日，暖機中。`;
+  $('#ddnote').textContent = d ? `${G[ddG]} ${n} 檔中，回檔未滿 5% 占 ${fmt(d[0]/n*100)}%，回檔 20% 以上占 ${fmt((d[3]+d[4]+d[5])/n*100)}%。` : `${G[ddG]}：本組可用歷史不足 250 個交易日，暖機中。`;
   hover('#ddhit', s, e, x, i => { const v = o.dd[i]; if (!v) return ''; const m = v.reduce((a,b)=>a+b,0);
     return `${fd(W.dates[i])}<br>加權 ${W.taiex[i] ? W.taiex[i].toFixed(0) : '—'}<br>` + DDL.map((l,k) => `${l} ${fmt(v[k]/m*100)}%`).join('<br>'); });
 }

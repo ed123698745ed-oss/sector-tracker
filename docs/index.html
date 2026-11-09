@@ -183,7 +183,7 @@ footer .fine{font-size:12px;margin-top:6px}
   <div class="summary" id="summary"></div>
 
   <section id="mpsec">
-    <h2>市場階段<small id="mpNote">規則 MP01・只供觀察</small><span class="upd" id="u_mp"></span></h2>
+    <h2>市場階段<small id="mpNote"></small><span class="upd" id="u_mp"></span></h2>
     <div class="mp" id="mp"></div>
   </section>
 
@@ -202,12 +202,12 @@ footer .fine{font-size:12px;margin-top:6px}
   </section>
 
   <section>
-    <h2>近 20 日上榜熱度<small>藍格＝當天上榜，右側為 20 日上榜次數</small><span class="upd" id="u_heat"></span></h2>
+    <h2>近 20 日上榜熱度<span class="upd" id="u_heat"></span></h2>
     <div class="scroll"><table class="heat" id="heat"></table></div>
   </section>
 
   <section>
-    <h2>全部題材<small id="allNote">點欄位排序・點題材名稱展開成分股</small><span class="upd" id="u_all"></span></h2>
+    <h2>全部題材<small id="allNote">點題材展開成分股</small><span class="upd" id="u_all"></span></h2>
     <div class="scroll"><table class="all" id="all"></table></div>
   </section>
 
@@ -216,7 +216,7 @@ footer .fine{font-size:12px;margin-top:6px}
 
 <script>
 // 加到主畫面的 app 會沿用舊版頁面：開啟或回到前景時比對版本，有新版就重新載入
-const PAGE_VER = '20261103cb';
+const PAGE_VER = '20261110note';
 function checkVer(){
   fetch('index.html?t=' + Date.now(), {cache: 'no-store'}).then(r => r.text()).then(t => {
     const m = t.match(/PAGE_VER = '([^']+)'/); if (m && m[1] !== PAGE_VER) location.replace('index.html?v=' + Date.now() + location.hash);
@@ -284,7 +284,7 @@ function loadIntra(){
     if (idx === D.length - 1) render(idx);  // 看最新一天時，摘要與熱門題材改用盤中暫定
     const G = META.groups || [], gi = t => G[TH.indexOf(t)] || '傳產';
     const rows = x.hits.slice().sort((a, b) => (gi(a[0]) === '電子' ? 0 : 1) - (gi(b[0]) === '電子' ? 0 : 1) || b[2] - a[2]);
-    $('intraSub').textContent = `${x.time} 抓取・報價至 ${x.quote_time || '—'}・上榜 ${x.hits.length}/${x.active}・收盤後以正式資料為準`;
+    $('intraSub').textContent = `${x.time} 抓取・報價至 ${x.quote_time || '—'}・上榜 ${x.hits.length}/${x.active}`;
     $('intraBody').innerHTML = rows.length ? rows.map((r, k) => (k === 0 || gi(rows[k-1][0]) !== gi(r[0]) ? `<div class="g">${gi(r[0])}</div>` : '')
       + `<div class="row"><span>${r[0]} <span class="chip rule">${r[1]}</span></span><span class="num"><span class="${cls(r[2])}">${pct(r[2])}</span>　≥${geTxt(r[0])}% ${r[3]}/${r[4]}</span></div>`).join('')
       : '<div class="row">目前沒有題材上榜</div>';
@@ -316,8 +316,6 @@ function render(i){
     t: TH.map(t => { const r = live.hits.find(h => h[0] === t); return r ? [r[1], r[2], r[3], r[4], r[6] || 0, r[5]] : ['']; })} : D[i];
   const ba = live ? ((META.ba_now || [])[bucket(d.tx)] ?? null) : (d.ba ?? null);
   const closeTxt = `${fmtD(D[i].d).slice(5)} 收盤`;
-  $('mpNote').textContent = `規則 ${META.mp_rule || 'MP01'}・只供觀察`;
-  $('allNote').textContent = '點欄位排序・點題材名稱展開成分股';
   const liveTag = live ? '盤中約 10 分鐘更新一次；各區塊標題旁為最後更新時間' : '';
   $('sub').textContent = live ? liveTag : `資料日 ${fmtD(d.d)}・更新 ${META.generated}`;
   // 摘要
@@ -375,7 +373,7 @@ function render(i){
       </dl>
     </div>
     <div class="leg">
-      <h4>狀態<small>看兩件事：①族群指數（成分股每日漲跌平均、逐日累計成的一條線）有沒有在它自己的 20 日均線上；②成分股中，站上各自 20 日均線的家數比例</small></h4>
+      <h4>狀態<small>族群指數（成分股漲跌平均累計）與月線的關係，加上成分股站上月線的比例</small></h4>
       <dl>
         <dt><span class="lab lab-M">主流</span></dt><dd>族群指數在月線上，且 ≥70% 成分股站上自己的月線；再加上族群指數接近 60 日高點，或近 20 日上榜 ≥8 天</dd>
         <dt><span class="lab lab-C">延續</span></dt><dd>族群指數在月線上，且 ≥50% 成分股站上自己的月線</dd>
@@ -390,21 +388,20 @@ function render(i){
         <dt><span class="wk wk5">3</span></dt><dd>本週主流天數 ≥3，本週算一個主流週</dd>
         <dt><span class="wk wk1">2</span></dt><dd>本週主流天數 1～2，還沒達標</dd>
         <dt><span class="wk wk0">·</span></dt><dd>本週沒有主流</dd>
-        <dt><b>7</b> / <span class="carry">7</span></dt><dd>主流週、延續週：連續幾週，每週最後交易日收盤結算；交易日不到 3 天的短週不計。灰字＝本週還沒達標，暫時沿用上週的週數</dd>
+        <dt><b>7</b> / <span class="carry">7</span></dt><dd>主流週、延續週：連續幾週；灰字＝本週還沒達標，沿用上週</dd>
         <dt><b>粗體</b><span class="hitdot"> ●</span></dt><dd>當天有上榜</dd>
         <dt><sup class="few">少</sup></dt><dd>成分股 5 檔以下，一檔漲跌就影響很大</dd>
       </dl>
     </div>
     <div class="leg">
-      <h4>市場階段 ${META.mp_rule || ''}<small>依五次底部（2020-03、2022-10、2024-08、2025-04、2026-07）整理的初稿，數值取 5 日平均</small></h4>
+      <h4>市場階段 ${META.mp_rule || ''}<small>單位「組」＝族群數，取 5 日平均</small></h4>
       <dl>
-        <dt>名詞</dt><dd><b>轉弱族群</b>：族群指數（成分股每日漲跌平均累計成的線）跌破它的 20 日均線（月線），而且成分股裡站上各自月線的不到 4 成，也就是整個族群多數股票都在月線下。<b>站穩月線</b>：族群標籤是主流或延續（族群在月線上、多數成分股也在月線上）。單位都是「組」（族群數，目前共 ${(D && D.length && D[D.length - 1].L || '').length || '—'} 組），取 5 日平均降低跳動</dd>
-        <dt><span class="ph p1" style="font-size:13px;padding:2px 8px">惡化</span></dt><dd>轉弱 ≥30 組。結構正在變差（循環第 1 步）</dd>
-        <dt><span class="ph p2" style="font-size:13px;padding:2px 8px">洗乾淨</span></dt><dd>轉弱 ≥55 組。多數族群都跌破月線，是轉好的前提，不是買點（第 2 步）</dd>
-        <dt><span class="ph p3" style="font-size:13px;padding:2px 8px">轉好起點</span></dt><dd>洗乾淨後 40 個交易日內，站穩月線 ≥40 組且轉弱 ≤10 組（第 3 步）</dd>
-        <dt><span class="ph p6" style="font-size:13px;padding:2px 8px">確認</span></dt><dd>連續兩個完整週主流族群都 ≥10 組，且兩週轉弱平均 ≤3 組、當日轉弱 &lt;20 組。2024-08、2026-07 兩次只到轉好起點就退回，沒有確認（第 4 步）</dd>
-        <dt><span class="ph p4" style="font-size:13px;padding:2px 8px">延續中</span></dt><dd>確認之後維持，代表這一波族群行情進行中；最近兩個完整週主流族群都不到 10 組時退出（轉弱 ≥20 組為退潮，否則回中性）。交易日不到 3 天的短週不算完整週</dd>
-        <dt><span class="ph p5" style="font-size:13px;padding:2px 8px">退潮</span></dt><dd>延續中時主流族群不到上週一半（週一、週二改比最近兩個完整週），且轉弱 ≥20 組；之後維持到轉弱 ≥30 組（惡化）、轉弱 ≥55 組（洗乾淨）、重新確認，或轉弱回落到 20 組以下（回到延續中）</dd>
+        <dt><span class="ph p1" style="font-size:13px;padding:2px 8px">惡化</span></dt><dd>轉弱 ≥30 組。結構變差</dd>
+        <dt><span class="ph p2" style="font-size:13px;padding:2px 8px">洗乾淨</span></dt><dd>轉弱 ≥55 組。多數族群跌破月線，是轉好的前提，不是買點</dd>
+        <dt><span class="ph p3" style="font-size:13px;padding:2px 8px">轉好起點</span></dt><dd>洗乾淨後 40 個交易日內，站穩月線（主流＋延續）≥40 組且轉弱 ≤10 組</dd>
+        <dt><span class="ph p6" style="font-size:13px;padding:2px 8px">確認</span></dt><dd>連續兩個完整週主流族群都 ≥10 組，且兩週轉弱平均 ≤3 組、當日轉弱 &lt;20 組</dd>
+        <dt><span class="ph p4" style="font-size:13px;padding:2px 8px">延續中</span></dt><dd>確認後維持；最近兩個完整週主流都不到 10 組時退出</dd>
+        <dt><span class="ph p5" style="font-size:13px;padding:2px 8px">退潮</span></dt><dd>延續中時主流不到上週一半，且轉弱 ≥20 組</dd>
         <dt><span class="ph p0" style="font-size:13px;padding:2px 8px">中性</span></dt><dd>以上都不符合</dd>
       </dl>
     </div>
