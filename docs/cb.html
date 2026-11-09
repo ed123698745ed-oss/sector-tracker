@@ -99,7 +99,7 @@ table.pct th,table.pct td{padding:6px 7px;cursor:default}
   </header>
 
   <section>
-    <h2>今日分布<small>全體可轉債價格落在 100 元附近的比例</small><span class="upd" id="u_t"></span></h2>
+    <h2>今日分布<span class="upd" id="u_t"></span></h2>
     <div class="xtools" style="margin:0"><span class="sub">口徑</span><div class="tabs" id="vtabs"></div></div>
     <div class="panel">
       <div class="idx" id="state"></div>
@@ -186,9 +186,9 @@ function drawToday(){
     card('＜100 占比', pc(t.lt100), pr(t.lt100_pct)) +
     card('≤105 占比', pc(t.le105), pr(t.le105_pct)) +
     card('≤110 占比', pc(t.le110), pr(t.le110_pct)) +
-    card('中位數', f2(t.med), pr(t.med_pct), `<span>低於歷史 ${t.med_pct == null ? '—' : Math.round((1 - t.med_pct) * 100)}% 的交易日</span>`) +
+    card('中位數', f2(t.med), pr(t.med_pct)) +
     card('近 20 日 ≤105 變化', pp(t.chg20), pr(t.chg20_pct));
-  $('#tnote').innerHTML = `歷史百分位＝${fd(C.start)} 至 ${fd(C.date)} 共 ${C.days} 個交易日中，數值小於或等於今日的比例；占比越高越接近崩跌時的分布，中位數則是越低越極端。目前口徑：${VAR[V]}。`;
+  $('#tnote').innerHTML = `歷史百分位＝${fd(C.start)} 至 ${fd(C.date)} 共 ${C.days} 個交易日中，數值小於或等於今日的比例（中位數越低越極端，改算大於或等於今日的比例）；所有百分位都是越高越極端。目前口徑：${VAR[V]}。`;
 }
 
 function xEpisodes(){ return C.episodes.map(e => ({s: C.dates.indexOf(e.s), e: C.dates.indexOf(e.e)})); }
@@ -329,7 +329,7 @@ function init(){
 來源：${C.source}，每日一檔，${fd(C.start)} 起。母體為當日檔案內全部代號（含交換公司債），只取等價列、不含議價。<br>
 主口徑價格用「明日參價」：當日有等價成交＝收市價；無成交則沿用前一參考價，可能高於實際可成交價。「只算當日有成交」改用收市價、只計有成交者；「剔除掛牌未滿 60 日」以資料內首見日起算掛牌交易日，2007-01-02 已在市者視為已滿。<br>
 清單的「漲跌」：有成交者為櫃買公布的等價漲跌；無成交者為參價與前一交易日參價的差（標「參價」）。<br>
-歷史極端：≤105 占比落在歷史前 ${Math.round((1 - C.extreme.q) * 100)}%，即該口徑 ${fd(C.start)} 起全部交易日 ≤105 占比的第 ${Math.round(C.extreme.q * 100)} 百分位（今日主口徑 ${pc(C.extreme.by.all)}、只算有成交 ${pc(C.extreme.by.traded)}、剔除未滿 60 日 ${pc(C.extreme.by.age60)}）；門檻每日隨新資料重算，用的是全部歷史，含當時尚未發生的日子，只供觀察。走勢圖的極端期間依主口徑，相隔 ${C.extreme.merge_gap} 個交易日內的段落合併為同一期間；門檻：${C.extreme.status}。<br>
+歷史極端：≤105 占比落在歷史前 ${Math.round((1 - C.extreme.q) * 100)}%，即該口徑 ${fd(C.start)} 起全部交易日 ≤105 占比的第 ${Math.round(C.extreme.q * 100)} 百分位（今日主口徑 ${pc(C.extreme.by.all)}、只算有成交 ${pc(C.extreme.by.traded)}、剔除未滿 60 日 ${pc(C.extreme.by.age60)}）；門檻每日隨新資料重算，用的是全部歷史，含當時尚未發生的日子，只供觀察。走勢圖的極端期間依主口徑，相隔 ${C.extreme.merge_gap} 個交易日內的段落合併為同一期間。<br>
 未涵蓋：本資料沒有賣回日、剩餘年限、轉換價，無法分辨價格低於 100 是信用風險還是時間價值；沒有 2007 年以前的資料；只有盤後資料，不做盤中更新。`;
 }
 Promise.all([fetch('cb.json?t=' + Date.now(), {cache: 'no-store'}).then(r => r.json()), fetch('cb_list.json?t=' + Date.now(), {cache: 'no-store'}).then(r => r.json())])

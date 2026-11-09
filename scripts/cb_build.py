@@ -7,7 +7,7 @@
     （掛牌日數以資料內首見日起算；2007-01-02 已存在者無法得知，視為已滿 60 日）
   每日指標：檔數、＜100 占比、≤105 占比、≤110 占比、中位數
   百分位：該值在 2007-01-02 至當日（含）全部交易日中的位置＝(≤ 該值的天數) ÷ 總天數
-    中位數越低越極端，網頁另以 100−百分位 呈現「低於多少比例的歷史日」
+    中位數越低越極端，故改用 ≥ 該值的天數 ÷ 總天數，使所有百分位都是「數字越高越極端」（Ed 2026-11-10）
   近 20 日變化：≤105 占比 當日 − 20 個交易日前，同法算百分位
   歷史極端（CB02，Ed 2026-11-10 確認）：≤105 占比達歷史前 10%＝該口徑 2007 年起全部交易日 ≤105 占比的第 90 百分位；
     各口徑各自計算，每日隨新資料重算；期間（主口徑）合併相隔 ≤20 個交易日的段落
@@ -15,12 +15,12 @@
 用法：python3 scripts/cb_build.py [--expect YYYYMMDD]
 """
 import datetime as dt, json, math, os, sys
-from bisect import bisect_right
+from bisect import bisect_left, bisect_right
 from cb_common import ROOT, archived_dates, closed_dates, load
 
 RULE = 'CB02'
 EXTREME_Q = 0.90      # 歷史前 10%：≤105 占比第 90 百分位為門檻（Ed 2026-11-10）
-STATUS = '歷史前 10%，Ed 2026-11-10 確認；每日依全部歷史重算'
+STATUS = '歷史前 10%'
 MERGE_GAP = 20
 AGE_MIN = 60
 TPE = dt.timezone(dt.timedelta(hours=8))
@@ -39,6 +39,13 @@ def q_threshold(vals, q=EXTREME_Q):
     """門檻＝排序後第 ceil(q·n) 個值；≥ 門檻者歷史百分位必 ≥ q。"""
     x = sorted(v for v in vals if v is not None)
     return x[math.ceil(q * len(x)) - 1] if x else None
+
+
+def pct_rank_ge(hist, v):
+    """hist 已排序；回傳 ≥ v 的比例（中位數用，越低越極端）。"""
+    if v is None or not hist:
+        return None
+    return (len(hist) - bisect_left(hist, v)) / len(hist)
 
 
 def pct_rank(hist, v):
@@ -83,7 +90,8 @@ def main():
             col = [x for x in cols[j] if x is not None]
             t[k] = cols[j][-1]
             if k != 'n':
-                t[k + '_pct'] = pct_rank(sorted(col), cols[j][-1])
+                t[k + '_pct'] = (pct_rank_ge(sorted(col), cols[j][-1]) if k == 'med'
+                                 else pct_rank(sorted(col), cols[j][-1]))
         le = cols[2]
         ch = [None if a is None or b is None else a - b for a, b in zip(le[20:], le[:-20])]
         chv = [x for x in ch if x is not None]
