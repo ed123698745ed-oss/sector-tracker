@@ -188,7 +188,7 @@ function drawToday(){
     card('≤110 占比', pc(t.le110), pr(t.le110_pct)) +
     card('中位數', f2(t.med), pr(t.med_pct)) +
     card('近 20 日 ≤105 變化', pp(t.chg20), pr(t.chg20_pct));
-  $('#tnote').innerHTML = `歷史百分位＝${fd(C.start)} 至 ${fd(C.date)} 共 ${C.days} 個交易日中，數值小於或等於今日的比例（中位數越低越極端，改算大於或等於今日的比例）；所有百分位都是越高越極端。目前口徑：${VAR[V]}。`;
+  $('#tnote').innerHTML = `歷史百分位：在 ${fd(C.start).slice(0, 4)} 年起 ${C.days} 個交易日中的位置，越高越極端。`;
 }
 
 function xEpisodes(){ return C.episodes.map(e => ({s: C.dates.indexOf(e.s), e: C.dates.indexOf(e.e)})); }
