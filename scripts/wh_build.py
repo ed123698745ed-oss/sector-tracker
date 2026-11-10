@@ -120,6 +120,11 @@ def main():
     lraw = np.array([[d['lo'][c][t] or np.nan for c in codes] for t in range(T)])
     adjH = np.where(traded, adj * hraw / close, np.nan)
     adjL = np.where(traded, adj * lraw / close, np.nan)
+    # 率先創新高分頁（ny_build.py）用：2018 年起的還原收盤、還原盤中最高、未還原收盤、當日漲跌%
+    t18 = next(i for i, x in enumerate(dates) if x >= '20180101')
+    np.savez_compressed(os.path.join(ROOT, 'cache', 'wh_adj.npz'), dates=np.array(dates[t18:]), codes=np.array(codes),
+                        adj=adj[t18:].astype(np.float64), adjH=adjH[t18:].astype(np.float64),
+                        close=close[t18:], pct=pct[t18:])
 
     def rolling(fn, n, src):
         out = np.full((T, N), np.nan)

@@ -78,6 +78,10 @@ jobs:
           python3 scripts/wh_monthly.py || echo "::warning::名單月更新失敗，沿用上月名單"
           python3 scripts/wh_prices.py
           python3 scripts/wh_build.py
+      - name: 率先創新高分頁（用 wh_build 產生的 cache；失敗不影響其他頁）
+        if: steps.fetch.outputs.skip != '1'
+        continue-on-error: true
+        run: python3 scripts/ny_build.py
       - name: 臺指 VIX（期交所每月檔＋盤後即時；失敗不影響其他頁）
         continue-on-error: true
         run: python3 scripts/vix.py daily

@@ -111,6 +111,7 @@ def snapshot(w, tse, uni, now=None, full=True, prev_all=None, prev_px=None):
     want, uset = {r['c'] for r in w['stocks']}, set(uni)
     stocks, priced, ps, lu, ld = {}, 0, [], 0, 0
     pall = {}   # 全市場普通股最新成交價（融資觀察盤中暫估用；只在全市場查詢時更新）
+    hall = {}   # 全市場普通股當日盤中最高價（率先創新高頁盤中判斷用；只在全市場查詢時更新）
     for c, x in q.items():
         p = pct(x)
         if p is None:
@@ -123,6 +124,8 @@ def snapshot(w, tse, uni, now=None, full=True, prev_all=None, prev_px=None):
             ps.append(p); lu += lim == 1; ld += lim == -1
             if full and price(x):
                 pall[c] = price(x)
+            if full and num(x.get('h')):
+                hall[c] = num(x.get('h'))
     allg = {'n': len(ps), 'up': sum(p > 0 for p in ps), 'flat': sum(p == 0 for p in ps), 'down': sum(p < 0 for p in ps),
             'lu': lu, 'ld': ld, 'dist': dist(ps), 'universe': len(uni), 'time': now.strftime('%H:%M')} if full else (
         prev_all if prev_all and prev_all.get('date') == qdate else None)
@@ -132,7 +135,7 @@ def snapshot(w, tse, uni, now=None, full=True, prev_all=None, prev_px=None):
     out = {'date': qdate, 'time': now.strftime('%H:%M'), 'quote_time': max(times[-1:] + [t.get('t') or '']) or None,
            'base_date': w['dates'][-1], 'taiex': tx, 'taiex_y': ty, 'n': len(codes), 'priced': priced,
            'source': '臺灣證券交易所 基本市況報導（mis.twse.com.tw）', 'all': allg, 'stocks': stocks,
-           'px': ({'date': qdate, 'time': now.strftime('%H:%M'), 'p': pall} if full else
+           'px': ({'date': qdate, 'time': now.strftime('%H:%M'), 'p': pall, 'h': hall} if full else
                   (prev_px if prev_px and prev_px.get('date') == qdate else None))}
     try:   # 臺指 VIX（期交所行情資訊網）；失敗或日期不是今日就不帶，不影響其他盤中資料
         v = vix.fetch_live()
