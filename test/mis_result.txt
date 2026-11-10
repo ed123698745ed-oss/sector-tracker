@@ -2678,3 +2678,10 @@ quote_time_range ['07:50:00'] ['11:52:03']
 hits 23 IP/ASIC(ABC) 矽晶圓(AB) 功率元件(AB) 化合物半導體(ABC) 先進封裝設備(AB) 封測(AB) 測試介面(ABC) 載板(ABC) CCL(B) 玻纖布/銅箔(BC) PCB/伺服器板(ABC) 散熱(ABC) BBU(B) 連接器/線材(A) 被動元件(A) 光通訊/矽光子(ABC) 網通交換器(A) 低軌衛星(ABC) 光學鏡頭(AB) 航空(AB) 軟體雲端(ABC) 驅動IC(A) IC通路(AB)
 count_check returned 611 baseline 610 (20261109)
 
+run_at 2026-11-10 12:02:39
+codes 611 returned 611 priced 609 seconds 91.0
+requests 13 errors 0 last_error 
+quote_time_range ['07:50:00'] ['12:02:23']
+hits 26 IP/ASIC(ABC) 矽晶圓(ABC) 功率元件(ABC) 化合物半導體(ABC) 先進封裝設備(ABC) 封測(ABC) 測試介面(ABC) 半導體材料(B) 載板(ABC) CCL(AB) 玻纖布/銅箔(BC) PCB/伺服器板(ABC) 散熱(ABC) BBU(B) 連接器/線材(AB) 被動元件(AB) 光通訊/矽光子(ABC) 網通交換器(AB) 低軌衛星(ABC) 光學鏡頭(AB) 貨櫃航運(B) 航空(AB) 軟體雲端(ABC) 驅動IC(A) IC通路(AB) 導線架(B)
+count_check returned 611 baseline 610 (20261109)
+
