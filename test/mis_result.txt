@@ -2629,3 +2629,10 @@ quote_time_range ['07:50:00'] ['10:42:13']
 hits 40 晶圓代工(AB) IP/ASIC(ABC) 網通/高速介面IC(B) 矽晶圓(ABC) 記憶體(AB) 功率元件(ABC) 化合物半導體(ABC) 先進封裝設備(ABC) 封測(ABC) 測試介面(ABC) 半導體材料(AB) 廠務工程(AB) 載板(ABC) CCL(ABC) 玻纖布/銅箔(ABC) PCB/伺服器板(ABC) 散熱(ABC) 電源供應器(C) BBU(AB) 機殼/滑軌(AB) 連接器/線材(AB) 被動元件(ABC) 光通訊/矽光子(ABC) 網通交換器(ABC) 低軌衛星(ABC) 光學鏡頭(ABC) 機器人(B) 貨櫃航運(A) 航空(AB) 軟體雲端(ABC) 資安(A) 無人機(B) 工具機(ABC) 驅動IC(A) 類比/PMIC(AB) IC通路(AB) 鉸鏈/軸承(A) 導線架(ABC) MCU(BC) 化工(AB)
 count_check returned 611 baseline 610 (20261109)
 
+run_at 2026-11-10 10:52:31
+codes 611 returned 611 priced 607 seconds 85.0
+requests 13 errors 0 last_error 
+quote_time_range ['07:50:00'] ['10:52:12']
+hits 36 晶圓代工(A) IP/ASIC(ABC) 矽晶圓(ABC) 記憶體(B) 功率元件(ABC) 化合物半導體(ABC) 先進封裝設備(ABC) 封測(ABC) 測試介面(ABC) 半導體材料(AB) 廠務工程(AB) 載板(ABC) CCL(ABC) 玻纖布/銅箔(ABC) PCB/伺服器板(ABC) 散熱(ABC) 電源供應器(C) BBU(AB) 機殼/滑軌(AB) 連接器/線材(AB) 被動元件(ABC) 光通訊/矽光子(ABC) 網通交換器(ABC) 低軌衛星(ABC) 光學鏡頭(ABC) 貨櫃航運(A) 航空(AB) 軟體雲端(ABC) 資安(B) 工具機(ABC) 驅動IC(A) 類比/PMIC(A) IC通路(AB) 導線架(AB) MCU(B) 化工(AB)
+count_check returned 611 baseline 610 (20261109)
+
