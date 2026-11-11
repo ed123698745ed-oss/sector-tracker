@@ -2797,3 +2797,11 @@ quote_time_range ['09:29:36'] ['09:52:02']
 hits 8 測試介面(AB) CCL(B) 玻纖布/銅箔(ABC) PCB/伺服器板(ABC) 低軌衛星(A) 機器人(AB) 汽車零組件(A) 工具機(ABC)
 count_check returned 611 baseline 609 (20261110)
 
+run_at 2026-11-11 10:04:10
+codes 611 returned 150 priced 148 seconds 158.6
+requests 33 errors 30 last_error <urlopen error [Errno 104] Connection reset by peer>
+quote_time_range ['09:50:11'] ['10:01:30']
+hits 1 玻纖布/銅箔(B)
+count_check returned 150 baseline 609 (20261110)
+skip: returned 150 < 90% of 609，不更新 intraday.json
+
