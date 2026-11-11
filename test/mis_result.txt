@@ -2805,3 +2805,10 @@ hits 1 玻纖布/銅箔(B)
 count_check returned 150 baseline 609 (20261110)
 skip: returned 150 < 90% of 609，不更新 intraday.json
 
+run_at 2026-11-11 10:12:21
+codes 611 returned 611 priced 608 seconds 91.9
+requests 13 errors 0 last_error 
+quote_time_range ['09:34:47'] ['10:12:12']
+hits 8 IP/ASIC(A) 測試介面(AB) 玻纖布/銅箔(ABC) PCB/伺服器板(ABC) 低軌衛星(A) 機器人(AB) 汽車零組件(A) 工具機(ABC)
+count_check returned 611 baseline 609 (20261110)
+
