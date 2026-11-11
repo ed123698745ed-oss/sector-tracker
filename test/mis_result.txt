@@ -2790,3 +2790,10 @@ quote_time_range ['09:18:17'] ['09:42:01']
 hits 6 測試介面(AB) 玻纖布/銅箔(ABC) PCB/伺服器板(ABC) 機器人(AB) 汽車零組件(A) 工具機(AB)
 count_check returned 611 baseline 609 (20261110)
 
+run_at 2026-11-11 09:52:09
+codes 611 returned 611 priced 605 seconds 80.8
+requests 13 errors 0 last_error 
+quote_time_range ['09:29:36'] ['09:52:02']
+hits 8 測試介面(AB) CCL(B) 玻纖布/銅箔(ABC) PCB/伺服器板(ABC) 低軌衛星(A) 機器人(AB) 汽車零組件(A) 工具機(ABC)
+count_check returned 611 baseline 609 (20261110)
+
