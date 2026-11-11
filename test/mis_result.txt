@@ -2861,3 +2861,10 @@ quote_time_range ['10:52:17'] ['11:22:03']
 hits 16 IP/ASIC(ABC) 網通/高速介面IC(B) 封測(AB) 測試介面(ABC) 廠務工程(A) CCL(AB) 玻纖布/銅箔(ABC) PCB/伺服器板(ABC) 散熱(B) 被動元件(A) 低軌衛星(ABC) 機器人(AB) 汽車零組件(A) 軟體雲端(AB) 資安(AB) 工具機(ABC)
 count_check returned 611 baseline 609 (20261110)
 
+run_at 2026-11-11 11:32:43
+codes 611 returned 611 priced 609 seconds 103.2
+requests 13 errors 0 last_error 
+quote_time_range ['10:56:17'] ['11:32:31']
+hits 17 IP/ASIC(ABC) 網通/高速介面IC(B) 封測(AB) 測試介面(ABC) 廠務工程(AB) CCL(AB) 玻纖布/銅箔(ABC) PCB/伺服器板(ABC) 散熱(B) 被動元件(A) 低軌衛星(ABC) 機器人(AB) 汽車零組件(A) 軟體雲端(ABC) 資安(AB) 工具機(ABC) IC通路(A)
+count_check returned 611 baseline 609 (20261110)
+
