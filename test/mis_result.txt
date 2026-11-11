@@ -2769,3 +2769,10 @@ quote_time_range ['09:02:05'] ['09:12:28']
 hits 3 測試介面(A) PCB/伺服器板(ABC) 被動元件(ABC)
 count_check returned 611 baseline 609 (20261110)
 
+run_at 2026-11-11 09:22:07
+codes 611 returned 611 priced 598 seconds 74.1
+requests 13 errors 0 last_error 
+quote_time_range ['09:08:40'] ['09:21:52']
+hits 7 測試介面(AB) CCL(A) 玻纖布/銅箔(AB) PCB/伺服器板(ABC) 被動元件(BC) 汽車零組件(A) 工具機(A)
+count_check returned 611 baseline 609 (20261110)
+
