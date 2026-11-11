@@ -2812,3 +2812,10 @@ quote_time_range ['09:34:47'] ['10:12:12']
 hits 8 IP/ASIC(A) 測試介面(AB) 玻纖布/銅箔(ABC) PCB/伺服器板(ABC) 低軌衛星(A) 機器人(AB) 汽車零組件(A) 工具機(ABC)
 count_check returned 611 baseline 609 (20261110)
 
+run_at 2026-11-11 10:21:59
+codes 611 returned 611 priced 608 seconds 69.5
+requests 13 errors 0 last_error 
+quote_time_range ['09:34:47'] ['10:21:41']
+hits 12 IP/ASIC(A) 測試介面(AB) 玻纖布/銅箔(ABC) PCB/伺服器板(ABC) 被動元件(A) 低軌衛星(AB) 光學鏡頭(AB) 機器人(AB) 汽車零組件(A) 軟體雲端(B) 工具機(ABC) 導線架(B)
+count_check returned 611 baseline 609 (20261110)
+
