@@ -2924,3 +2924,10 @@ quote_time_range ['11:51:40'] ['12:52:03']
 hits 21 IP/ASIC(ABC) 網通/高速介面IC(AB) 矽晶圓(B) 封測(AB) 測試介面(ABC) 廠務工程(AB) CCL(ABC) 玻纖布/銅箔(ABC) PCB/伺服器板(ABC) 散熱(AB) 機殼/滑軌(A) 被動元件(ABC) 低軌衛星(ABC) 光學鏡頭(AB) 機器人(ABC) 汽車零組件(AB) 軟體雲端(ABC) 資安(AB) 工具機(ABC) IC通路(A) 導線架(B)
 count_check returned 611 baseline 609 (20261110)
 
+run_at 2026-11-11 13:02:50
+codes 611 returned 611 priced 610 seconds 105.2
+requests 13 errors 0 last_error 
+quote_time_range ['12:10:28'] ['13:02:33']
+hits 22 IP/ASIC(ABC) 網通/高速介面IC(AB) 矽晶圓(B) 記憶體(A) 封測(AB) 測試介面(ABC) 廠務工程(AB) CCL(ABC) 玻纖布/銅箔(ABC) PCB/伺服器板(ABC) 散熱(AB) 機殼/滑軌(AB) 被動元件(ABC) 低軌衛星(ABC) 光學鏡頭(AB) 機器人(ABC) 汽車零組件(AB) 軟體雲端(ABC) 資安(AB) 工具機(ABC) IC通路(AB) 導線架(AB)
+count_check returned 611 baseline 609 (20261110)
+
