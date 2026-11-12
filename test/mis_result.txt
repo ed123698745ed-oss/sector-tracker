@@ -3099,3 +3099,10 @@ quote_time_range ['11:45:23'] ['12:11:48']
 hits 10 封測(A) 測試介面(ABC) 半導體材料(A) PCB/伺服器板(ABC) 低軌衛星(AB) 太陽能/儲能(B) 國防軍工(B) 生技(B) 無人機(B) 工具機(ABC)
 count_check returned 610 baseline 610 (20261111)
 
+run_at 2026-11-12 12:21:58
+codes 611 returned 610 priced 609 seconds 58.1
+requests 13 errors 0 last_error 
+quote_time_range ['11:45:23'] ['12:21:38']
+hits 7 測試介面(ABC) PCB/伺服器板(ABC) 低軌衛星(AB) 國防軍工(BC) 生技(B) 無人機(BC) 工具機(C)
+count_check returned 610 baseline 610 (20261111)
+
