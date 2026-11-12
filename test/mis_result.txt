@@ -3085,3 +3085,10 @@ quote_time_range ['11:25:54'] ['11:51:58']
 hits 5 測試介面(AB) PCB/伺服器板(ABC) 低軌衛星(AB) 無人機(B) 工具機(ABC)
 count_check returned 610 baseline 610 (20261111)
 
+run_at 2026-11-12 12:02:21
+codes 611 returned 610 priced 609 seconds 72.1
+requests 13 errors 0 last_error 
+quote_time_range ['11:32:37'] ['12:02:03']
+hits 6 測試介面(ABC) PCB/伺服器板(ABC) 低軌衛星(AB) 無人機(B) 工具機(AC) 食品(A)
+count_check returned 610 baseline 610 (20261111)
+
