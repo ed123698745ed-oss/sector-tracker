@@ -3071,3 +3071,10 @@ quote_time_range ['10:46:25'] ['11:32:28']
 hits 11 封測(A) 測試介面(ABC) PCB/伺服器板(ABC) 機殼/滑軌(A) 光通訊/矽光子(A) 低軌衛星(ABC) 面板(B) 光學鏡頭(AB) 國防軍工(BC) 無人機(ABC) 工具機(ABC)
 count_check returned 610 baseline 610 (20261111)
 
+run_at 2026-11-12 11:42:01
+codes 611 returned 610 priced 608 seconds 68.1
+requests 13 errors 0 last_error 
+quote_time_range ['11:05:37'] ['11:41:48']
+hits 10 封測(A) 測試介面(ABC) PCB/伺服器板(ABC) 機殼/滑軌(A) 低軌衛星(ABC) 面板(B) 光學鏡頭(A) 國防軍工(BC) 無人機(BC) 工具機(AB)
+count_check returned 610 baseline 610 (20261111)
+
