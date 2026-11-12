@@ -2987,3 +2987,10 @@ quote_time_range ['09:18:10'] ['09:32:48']
 hits 15 IP/ASIC(B) 封測(AB) 測試介面(AB) 半導體材料(AB) 玻纖布/銅箔(A) PCB/伺服器板(ABC) 機殼/滑軌(AB) 光通訊/矽光子(AB) 網通交換器(AB) 低軌衛星(ABC) 光學鏡頭(A) 國防軍工(B) 軟體雲端(A) 無人機(AB) 工具機(B)
 count_check returned 610 baseline 610 (20261111)
 
+run_at 2026-11-12 09:41:56
+codes 611 returned 610 priced 602 seconds 61.5
+requests 13 errors 0 last_error 
+quote_time_range ['09:27:27'] ['09:41:43']
+hits 22 IP/ASIC(B) 記憶體(AB) 記憶體模組(AB) 化合物半導體(AB) 先進封裝設備(AB) 封測(AB) 測試介面(ABC) 半導體材料(AB) 玻纖布/銅箔(AB) PCB/伺服器板(ABC) 機殼/滑軌(AB) 光通訊/矽光子(AB) 網通交換器(AB) 低軌衛星(ABC) 面板(AB) 光學鏡頭(A) 國防軍工(BC) 軟體雲端(AB) 無人機(BC) 工具機(B) IC通路(B) 化工(A)
+count_check returned 610 baseline 610 (20261111)
+
