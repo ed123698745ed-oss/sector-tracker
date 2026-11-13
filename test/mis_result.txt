@@ -3162,3 +3162,10 @@ quote_time_range ['13:30:00'] ['13:33:00']
 hits 2 測試介面(A) PCB/伺服器板(C)
 count_check returned 610 baseline 610 (20261111)
 
+run_at 2026-11-13 09:02:24
+codes 611 returned 610 priced 488 seconds 72.8
+requests 14 errors 1 last_error <urlopen error [Errno -5] No address associated with hostname>
+quote_time_range ['08:48:48'] ['09:02:08']
+hits 21 IP/ASIC(ABC) 網通/高速介面IC(AB) 矽晶圓(A) 記憶體(AB) 功率元件(A) 化合物半導體(AB) 先進封裝設備(AB) 封測(AB) 測試介面(AB) 載板(A) CCL(AB) 玻纖布/銅箔(AB) PCB/伺服器板(AB) 機殼/滑軌(B) 被動元件(A) 光通訊/矽光子(AB) 低軌衛星(AB) 光學鏡頭(AB) 軟體雲端(AB) 資安(AB) 工具機(AB)
+count_check returned 610 baseline 609 (20261112)
+
