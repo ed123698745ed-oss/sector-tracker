@@ -3337,3 +3337,10 @@ quote_time_range ['11:59:00'] ['13:02:11']
 hits 21 IP/ASIC(ABC) 網通/高速介面IC(ABC) 化合物半導體(B) 封測(AB) 半導體材料(B) 玻纖布/銅箔(AB) PCB/伺服器板(A) 連接器/線材(AB) 被動元件(AB) 光通訊/矽光子(AB) 網通交換器(AB) 低軌衛星(A) 光學鏡頭(AB) 汽車零組件(A) 塑化(A) 軟體雲端(ABC) 資安(ABC) 驅動IC(A) 類比/PMIC(AB) MCU(A) 電動車(A)
 count_check returned 610 baseline 609 (20261112)
 
+run_at 2026-11-13 13:12:24
+codes 611 returned 610 priced 607 seconds 91.3
+requests 13 errors 0 last_error 
+quote_time_range ['11:59:00'] ['13:12:13']
+hits 20 IP/ASIC(ABC) 網通/高速介面IC(ABC) 化合物半導體(AB) 封測(AB) 半導體材料(AB) 玻纖布/銅箔(AB) PCB/伺服器板(AB) 連接器/線材(AB) 被動元件(AB) 光通訊/矽光子(AB) 網通交換器(AB) 低軌衛星(AB) 光學鏡頭(AB) 塑化(A) 散裝航運(A) 軟體雲端(ABC) 資安(ABC) 驅動IC(A) 類比/PMIC(A) MCU(AB)
+count_check returned 610 baseline 609 (20261112)
+
