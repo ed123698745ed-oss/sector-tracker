@@ -3267,3 +3267,10 @@ quote_time_range ['10:54:42'] ['11:22:03']
 hits 30 IP/ASIC(ABC) 網通/高速介面IC(ABC) 功率元件(A) 化合物半導體(AB) 封測(AB) 測試介面(AB) 半導體材料(AB) 廠務工程(B) CCL(AB) 玻纖布/銅箔(B) PCB/伺服器板(ABC) 散熱(AB) 機殼/滑軌(A) 連接器/線材(AB) 被動元件(ABC) 光通訊/矽光子(AB) 網通交換器(B) 低軌衛星(ABC) 光學鏡頭(ABC) 機器人(AB) 汽車零組件(A) 塑化(AB) 軟體雲端(ABC) 資安(ABC) 工具機(AB) 驅動IC(B) 類比/PMIC(AB) 導線架(A) MCU(AB) 電動車(A)
 count_check returned 610 baseline 609 (20261112)
 
+run_at 2026-11-13 11:32:41
+codes 611 returned 610 priced 606 seconds 95.1
+requests 13 errors 0 last_error 
+quote_time_range ['10:57:59'] ['11:32:18']
+hits 30 IP/ASIC(ABC) 網通/高速介面IC(ABC) 矽晶圓(B) 功率元件(AB) 化合物半導體(AB) 封測(AB) 測試介面(ABC) 半導體材料(AB) CCL(AB) 玻纖布/銅箔(AB) PCB/伺服器板(ABC) 散熱(AB) 機殼/滑軌(A) 連接器/線材(AB) 被動元件(ABC) 光通訊/矽光子(ABC) 網通交換器(B) 低軌衛星(ABC) 光學鏡頭(ABC) 機器人(B) 汽車零組件(A) 塑化(AB) 軟體雲端(ABC) 資安(ABC) 工具機(AB) 驅動IC(B) 類比/PMIC(AB) 導線架(A) MCU(AB) 電動車(AB)
+count_check returned 610 baseline 609 (20261112)
+
